@@ -20,5 +20,13 @@ describe("siteConfig", () => {
       "/contacts",
     ]);
     expect(siteConfig.helpHref).toBe("/help");
+    expect(siteConfig.routes.contactsForHelp).toBe("/contacts#help-request");
+    expect(siteConfig.routes.public).toContain("/requisites");
+  });
+
+  it("uses a valid local site origin fallback", () => {
+    expect(siteConfig.siteUrl).toBeInstanceOf(URL);
+    expect(siteConfig.siteUrl.origin).toMatch(/^https?:\/\//);
+    expect(siteConfig.foundedAt).toBe("2025-07-17");
   });
 });

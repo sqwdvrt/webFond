@@ -9,7 +9,20 @@ export const siteConfig = {
   tagline: "Делая мир лучше",
   description:
     "Благотворительный фонд поддержки людей, оказавшихся в трудной жизненной ситуации.",
+  siteUrl: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  foundedAt: "2025-07-17",
   helpHref: "/help",
+  routes: {
+    contactsForHelp: "/contacts#help-request",
+    public: [
+      "/",
+      "/about",
+      "/help",
+      "/projects",
+      "/requisites",
+      "/contacts",
+    ],
+  },
   navigation: [
     { label: "О фонде", href: "/about" },
     { label: "Проекты", href: "/projects" },
