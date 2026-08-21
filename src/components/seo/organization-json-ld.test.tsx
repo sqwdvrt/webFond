@@ -8,6 +8,10 @@ describe("OrganizationJsonLd", () => {
     const data = JSON.parse(container.querySelector("script")?.textContent ?? "{}");
     expect(data["@type"]).toBe("NGO");
     expect(data.taxID).toBe("9721254417");
+    expect(data.name).toBe("Фонд «Быть Добру»");
+    expect(data.legalName).toBe("Фонд «Быть Добру»");
+    expect(data.foundingDate).toBe("2025-07-17");
+    expect(data.email).toBe("SOROVOI@MAIL.RU");
     expect(data.identifier).toEqual([
       { "@type": "PropertyValue", propertyID: "ОГРН", value: "1257700318974" },
       { "@type": "PropertyValue", propertyID: "КПП", value: "772101001" },

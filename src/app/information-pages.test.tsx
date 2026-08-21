@@ -17,7 +17,7 @@ describe("information pages", () => {
   it("keeps help payments disabled", () => {
     render(<HelpPage />);
     expect(screen.getByRole("group")).toBeDisabled();
-    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByRole("button", { name: "Онлайн-оплата скоро будет доступна" })).toBeDisabled();
   });
 
   it("shows confirmed contacts and no application form", () => {

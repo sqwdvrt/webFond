@@ -16,7 +16,6 @@ describe("DonationPreview", () => {
     expect(screen.getByLabelText("Другая сумма")).toBeDisabled();
     expect(screen.queryByLabelText(/имя/i)).toBeNull();
     expect(screen.queryByLabelText(/email/i)).toBeNull();
-    expect(screen.queryByRole("button", { name: /оплатить/i })).toBeNull();
-    expect(screen.getByText("Онлайн-оплата скоро будет доступна")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Онлайн-оплата скоро будет доступна" })).toBeDisabled();
   });
 });
