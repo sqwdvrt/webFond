@@ -9,6 +9,7 @@ out/
 
 # Tests
 coverage/
+*.tsbuildinfo
 
 # Local environment
 .env

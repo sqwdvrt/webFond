@@ -1,0 +1,46 @@
+# Фонд «Быть Добру»
+
+Техническая основа официального сайта благотворительного фонда. Проект использует
+Next.js App Router, TypeScript, Tailwind CSS, PostgreSQL и Prisma.
+
+Правила и этапы находятся в [`PROJECT_PLAN.md`](./PROJECT_PLAN.md), краткий журнал
+работы — в [`WORK_REPORT.md`](./WORK_REPORT.md).
+
+## Требования
+
+- Node.js 20.9 или новее;
+- npm;
+- PostgreSQL для работы с данными.
+
+## Локальный запуск
+
+```bash
+npm install
+cp .env.example .env
+npm run db:generate
+npm run dev
+```
+
+После запуска сайт доступен по адресу [http://localhost:3000](http://localhost:3000).
+
+Перед первым подключением базы укажите рабочий `DATABASE_URL` и создайте миграцию:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+## Проверки
+
+```bash
+npm test
+npm run lint
+npm run typecheck
+npm run build
+npm run db:validate
+```
+
+## Платежи
+
+Планируется только разовое пожертвование через СБП и динамический QR-код ЮKassa.
+Подписок и автоматических списаний в проекте нет. Секрет ЮKassa используется только
+на сервере и не должен иметь префикс `NEXT_PUBLIC_`.
