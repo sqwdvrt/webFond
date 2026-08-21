@@ -4,15 +4,18 @@ import { describe, expect, it } from "vitest";
 import { SiteFooter } from "@/components/layout/site-footer";
 
 describe("SiteFooter", () => {
-  it("renders confirmed legal and contact information", () => {
+  it("keeps the brand, contact, and copyright without registration numbers", () => {
     render(<SiteFooter />);
 
-    expect(screen.getByText(/ОГРН 1257700318974/)).toBeVisible();
-    expect(screen.getByText(/ИНН 9721254417/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Фонд «Быть Добру»" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "SOROVOI@MAIL.RU" })).toHaveAttribute(
       "href",
       "mailto:SOROVOI@MAIL.RU",
     );
+    expect(screen.getByText(`© ${new Date().getFullYear()} Фонд «Быть Добру»`)).toBeVisible();
+    expect(screen.queryByText(/ОГРН/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ИНН/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/КПП/)).not.toBeInTheDocument();
   });
 
   it("links to the required legal pages", () => {

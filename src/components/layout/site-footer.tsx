@@ -44,10 +44,6 @@ export function SiteFooter() {
       </div>
 
       <div className="container footer-bottom">
-        <p>
-          ОГРН {siteConfig.legal.ogrn} · ИНН {siteConfig.legal.inn} · КПП{" "}
-          {siteConfig.legal.kpp}
-        </p>
         <p>© {new Date().getFullYear()} {siteConfig.name}</p>
       </div>
     </footer>
