@@ -3,9 +3,11 @@ import Link from "next/link";
 import { siteConfig } from "@/config/site";
 
 const legalLinks = [
+  { href: "/requisites", label: "Реквизиты" },
   { href: "/privacy", label: "Политика конфиденциальности" },
   { href: "/personal-data-consent", label: "Согласие на обработку данных" },
   { href: "/donation-offer", label: "Оферта пожертвования" },
+  { href: "/cookies", label: "Файлы cookie" },
 ];
 
 export function SiteFooter() {

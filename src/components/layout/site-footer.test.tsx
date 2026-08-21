@@ -26,5 +26,7 @@ describe("SiteFooter", () => {
       "href",
       "/donation-offer",
     );
+    expect(screen.getByRole("link", { name: "Реквизиты" })).toHaveAttribute("href", "/requisites");
+    expect(screen.getByRole("link", { name: "Файлы cookie" })).toHaveAttribute("href", "/cookies");
   });
 });

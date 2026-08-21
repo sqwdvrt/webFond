@@ -2,7 +2,7 @@
 
 import { Menu, Sprout, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { siteConfig } from "@/config/site";
 
@@ -10,6 +10,15 @@ export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isMenuOpen]);
 
   return (
     <header className="site-header">

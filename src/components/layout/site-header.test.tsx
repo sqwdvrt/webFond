@@ -35,4 +35,12 @@ describe("SiteHeader", () => {
     await user.click(screen.getByRole("button", { name: "Закрыть меню" }));
     expect(screen.queryByRole("navigation", { name: "Мобильная" })).toBeNull();
   });
+
+  it("closes the mobile navigation with Escape", async () => {
+    const user = userEvent.setup();
+    render(<SiteHeader />);
+    await user.click(screen.getByRole("button", { name: "Открыть меню" }));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("navigation", { name: "Мобильная" })).toBeNull();
+  });
 });
