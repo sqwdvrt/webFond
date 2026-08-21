@@ -8,15 +8,32 @@ describe("HomePage", () => {
     render(<HomePage />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByText(/Помогаем людям, оказавшимся/)).toBeVisible();
-    expect(screen.getByRole("link", { name: "Сделать пожертвование" })).toHaveAttribute("href", "/help");
+    expect(screen.getByRole("link", { name: "Помочь фонду" })).toHaveAttribute("href", "/help");
     expect(screen.getByRole("link", { name: "Нужна помощь?" })).toHaveAttribute("href", "/contacts#help-request");
     expect(screen.getAllByText("Направление работы")).toHaveLength(3);
+    expect(screen.getByRole("heading", { level: 3, name: "Поддержать фонд" })).toBeVisible();
   });
 
-  it("shows confirmed facts and honest placeholders", () => {
+  it("keeps the approved section order and continuous numbering", () => {
     render(<HomePage />);
-    expect(screen.getByText(/17 июля 2025 года/)).toBeVisible();
-    expect(screen.getByText("Материалы готовятся к публикации")).toBeVisible();
-    expect(screen.getByText("Проверенные отчеты появятся здесь")).toBeVisible();
+
+    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
+      "Направления помощи",
+      "Как можно помочь",
+      "Материалы готовятся к публикации",
+      "Проверенные отчеты появятся здесь",
+      "Свяжитесь с фондом",
+    ]);
+    expect(screen.getByText("01")).toBeVisible();
+    expect(screen.getByText("02")).toBeVisible();
+    expect(screen.getByText("03 Новости")).toBeVisible();
+    expect(screen.getByText("04 Отчеты")).toBeVisible();
+    expect(screen.queryByText("Подтвержденные факты")).not.toBeInTheDocument();
+    expect(screen.queryByText(/17 июля 2025 года/)).not.toBeInTheDocument();
+  });
+
+  it("describes help without emphasizing payment periodicity", () => {
+    const { container } = render(<HomePage />);
+    expect(container.textContent?.toLowerCase()).not.toMatch(/разов|единоврем|подпис|автоспис/);
   });
 });

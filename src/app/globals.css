@@ -247,12 +247,6 @@ a {
   margin-top: 34px;
 }
 
-.hero-note {
-  margin-top: 18px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .hero-logo {
   width: 100%;
   max-width: 410px;
@@ -312,14 +306,6 @@ a {
 .participation-item h3 { margin: 42px 0 12px; font-size: 19px; }
 .participation-item p { margin: 0; color: var(--muted); font-size: 14px; }
 .participation-item a { display: inline-block; margin-top: 18px; color: var(--brand-dark); font-weight: 700; }
-.facts-band { color: var(--surface); background: var(--ink); }
-.facts-band .section-number { color: #9ed09f; }
-.facts-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 72px; }
-.facts-grid .section-heading { grid-template-columns: 1fr; margin: 0; }
-.fact-list { border-top: 1px solid #465049; }
-.fact-list p { display: grid; gap: 5px; margin: 0; padding: 24px 0; border-bottom: 1px solid #465049; }
-.fact-list strong { font-family: Georgia, "Times New Roman", serif; font-size: 25px; font-weight: 500; }
-.fact-list span { color: #b6c0b8; font-size: 13px; }
 .split-states { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .split-states > div { display: grid; gap: 16px; }
 .empty-state { min-height: 220px; display: flex; gap: 22px; align-items: flex-start; padding: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
@@ -535,7 +521,7 @@ a {
     font-size: 16px;
   }
   .content-band, .page-section { padding: 58px 0; }
-  .section-heading, .facts-grid, .split-states { grid-template-columns: 1fr; gap: 24px; }
+  .section-heading, .split-states { grid-template-columns: 1fr; gap: 24px; }
   .project-grid, .participation-grid { grid-template-columns: 1fr; }
   .project-card { min-height: 270px; }
   .contact-band-inner { align-items: flex-start; flex-direction: column; }
