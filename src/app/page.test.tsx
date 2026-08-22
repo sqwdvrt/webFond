@@ -17,6 +17,7 @@ describe("HomePage", () => {
     expect(screen.getByText("Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства.")).toBeVisible();
     const activityList = container.querySelector("ul.activity-list");
     expect(activityList).toBeInstanceOf(HTMLUListElement);
+    expect(activityList).toHaveAttribute("role", "list");
     expect(activityList?.querySelectorAll(":scope > li")).toHaveLength(8);
     expect(Array.from(activityList?.querySelectorAll(":scope > li") ?? []).map((item) => item.textContent)).toEqual(
       projects.map((project) => project.homepageDescription),
