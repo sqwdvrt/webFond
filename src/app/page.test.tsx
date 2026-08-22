@@ -26,7 +26,7 @@ describe("HomePage", () => {
     expect(activityList?.querySelector("article, a, svg")).not.toBeInTheDocument();
     expect(activityList?.querySelectorAll(".project-number")).toHaveLength(0);
     expect(screen.queryByText("Виды деятельности по уставу")).not.toBeInTheDocument();
-    expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом.")).toBeVisible();
+    expect(screen.queryByText(/Конкретные программы и проекты будут опубликованы/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
       "Поддержать фонд",
       "Волонтерство",

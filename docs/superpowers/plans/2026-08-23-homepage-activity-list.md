@@ -97,7 +97,7 @@ In `src/app/page.tsx`:
 - retain `<SectionHeading number="01" ... />` but remove its disclaimer `intro`;
 - render the approved introduction, `<ul className="activity-list">`, and eight `<li>` elements using `homepageDescription`;
 - do not render the additional status label «Виды деятельности по уставу» on the homepage;
-- render the exact disclaimer after the list.
+- do not render the disclaimer about future programs and projects on the homepage.
 
 Use ordinary text elements only. Do not add a component, icon, number, link, or project-like label to any list item.
 
@@ -108,7 +108,6 @@ In `src/app/globals.css`:
 - add a constrained `.activity-intro`;
 - add a two-column `.activity-list` with zero list styling and a top rule;
 - give each `li` a bottom rule, stable padding, readable line height, and a decorative green `::before` stroke;
-- add a subdued `.activity-note` below the list;
 - switch `.activity-list` to one column in the existing mobile media query;
 - preserve DOM order so the mobile sequence remains the charter sequence.
 
