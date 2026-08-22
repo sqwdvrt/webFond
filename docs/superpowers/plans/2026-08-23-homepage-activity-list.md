@@ -95,7 +95,8 @@ In `src/app/page.tsx`:
 
 - remove the `ProjectCard` import;
 - retain `<SectionHeading number="01" ... />` but remove its disclaimer `intro`;
-- render the one-time status label, approved introduction, `<ul className="activity-list">`, and eight `<li>` elements using `homepageDescription`;
+- render the approved introduction, `<ul className="activity-list">`, and eight `<li>` elements using `homepageDescription`;
+- do not render the additional status label «Виды деятельности по уставу» on the homepage;
 - render the exact disclaimer after the list.
 
 Use ordinary text elements only. Do not add a component, icon, number, link, or project-like label to any list item.
