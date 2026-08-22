@@ -11,6 +11,9 @@ describe("SiteHeader", () => {
     expect(
       screen.getByRole("link", { name: "Фонд «Быть Добру»" }),
     ).toHaveAttribute("href", "/");
+    expect(
+      screen.getByRole("img", { name: "Логотип фонда «Быть Добру»" }),
+    ).toBeVisible();
     expect(screen.getByRole("navigation", { name: "Основная" })).toBeVisible();
     expect(screen.getAllByRole("link", { name: "Помочь" })[0]).toHaveAttribute(
       "href",

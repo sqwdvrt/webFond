@@ -1,6 +1,7 @@
 "use client";
 
-import { Menu, Sprout, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -24,8 +25,14 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container header-inner">
         <Link className="brand-link" href="/" aria-label={siteConfig.name}>
-          <span className="brand-mark" aria-hidden="true">
-            <Sprout size={24} strokeWidth={1.8} />
+          <span className="brand-mark">
+            <Image
+              src="/brand/logo.jpg"
+              width={1254}
+              height={1254}
+              alt="Логотип фонда «Быть Добру»"
+              priority
+            />
           </span>
           <span className="brand-copy">
             <strong>Быть Добру</strong>
