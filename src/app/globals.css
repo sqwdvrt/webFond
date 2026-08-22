@@ -537,12 +537,16 @@ a {
     font-size: 16px;
   }
   .content-band, .page-section { padding: 58px 0; }
-  .section-heading, .split-states { grid-template-columns: 1fr; gap: 24px; }
+  .section-heading, .split-states { grid-template-columns: 1fr; }
+  .section-heading { gap: 16px; margin-bottom: 32px; }
+  .split-states { gap: 24px; }
   .project-grid, .participation-grid { grid-template-columns: 1fr; }
   .project-card { min-height: 270px; }
   .project-grid-compact { grid-template-columns: 1fr; }
   .project-card-compact { min-height: 0; padding: 20px; }
   .project-card-compact h3 { font-size: 17px; }
+  .participation-item { min-height: 220px; padding: 22px 26px; }
+  .participation-item h3 { margin-top: 24px; }
   .contact-band-inner { align-items: flex-start; flex-direction: column; }
   .contact-band h2 { font-size: 38px; }
   .amount-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
