@@ -4,17 +4,32 @@ import { describe, expect, it } from "vitest";
 import HomePage from "@/app/page";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { projects } from "@/content/projects";
 
 describe("HomePage", () => {
   it("renders the approved mission, actions, and charter activities", () => {
-    render(<HomePage />);
+    const { container } = render(<HomePage />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByText(/Помогаем людям, оказавшимся/)).toBeVisible();
     expect(screen.getByRole("link", { name: "Помочь фонду" })).toHaveAttribute("href", "/help");
     expect(screen.getByRole("link", { name: "Нужна помощь?" })).toHaveAttribute("href", "/contacts#help-request");
     expect(screen.getByRole("heading", { level: 2, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
     expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом")).toBeVisible();
-    expect(screen.getAllByText("Виды деятельности по уставу")).toHaveLength(8);
+    expect(screen.getAllByText("Виды деятельности по уставу")).toHaveLength(1);
+    expect(Array.from(container.querySelectorAll(".project-number")).map((item) => item.textContent)).toEqual([
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+    ]);
+    expect(container.querySelectorAll(".project-card-compact")).toHaveLength(8);
+    expect(Array.from(container.querySelectorAll(".project-card h3")).map((heading) => heading.textContent)).toEqual(
+      projects.map((project) => project.description),
+    );
     expect(screen.getByText("Помощь социально незащищенным гражданам, находящимся в тяжелом материальном положении.")).toBeVisible();
     expect(screen.getByText("Разработка и реализация проектов для финансирования социальной сферы с участием бизнеса, бюджета и физических лиц.")).toBeVisible();
     expect(screen.getAllByRole("heading", { level: 3 }).slice(8).map((heading) => heading.textContent)).toEqual([

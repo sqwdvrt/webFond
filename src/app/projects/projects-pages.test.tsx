@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import ProjectsPage from "@/app/projects/page";
+import { projects } from "@/content/projects";
 
 describe("project pages", () => {
   it("renders charter activity types without invented project names", () => {
@@ -12,6 +13,10 @@ describe("project pages", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
     expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом")).toBeVisible();
     expect(container.querySelectorAll(".project-status")).toHaveLength(8);
+    expect(container.querySelectorAll(".project-card-compact")).toHaveLength(0);
+    expect(Array.from(container.querySelectorAll(".project-card h3")).map((heading) => heading.textContent)).toEqual(
+      projects.map((project) => project.description),
+    );
     expect(container.textContent).not.toMatch(/Направления помощи|Помощь рядом|Забота о старших|Поддержка детям|Три направления/);
     expect(Array.from(container.querySelectorAll("a")).map((link) => link.getAttribute("href"))).not.toEqual(
       expect.arrayContaining([
