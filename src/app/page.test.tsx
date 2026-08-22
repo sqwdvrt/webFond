@@ -23,6 +23,7 @@ describe("HomePage", () => {
       projects.map((project) => project.homepageDescription),
     );
     expect(container.querySelectorAll(".project-card-compact")).toHaveLength(0);
+    expect(activityList?.querySelector("article, a, svg")).not.toBeInTheDocument();
     expect(activityList?.querySelectorAll(".project-number")).toHaveLength(0);
     const activityLabels = screen.getAllByText("Виды деятельности по уставу");
     expect(activityLabels).toHaveLength(1);
