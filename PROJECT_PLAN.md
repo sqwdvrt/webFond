@@ -190,20 +190,21 @@
 
 **Задача 1. CSS-контракт**
 
-- [ ] Создать тест, который читает `globals.css` и проверяет `width: clamp(260px, 28vw, 390px)`, `max-width: 100%`, `justify-self: center`, `padding: 8px`, отсутствие рамки, радиус 8 px, тень и мобильную ширину `min(100%, 300px)`.
+- [ ] Создать тест, который читает `globals.css` и проверяет `width: clamp(260px, 28vw, 390px)`, `max-width: 100%`, `justify-self: center`, `padding: 8px`, отсутствие рамки, радиус 8 px и тень.
 - [ ] Запустить `npm test -- src/app/hero-logo-styles.test.ts` и подтвердить ожидаемое падение на старых стилях.
 - [ ] В `.hero-logo` установить адаптивную ширину, центрирование, внутренний отступ, `border: 0`, `border-radius: 8px`, `overflow: hidden` и `box-shadow: 0 18px 48px rgba(31, 91, 37, 0.12)`.
-- [ ] В media query до 720 px установить `width: min(100%, 300px)` и сохранить `justify-self: center`.
+- [ ] Удалить мобильное переопределение `.hero-logo`, чтобы единый `clamp()` не создавал скачок размера на границе 720 px.
 - [ ] Повторить целевой тест и получить успешный результат.
-- [ ] Зафиксировать код и тест отдельным коммитом.
+- [ ] Выполнить `git add src/app/hero-logo-styles.test.ts src/app/globals.css` и `git commit -m "style: center adaptive hero logo"`.
 
 **Задача 2. Визуальная проверка и отчет**
 
 - [ ] Проверить главную на ширинах 1440, 980, 720 и 390 px: центрирование, целое изображение, отсутствие горизонтального переполнения и перекрытий.
-- [ ] Проверить ошибки консоли и ответ главной страницы `200`.
+- [ ] Если сервер не запущен, выполнить `npm run dev -- -p 3001`; проверить ответ командой `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:3001/` и получить `200`.
+- [ ] Проверить ошибки консоли браузера.
 - [ ] Добавить в `WORK_REPORT.md` одну короткую запись об адаптивном логотипе.
 - [ ] Запустить `npm test`, `npm run lint`, `npm run typecheck`, `npm run build` и `git diff --check`.
-- [ ] Зафиксировать отчет и выполненный чек-лист отдельным коммитом.
+- [ ] Выполнить `git add PROJECT_PLAN.md WORK_REPORT.md` и `git commit -m "docs: record adaptive hero logo"`.
 
 ### Этап 3. Контент и админка
 
