@@ -26,6 +26,13 @@ describe("public content components", () => {
     expect(screen.queryByRole("link", { name: /Подробнее/ })).toBeNull();
   });
 
+  it("renders the compact charter activity with a number and no repeated status", () => {
+    render(<ProjectCard project={projects[0]} compact number={1} />);
+    expect(screen.getByText("01")).toHaveClass("project-number");
+    expect(screen.getByText(/Помощь социально незащищенным гражданам/)).toBeVisible();
+    expect(screen.queryByText("Виды деятельности по уставу")).not.toBeInTheDocument();
+  });
+
   it("renders an honest empty state", () => {
     render(<EmptyState title="Материалы готовятся к публикации" description="Мы добавим их после проверки." />);
     expect(screen.getByText("Материалы готовятся к публикации")).toBeVisible();
