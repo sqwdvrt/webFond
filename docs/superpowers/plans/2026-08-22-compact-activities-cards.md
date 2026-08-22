@@ -1,5 +1,7 @@
 # Compact Activities Cards Implementation Plan
 
+> **Follow-up, 2026-08-23:** The card numbering described in the original implementation steps was removed at the user's request. Current compact cards have no internal number labels.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make homepage block 01 compact and readable while preserving all charter wording and leaving `/projects` unchanged.

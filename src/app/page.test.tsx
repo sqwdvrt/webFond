@@ -16,16 +16,7 @@ describe("HomePage", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
     expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом")).toBeVisible();
     expect(screen.getAllByText("Виды деятельности по уставу")).toHaveLength(1);
-    expect(Array.from(container.querySelectorAll(".project-number")).map((item) => item.textContent)).toEqual([
-      "01",
-      "02",
-      "03",
-      "04",
-      "05",
-      "06",
-      "07",
-      "08",
-    ]);
+    expect(container.querySelectorAll(".project-number")).toHaveLength(0);
     expect(container.querySelectorAll(".project-card-compact")).toHaveLength(8);
     expect(Array.from(container.querySelectorAll(".project-card h3")).map((heading) => heading.textContent)).toEqual(
       projects.map((project) => project.description),
