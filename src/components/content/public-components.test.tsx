@@ -19,13 +19,11 @@ describe("public content components", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Направления" })).toBeVisible();
   });
 
-  it("renders project status and internal detail link", () => {
+  it("renders a charter activity without a detail link", () => {
     render(<ProjectCard project={projects[0]} />);
-    expect(screen.getByText("Направление работы")).toBeVisible();
-    expect(screen.getByRole("link", { name: /Подробнее/ })).toHaveAttribute(
-      "href",
-      "/projects/pomoshch-ryadom",
-    );
+    expect(screen.getByText("Виды деятельности по уставу")).toBeVisible();
+    expect(screen.getByText(/Помощь социально незащищенным гражданам/)).toBeVisible();
+    expect(screen.queryByRole("link", { name: /Подробнее/ })).toBeNull();
   });
 
   it("renders an honest empty state", () => {

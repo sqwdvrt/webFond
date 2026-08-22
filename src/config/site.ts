@@ -25,7 +25,7 @@ export const siteConfig = {
   },
   navigation: [
     { label: "О фонде", href: "/about" },
-    { label: "Проекты", href: "/projects" },
+    { label: "Деятельность", href: "/projects" },
     { label: "Отчеты", href: "/reports" },
     { label: "Новости", href: "/news" },
     { label: "Контакты", href: "/contacts" },

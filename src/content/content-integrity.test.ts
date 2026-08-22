@@ -19,9 +19,9 @@ describe("public content integrity", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("does not add numeric claims to project descriptions", () => {
-    for (const project of projects) {
-      expect(`${project.description} ${project.detail}`).not.toMatch(/\d/);
+  it("does not add numeric claims to charter activity descriptions", () => {
+    for (const activity of projects) {
+      expect(activity.description).not.toMatch(/\d/);
     }
   });
 });

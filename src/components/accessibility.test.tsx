@@ -68,7 +68,7 @@ describe("public accessibility", () => {
   it("keeps project page headings in order", () => {
     const { container } = render(<ProjectsPage />);
     expect(Array.from(container.querySelectorAll("h1, h2, h3")).map((heading) => heading.tagName)).toEqual([
-      "H1", "H2", "H3", "H3", "H3",
+      "H1", "H2", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3",
     ]);
   });
 

@@ -1,30 +1,33 @@
 import { describe, expect, it } from "vitest";
 
-import { getProjectBySlug, projects, projectSlugs } from "@/content/projects";
+import { projects } from "@/content/projects";
 
-describe("approved projects", () => {
-  it("contains exactly the three approved directions", () => {
-    expect(projectSlugs).toEqual([
-      "pomoshch-ryadom",
-      "zabota-o-starshih",
-      "podderzhka-detyam",
-    ]);
-    expect(projects.map((project) => project.title)).toEqual([
-      "Помощь рядом",
-      "Забота о старших",
-      "Поддержка детям",
+describe("charter activities", () => {
+  it("contains only the eight activity types from the charter", () => {
+    expect(projects.map((activity) => activity.description)).toEqual([
+      "Помощь социально незащищенным гражданам, находящимся в тяжелом материальном положении.",
+      "Оказание помощи и поддержки пожилым людям, детям-сиротам, детям и престарелым гражданам, находящимся на попечении государства, малообеспеченным и иным лицам, нуждающимся в помощи.",
+      "Содействие восстановлению, облагораживанию и охране объектов и территорий, имеющих историческую, культурную или природоохранную значимость.",
+      "Объединение усилий организаций для оказания помощи нуждающимся, возрождения и развития меценатства.",
+      "Проведение информационных и иных акций для помощи и поддержки нуждающихся.",
+      "Привлечение добровольных пожертвований и денежных взносов российских организаций и граждан.",
+      "Участие в государственных программах, получение и реализация грантов.",
+      "Разработка и реализация проектов для финансирования социальной сферы с участием бизнеса, бюджета и физических лиц.",
     ]);
   });
 
-  it("keeps neutral status, internal links, and no invented metrics", () => {
-    for (const project of projects) {
-      expect(project.status).toBe("Направление работы");
-      expect(project.href).toBe(`/projects/${project.slug}`);
-      expect(project).not.toHaveProperty("raised");
-      expect(project).not.toHaveProperty("goal");
-      expect(project).not.toHaveProperty("beneficiaries");
-      expect(getProjectBySlug(project.slug)).toEqual(project);
+  it("does not expose project slugs, invented names, or metrics", () => {
+    for (const activity of projects) {
+      expect(activity.status).toBe("Виды деятельности по уставу");
+      expect(activity).not.toHaveProperty("slug");
+      expect(activity).not.toHaveProperty("href");
+      expect(activity).not.toHaveProperty("title");
+      expect(activity).not.toHaveProperty("raised");
+      expect(activity).not.toHaveProperty("goal");
+      expect(activity).not.toHaveProperty("beneficiaries");
     }
-    expect(getProjectBySlug("unknown")).toBeUndefined();
+    expect(JSON.stringify(projects)).not.toMatch(
+      /Помощь рядом|Забота о старших|Поддержка детям|pomoshch-ryadom|zabota-o-starshih|podderzhka-detyam/,
+    );
   });
 });

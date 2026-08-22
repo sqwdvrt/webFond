@@ -7,7 +7,6 @@ import { metadata as aboutMetadata } from "@/app/about/page";
 import { metadata as contactsMetadata } from "@/app/contacts/page";
 import { metadata as helpMetadata } from "@/app/help/page";
 import { metadata as projectsMetadata } from "@/app/projects/page";
-import { generateMetadata as generateProjectMetadata } from "@/app/projects/[slug]/page";
 import { metadata as requisitesMetadata } from "@/app/requisites/page";
 import { metadata as newsMetadata } from "@/app/news/page";
 import { metadata as reportsMetadata } from "@/app/reports/page";
@@ -15,7 +14,6 @@ import { metadata as privacyMetadata } from "@/app/privacy/page";
 import { metadata as consentMetadata } from "@/app/personal-data-consent/page";
 import { metadata as offerMetadata } from "@/app/donation-offer/page";
 import { metadata as cookiesMetadata } from "@/app/cookies/page";
-import { projects } from "@/content/projects";
 
 describe("SEO routes", () => {
   it("sets site origin and Open Graph brand image", () => {
@@ -28,7 +26,9 @@ describe("SEO routes", () => {
     for (const path of ["/", "/about", "/help", "/projects", "/requisites", "/contacts"]) {
       expect(urls).toContain(new URL(path, metadata.metadataBase as URL).toString());
     }
-    for (const project of projects) expect(urls).toContain(new URL(project.href, metadata.metadataBase as URL).toString());
+    for (const path of ["/projects/pomoshch-ryadom", "/projects/zabota-o-starshih", "/projects/podderzhka-detyam"]) {
+      expect(urls).not.toContain(new URL(path, metadata.metadataBase as URL).toString());
+    }
     expect(urls.some((url) => url.endsWith("/news"))).toBe(false);
     expect(urls.some((url) => url.endsWith("/reports"))).toBe(false);
   });
@@ -47,13 +47,10 @@ describe("SEO routes", () => {
     }
   });
 
-  it("builds project metadata from approved content", async () => {
-    for (const project of projects) {
-      const page = await generateProjectMetadata({ params: Promise.resolve({ slug: project.slug }) });
-      expect(page.title).toBe(project.title);
-      expect(page.description).toBe(project.description);
-      expect(page.alternates?.canonical).toBe(project.href);
-    }
+  it("uses charter wording for the activities page metadata", () => {
+    expect(projectsMetadata.title).toBe("Цели, предмет и виды деятельности фонда");
+    expect(projectsMetadata.description).toBe("Виды деятельности фонда «Быть Добру» по уставу.");
+    expect(projectsMetadata.alternates?.canonical).toBe("/projects");
   });
 
   it("keeps every placeholder route noindex", () => {

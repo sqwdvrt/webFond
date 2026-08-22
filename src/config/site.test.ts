@@ -19,6 +19,7 @@ describe("siteConfig", () => {
       "/news",
       "/contacts",
     ]);
+    expect(siteConfig.navigation.find((item) => item.href === "/projects")?.label).toBe("Деятельность");
     expect(siteConfig.helpHref).toBe("/help");
     expect(siteConfig.routes.contactsForHelp).toBe("/contacts#help-request");
     expect(siteConfig.routes.public).toContain("/requisites");
