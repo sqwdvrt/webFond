@@ -14,16 +14,20 @@ describe("HomePage", () => {
     expect(screen.getByRole("link", { name: "Помочь фонду" })).toHaveAttribute("href", "/help");
     expect(screen.getByRole("link", { name: "Нужна помощь?" })).toHaveAttribute("href", "/contacts#help-request");
     expect(screen.getByRole("heading", { level: 2, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
-    expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом")).toBeVisible();
-    expect(screen.getAllByText("Виды деятельности по уставу")).toHaveLength(1);
-    expect(container.querySelectorAll(".project-number")).toHaveLength(0);
-    expect(container.querySelectorAll(".project-card-compact")).toHaveLength(8);
-    expect(Array.from(container.querySelectorAll(".project-card h3")).map((heading) => heading.textContent)).toEqual(
-      projects.map((project) => project.description),
+    expect(screen.getByText("Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства.")).toBeVisible();
+    const activityList = container.querySelector("ul.activity-list");
+    expect(activityList).toBeInstanceOf(HTMLUListElement);
+    expect(activityList?.querySelectorAll(":scope > li")).toHaveLength(8);
+    expect(Array.from(activityList?.querySelectorAll(":scope > li") ?? []).map((item) => item.textContent)).toEqual(
+      projects.map((project) => project.homepageDescription),
     );
-    expect(screen.getByText("Помощь социально незащищенным гражданам, находящимся в тяжелом материальном положении.")).toBeVisible();
-    expect(screen.getByText("Разработка и реализация проектов для финансирования социальной сферы с участием бизнеса, бюджета и физических лиц.")).toBeVisible();
-    expect(screen.getAllByRole("heading", { level: 3 }).slice(8).map((heading) => heading.textContent)).toEqual([
+    expect(container.querySelectorAll(".project-card-compact")).toHaveLength(0);
+    expect(activityList?.querySelectorAll(".project-number")).toHaveLength(0);
+    const activityLabels = screen.getAllByText("Виды деятельности по уставу");
+    expect(activityLabels).toHaveLength(1);
+    expect(activityLabels[0]).toBeVisible();
+    expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом.")).toBeVisible();
+    expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
       "Поддержать фонд",
       "Волонтерство",
       "Партнерство",
