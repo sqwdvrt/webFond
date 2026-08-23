@@ -396,6 +396,10 @@ describe("parseRequisitesForm", () => {
     "user@example .org",
     ".user@example.org",
     "user.@example.org",
+    "a..b@example.org",
+    "a()b@example.org",
+    '"quoted"@example.org',
+    "тест@example.org",
     "user@.example.org",
     "user@example..org",
     "user@example.org.",
@@ -414,6 +418,7 @@ describe("parseRequisitesForm", () => {
 
   it.each([
     ["a@b", true],
+    ["a!#$%&'*+/=?^_`{|}~-z@example.org", true],
     [`${"a".repeat(248)}@a.com`, true],
     [`${"a".repeat(249)}@a.com`, false],
   ] as const)("enforces requisites email length boundaries", (email, valid) => {

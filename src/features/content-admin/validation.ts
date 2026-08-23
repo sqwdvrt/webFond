@@ -17,6 +17,8 @@ const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f-\u009f]/;
 const CONTENT_CONTROL_CHARACTER_PATTERN =
   /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const EMAIL_LOCAL_PART_PATTERN =
+  /^[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]+)*$/;
 const MAX_URL_LENGTH = 2048;
 const REQUISITES_FIELDS = [
   "version",
@@ -242,12 +244,7 @@ function isBasicEmail(value: string) {
   if (parts.length !== 2) return false;
 
   const [local, domain] = parts;
-  if (
-    !local ||
-    !domain ||
-    local.startsWith(".") ||
-    local.endsWith(".")
-  ) {
+  if (!local || !domain || !EMAIL_LOCAL_PART_PATTERN.test(local)) {
     return false;
   }
 
