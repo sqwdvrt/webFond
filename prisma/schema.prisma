@@ -53,6 +53,8 @@ model Project {
   publishedAt DateTime?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+
+  @@index([status, publishedAt, id])
 }
 
 model NewsPost {
@@ -66,16 +68,21 @@ model NewsPost {
   publishedAt DateTime?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+
+  @@index([status, publishedAt, id])
 }
 
 model Document {
-  id          String    @id @default(cuid())
+  id          String            @id @default(cuid())
   title       String
   category    String
   fileUrl     String
+  status      PublicationStatus @default(DRAFT)
   publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([status, publishedAt, id])
 }
 
 model SiteSetting {
