@@ -5,6 +5,8 @@ export type AdminAuthConfig = {
   trustProxy: boolean;
 };
 
+type Environment = Readonly<Record<string, string | undefined>>;
+
 export class AdminAuthConfigurationError extends Error {
   constructor(variable: string) {
     super(`Invalid ${variable}`);
@@ -13,7 +15,7 @@ export class AdminAuthConfigurationError extends Error {
 }
 
 function requireValue(
-  env: NodeJS.ProcessEnv,
+  env: Environment,
   name: "ADMIN_USERNAME" | "ADMIN_PASSWORD" | "AUTH_SECRET",
 ) {
   const value = env[name];
@@ -26,7 +28,7 @@ function requireValue(
 }
 
 export function readAdminAuthConfig(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Environment = process.env,
 ): AdminAuthConfig {
   const username = requireValue(env, "ADMIN_USERNAME").trim();
   const password = requireValue(env, "ADMIN_PASSWORD");

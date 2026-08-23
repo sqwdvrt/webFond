@@ -1,0 +1,195 @@
+.adminShell {
+  min-height: calc(100vh - var(--header-height));
+  background: #f1f4f0;
+}
+
+.loginSection {
+  min-height: calc(100vh - var(--header-height));
+  display: grid;
+  place-items: center;
+  padding: 56px 20px;
+}
+
+.loginPanel {
+  width: min(100%, 480px);
+  padding: 36px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.eyebrow {
+  color: var(--brand-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.loginPanel h1,
+.dashboard h1 {
+  margin: 12px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.loginPanel h1 {
+  font-size: 36px;
+}
+
+.intro {
+  margin: 16px 0 0;
+  color: var(--muted);
+}
+
+.loginForm {
+  display: grid;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid #aeb7b0;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 400;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: #a63f36;
+}
+
+.formMessage {
+  min-height: 24px;
+  margin: -4px 0 0;
+  color: #8b3029;
+  font-size: 14px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  color: var(--surface);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+}
+
+.primaryButton:hover {
+  background: var(--brand-dark);
+}
+
+.primaryButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.dashboard {
+  width: min(100% - 40px, 1040px);
+  margin-inline: auto;
+  padding: 64px 0 88px;
+}
+
+.dashboardHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dashboard h1 {
+  font-size: 44px;
+}
+
+.secondaryButton {
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+}
+
+.secondaryButton:hover {
+  color: var(--surface);
+  background: var(--ink);
+}
+
+.dashboardContent {
+  padding-top: 44px;
+}
+
+.accountLabel {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.accountName {
+  margin: 8px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.dashboardNote {
+  max-width: 620px;
+  margin: 28px 0 0;
+  padding-top: 28px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
+  .loginSection {
+    align-items: start;
+    padding: 32px 16px;
+  }
+
+  .loginPanel {
+    padding: 26px 22px;
+  }
+
+  .loginPanel h1 {
+    font-size: 31px;
+  }
+
+  .dashboard {
+    width: min(100% - 32px, 1040px);
+    padding: 44px 0 64px;
+  }
+
+  .dashboardHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboardHeader form,
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .dashboard h1 {
+    font-size: 36px;
+  }
+}
