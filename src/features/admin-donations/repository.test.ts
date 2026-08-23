@@ -16,8 +16,14 @@ const row: DonationRow = {
 };
 
 function pageClient(total: number, rows: DonationRow[] = [row]) {
-  const count = vi.fn(async (_args: unknown) => total);
-  const findMany = vi.fn(async (_args: unknown) => rows);
+  const count = vi.fn(async (...args: unknown[]) => {
+    void args;
+    return total;
+  });
+  const findMany = vi.fn(async (...args: unknown[]) => {
+    void args;
+    return rows;
+  });
   const transaction = vi.fn(
     async (callback: (tx: { donation: { count: typeof count; findMany: typeof findMany } }) => Promise<unknown>) =>
       callback({ donation: { count, findMany } }),
@@ -83,7 +89,10 @@ describe("donation repository page", () => {
 
 describe("donation repository export batches", () => {
   it("uses base filters and the stable order for the first batch", async () => {
-    const findMany = vi.fn(async (_args: unknown) => [row]);
+    const findMany = vi.fn(async (...args: unknown[]) => {
+      void args;
+      return [row];
+    });
 
     await getDonationExportBatch(
       { status: "SUCCEEDED" },
@@ -103,7 +112,10 @@ describe("donation repository export batches", () => {
   });
 
   it("keeps search OR conditions when applying a manual keyset", async () => {
-    const findMany = vi.fn(async (_args: unknown) => [] as DonationRow[]);
+    const findMany = vi.fn(async (...args: unknown[]) => {
+      void args;
+      return [] as DonationRow[];
+    });
     const cursor = {
       createdAt: new Date("2026-08-23T08:00:00.000Z"),
       id: "donation-500",
