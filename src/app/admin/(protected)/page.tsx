@@ -23,11 +23,19 @@ export default async function AdminPage() {
       <div className={styles.dashboardContent}>
         <p className={styles.accountLabel}>Текущая учетная запись</p>
         <p className={styles.accountName}>{session.username}</p>
-        <p className={styles.dashboardNote}>
-          Управление проектами, новостями и документами будет добавлено в
-          следующем срезе этапа 3.
-        </p>
+        <div className={styles.adminNavigation}>
+          <Link href="/admin/donations">
+            <HandCoins aria-hidden="true" size={22} />
+            <span>
+              <strong>Пожертвования</strong>
+              <small>Список, фильтры и CSV-экспорт</small>
+            </span>
+            <ArrowRight aria-hidden="true" size={20} />
+          </Link>
+        </div>
       </div>
     </section>
   );
 }
+import { ArrowRight, HandCoins } from "lucide-react";
+import Link from "next/link";
