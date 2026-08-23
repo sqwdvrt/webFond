@@ -5,6 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const databaseUrlValue = process.env.CONTENT_MIGRATION_TEST_DATABASE_URL;
 const describeWithDatabase = databaseUrlValue ? describe : describe.skip;
+const PSQL_PROCESS_TIMEOUT_MS = 10_000;
+const VITEST_HOOK_TIMEOUT_MS = 25_000;
 const schemaName = `content_migration_${randomUUID().replaceAll("-", "")}`;
 const migrationPath = resolve(
   process.cwd(),
@@ -32,14 +34,16 @@ describeWithDatabase("content publication migration against PostgreSQL", () => {
   function psql(...args: string[]) {
     return execFileSync(
       "psql",
-      ["--dbname", connection, "-v", "ON_ERROR_STOP=1", "-1", ...args],
+      ["--dbname", connection, "-X", "-v", "ON_ERROR_STOP=1", "-1", ...args],
       {
         encoding: "utf8",
         env: {
           ...process.env,
-          PGOPTIONS: `-c search_path=${schemaName}`,
+          PGCONNECT_TIMEOUT: "5",
+          PGOPTIONS: `-c search_path=${schemaName} -c lock_timeout=5000 -c statement_timeout=8000`,
         },
         stdio: ["ignore", "pipe", "pipe"],
+        timeout: PSQL_PROCESS_TIMEOUT_MS,
       },
     );
   }
@@ -50,9 +54,24 @@ describeWithDatabase("content publication migration against PostgreSQL", () => {
     psql("-c", `DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
   }
 
+  function cleanupAfterSetupFailure(primaryError: unknown): never {
+    try {
+      dropSchema();
+    } catch {
+      try {
+        process.stderr.write(
+          "Failed to clean up isolated content migration schema after setup failure\n",
+        );
+      } catch {
+        // Preserve the setup error even if reporting the cleanup failure fails.
+      }
+    }
+
+    throw primaryError;
+  }
+
   beforeAll(() => {
     connection = validatedConnection(databaseUrlValue!);
-    let setupComplete = false;
 
     try {
       psql(
@@ -108,15 +127,14 @@ describeWithDatabase("content publication migration against PostgreSQL", () => {
         `,
       );
       psql("--file", migrationPath);
-      setupComplete = true;
-    } finally {
-      if (!setupComplete) dropSchema();
+    } catch (primaryError) {
+      cleanupAfterSetupFailure(primaryError);
     }
-  }, 30_000);
+  }, VITEST_HOOK_TIMEOUT_MS);
 
   afterAll(() => {
     dropSchema();
-  });
+  }, VITEST_HOOK_TIMEOUT_MS);
 
   it("preserves rows and backfills publication state", () => {
     const rows = psql(
