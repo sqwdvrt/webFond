@@ -80,6 +80,72 @@ describe("parseEditorialForm", () => {
     expect(value.status).toBe("PUBLISHED");
   });
 
+  it("normalizes CRLF paragraphs and permits LF paragraphs in content", () => {
+    const value = expectValid(
+      parseEditorialForm(
+        form({
+          ...validDraft,
+          content: "  Первый абзац.\r\n\r\nВторой абзац.\nТретий абзац.  ",
+        }),
+      ),
+    );
+
+    expect(value.content).toBe(
+      "Первый абзац.\n\nВторой абзац.\nТретий абзац.",
+    );
+  });
+
+  it.each([
+    ["title", "Про\u0000ект"],
+    ["slug", "project\u0085slug"],
+    ["summary", "Краткое\u009f описание"],
+    ["content", "Абзац\tс табуляцией"],
+    ["content", "Абзац\rбез LF"],
+    ["imageUrl", "/images/pro\u0085ject.jpg"],
+    ["status", "DRAFT\u0000"],
+  ])("rejects embedded controls in editorial %s", (field, value) => {
+    const result = parseEditorialForm(form({ ...validDraft, [field]: value }));
+
+    expect(result).toMatchObject({ ok: false, errors: { [field]: expect.any(String) } });
+  });
+
+  it.each([
+    ["title", "😀", false],
+    ["title", "😀".repeat(160), true],
+    ["title", "😀".repeat(161), false],
+    ["summary", "😀".repeat(500), true],
+    ["summary", "😀".repeat(501), false],
+    ["content", "😀".repeat(20_000), true],
+    ["content", "😀".repeat(20_001), false],
+  ] as const)("counts editorial %s length by code point", (field, value, valid) => {
+    const result = parseEditorialForm(form({ ...validDraft, [field]: value }));
+
+    expect(result.ok).toBe(valid);
+  });
+
+  it.each([
+    [`/${"😀".repeat(2047)}`, true],
+    [`/${"😀".repeat(2048)}`, false],
+  ] as const)("counts URL length by code point", (imageUrl, valid) => {
+    expect(parseEditorialForm(form({ ...validDraft, imageUrl })).ok).toBe(valid);
+  });
+
+  it("uses code-point minimums for published editorial text", () => {
+    const result = parseEditorialForm(
+      form({
+        ...validDraft,
+        status: "PUBLISHED",
+        summary: "😀".repeat(9),
+        content: "😀".repeat(19),
+      }),
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      errors: { summary: expect.any(String), content: expect.any(String) },
+    });
+  });
+
   it.each([
     ["title", "x"],
     ["title", "x".repeat(161)],
@@ -138,6 +204,30 @@ describe("parseDocumentForm", () => {
       fileUrl: "/documents/charter.pdf",
       status: "ARCHIVED",
     });
+  });
+
+  it.each([
+    ["title", "Ус\u0000тав"],
+    ["category", "Документы\u0085 фонда"],
+    ["fileUrl", "/documents/char\u009fter.pdf"],
+    ["status", "ARCHIVED\u0000"],
+  ])("rejects embedded controls in document %s", (field, value) => {
+    const result = parseDocumentForm(form({ ...validDocument, [field]: value }));
+
+    expect(result).toMatchObject({ ok: false, errors: { [field]: expect.any(String) } });
+  });
+
+  it.each([
+    ["title", "😀", false],
+    ["title", "😀".repeat(160), true],
+    ["title", "😀".repeat(161), false],
+    ["category", "😀", false],
+    ["category", "😀".repeat(80), true],
+    ["category", "😀".repeat(81), false],
+  ] as const)("counts document %s length by code point", (field, value, valid) => {
+    const result = parseDocumentForm(form({ ...validDocument, [field]: value }));
+
+    expect(result.ok).toBe(valid);
   });
 
   it.each([
@@ -278,6 +368,81 @@ describe("parseRequisitesForm", () => {
   });
 
   it.each([
+    ["version", "1\u0000"],
+    ["status", "DRAFT\u0085"],
+    ["fullName", "Фонд\u0000 Добра"],
+    ["shortName", "Ф\u0085БД"],
+    ["ogrn", "125770\u00000318974"],
+    ["inn", "97212\u008554417"],
+    ["kpp", "7721\u000001001"],
+    ["address", "Москва,\u009f улица Добра"],
+    ["email", "office@example\u0000.org"],
+    ["bankName", "АО\u0085 Банк"],
+    ["recipientName", "Фонд\u0000 Добра"],
+    ["checkingAccount", "4070381010\u00850000000001"],
+    ["correspondentAccount", "3010181000\u00000000000001"],
+    ["bik", "0445\u009f25001"],
+  ])("rejects embedded controls in requisites %s", (field, value) => {
+    const result = parseRequisitesForm(
+      form({ ...validPublished, status: "DRAFT", [field]: value }),
+    );
+
+    expect(result).toMatchObject({ ok: false, errors: { [field]: expect.any(String) } });
+  });
+
+  it.each([
+    "user @example.org",
+    "user@ example.org",
+    "user@example .org",
+    ".user@example.org",
+    "user.@example.org",
+    "user@.example.org",
+    "user@example..org",
+    "user@example.org.",
+    "user@-example.org",
+    "user@example-.org",
+    "user@exam_ple.org",
+    "user@пример.рф",
+    `user@${"a".repeat(64)}.org`,
+  ])("rejects malformed requisites email %j", (email) => {
+    const result = parseRequisitesForm(
+      form({ ...validPublished, status: "DRAFT", email }),
+    );
+
+    expect(result).toMatchObject({ ok: false, errors: { email: expect.any(String) } });
+  });
+
+  it.each([
+    ["a@b", true],
+    [`${"a".repeat(248)}@a.com`, true],
+    [`${"a".repeat(249)}@a.com`, false],
+  ] as const)("enforces requisites email length boundaries", (email, valid) => {
+    expect(
+      parseRequisitesForm(form({ ...validPublished, status: "DRAFT", email })).ok,
+    ).toBe(valid);
+  });
+
+  it.each([
+    ["fullName", "😀", false],
+    ["fullName", "😀".repeat(240), true],
+    ["fullName", "😀".repeat(241), false],
+    ["shortName", "😀", false],
+    ["shortName", "😀".repeat(160), true],
+    ["address", "😀".repeat(4), false],
+    ["address", "😀".repeat(500), true],
+    ["bankName", "😀", false],
+    ["bankName", "😀".repeat(200), true],
+    ["recipientName", "😀", false],
+    ["recipientName", "😀".repeat(240), true],
+  ] as const)("counts requisites %s length by code point", (field, value, valid) => {
+    const result = parseRequisitesForm(
+      form({ ...validPublished, status: "DRAFT", [field]: value }),
+    );
+
+    expect(result.ok).toBe(valid);
+  });
+
+  it.each([
     ["version", "2"],
     ["status", "published"],
     ["fullName", "x"],
@@ -368,6 +533,19 @@ describe("parseRequisitesSetting", () => {
       ok: true,
       value: { fullName: "Фонд «Быть Добру»" },
     });
+  });
+
+  it.each([
+    ["fullName", "Фонд\u0000 Добра"],
+    ["shortName", "Ф\u0085БД"],
+    ["address", "Москва,\u009f улица Добра"],
+    ["email", "office@example\u0000.org"],
+    ["bankName", "АО\u0085 Банк"],
+    ["recipientName", "Фонд\u0000 Добра"],
+  ])("rejects embedded controls in stored requisites %s", (field, value) => {
+    expect(
+      parseRequisitesSetting({ ...defaultRequisitesDraft(), [field]: value }),
+    ).toEqual({ ok: false });
   });
 
   it.each([

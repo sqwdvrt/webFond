@@ -13,7 +13,9 @@ import {
 } from "./types";
 
 const DUPLICATE_ERROR = "Поле должно быть указано один раз";
-const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/;
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f-\u009f]/;
+const CONTENT_CONTROL_CHARACTER_PATTERN =
+  /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_URL_LENGTH = 2048;
 const REQUISITES_FIELDS = [
@@ -67,8 +69,29 @@ function setError<T extends string>(
   errors[field] ??= message;
 }
 
+function textLength(value: string) {
+  return Array.from(value).length;
+}
+
 function hasLength(value: string, minimum: number, maximum: number) {
-  return value.length >= minimum && value.length <= maximum;
+  const length = textLength(value);
+  return length >= minimum && length <= maximum;
+}
+
+function rejectControlCharacters<T extends string>(
+  values: Fields<T>,
+  errors: FieldErrors<T>,
+  multilineField?: T,
+) {
+  for (const field of Object.keys(values) as T[]) {
+    const pattern =
+      field === multilineField
+        ? CONTENT_CONTROL_CHARACTER_PATTERN
+        : CONTROL_CHARACTER_PATTERN;
+    if (pattern.test(values[field])) {
+      setError(errors, field, "Удалите недопустимые управляющие символы");
+    }
+  }
 }
 
 function isPublicationStatus(value: string): value is PublicationStatus {
@@ -78,7 +101,7 @@ function isPublicationStatus(value: string): value is PublicationStatus {
 function isSafeUrl(value: string) {
   if (
     !value ||
-    value.length > MAX_URL_LENGTH ||
+    textLength(value) > MAX_URL_LENGTH ||
     value.includes("\\") ||
     CONTROL_CHARACTER_PATTERN.test(value)
   ) {
@@ -111,6 +134,8 @@ export function parseEditorialForm(
     "imageUrl",
     "status",
   ] as const);
+  values.content = values.content.replace(/\r\n/g, "\n");
+  rejectControlCharacters(values, errors, "content");
 
   if (!hasLength(values.title, 2, 160)) {
     setError(errors, "title", "Введите от 2 до 160 символов");
@@ -125,10 +150,10 @@ export function parseEditorialForm(
       "Введите адрес из строчных латинских букв, цифр и одиночных дефисов",
     );
   }
-  if (values.summary.length > 500) {
+  if (!hasLength(values.summary, 0, 500)) {
     setError(errors, "summary", "Введите не более 500 символов");
   }
-  if (values.content.length > 20_000) {
+  if (!hasLength(values.content, 0, 20_000)) {
     setError(errors, "content", "Введите не более 20000 символов");
   }
   if (values.imageUrl && !isSafeUrl(values.imageUrl)) {
@@ -172,6 +197,7 @@ export function parseDocumentForm(
     "fileUrl",
     "status",
   ] as const);
+  rejectControlCharacters(values, errors);
 
   if (!hasLength(values.title, 2, 160)) {
     setError(errors, "title", "Введите от 2 до 160 символов");
@@ -209,11 +235,35 @@ export function publicationTimestamp(
   return status === "PUBLISHED" ? now : null;
 }
 
+function isBasicEmail(value: string) {
+  if (!hasLength(value, 3, 254) || /\s/u.test(value)) return false;
+
+  const parts = value.split("@");
+  if (parts.length !== 2) return false;
+
+  const [local, domain] = parts;
+  if (
+    !local ||
+    !domain ||
+    local.startsWith(".") ||
+    local.endsWith(".")
+  ) {
+    return false;
+  }
+
+  return domain.split(".").every(
+    (label) =>
+      label.length <= 63 &&
+      /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(label),
+  );
+}
+
 function validateRequisites(
   values: Fields<RequisitesField>,
   initialErrors: FieldErrors<RequisitesField> = {},
 ) {
   const errors = { ...initialErrors };
+  rejectControlCharacters(values, errors);
 
   if (values.version !== "1") {
     setError(errors, "version", "Версия реквизитов не поддерживается");
@@ -240,13 +290,7 @@ function validateRequisites(
     setError(errors, "address", "Введите от 5 до 500 символов");
   }
 
-  const firstAt = values.email.indexOf("@");
-  if (
-    !hasLength(values.email, 3, 254) ||
-    firstAt <= 0 ||
-    firstAt !== values.email.lastIndexOf("@") ||
-    firstAt === values.email.length - 1
-  ) {
+  if (!isBasicEmail(values.email)) {
     setError(errors, "email", "Введите корректный email");
   }
 
