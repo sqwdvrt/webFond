@@ -44,7 +44,9 @@ export async function renderDonationsPage(
   const result = await dependencies.getPage(parsed.value);
   if (result.page !== parsed.value.page) {
     const query = buildDonationQuery({ ...parsed.value, page: result.page });
-    dependencies.navigate(`/admin/donations?${query}`);
+    dependencies.navigate(
+      `/admin/donations${query.size ? `?${query}` : ""}`,
+    );
   }
 
   return <DonationsView filters={parsed.value} result={result} />;

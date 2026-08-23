@@ -63,6 +63,11 @@ Query-параметр поиска может содержать email и ос�
 production access-логи reverse proxy и хостинга должны удалять или не записывать
 query string для маршрутов `/admin`.
 
+Production-ответы `/admin` получают `Cache-Control: private, no-store,
+max-age=0`. В режиме `next dev` Next.js может заменить его на `no-cache,
+must-revalidate`; проверять итоговый заголовок нужно через `next build` и
+`next start`.
+
 ## Проверки
 
 ```bash

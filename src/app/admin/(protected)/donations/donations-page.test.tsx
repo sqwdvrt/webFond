@@ -85,6 +85,25 @@ describe("donations page orchestration", () => {
       "redirect:/admin/donations?status=SUCCEEDED&from=2026-08-01&to=2026-08-23&q=fixture&page=2",
     );
   });
+
+  it("does not append an empty query to a canonical redirect", async () => {
+    const requested = { page: 2 };
+    const deps = dependencies({
+      parseFilters: vi.fn(() => ({ ok: true as const, value: requested })),
+      getPage: vi.fn(async () => ({
+        ...result,
+        rows: [],
+        total: 0,
+        totalPages: 1,
+        page: 1,
+      })),
+    });
+
+    await expect(renderDonationsPage({}, deps)).rejects.toThrow(
+      "redirect:/admin/donations",
+    );
+    expect(deps.navigate).toHaveBeenCalledWith("/admin/donations");
+  });
 });
 
 describe("DonationsView", () => {
@@ -123,6 +142,21 @@ describe("DonationsView", () => {
     expect(screen.getByText("Пожертвования не найдены")).toBeVisible();
     expect(screen.queryByRole("link", { name: /Назад/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Далее/ })).not.toBeInTheDocument();
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+  });
+
+  it("renders an accessible populated table and filter form", async () => {
+    const { container } = render(
+      <DonationsView filters={filters} result={result} />,
+    );
 
     const results = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } },
