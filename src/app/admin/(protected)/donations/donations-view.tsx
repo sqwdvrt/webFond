@@ -28,6 +28,10 @@ function donationsHref(filters: DonationPageFilters, page: number) {
   return `/admin/donations${query.size ? `?${query}` : ""}`;
 }
 
+function MissingValue() {
+  return <span aria-label="Нет данных">&mdash;</span>;
+}
+
 export function InvalidDonationFilters() {
   return (
     <section className={styles.donationsPage}>
@@ -156,10 +160,10 @@ export function DonationsView({
                       {DONATION_STATUS_LABELS[donation.status]}
                     </span>
                   </td>
-                  <td>{donation.donorName ?? "—"}</td>
-                  <td>{donation.donorEmail ?? "—"}</td>
+                  <td>{donation.donorName ?? <MissingValue />}</td>
+                  <td>{donation.donorEmail ?? <MissingValue />}</td>
                   <td className={styles.paymentId}>
-                    {donation.providerPaymentId ?? "—"}
+                    {donation.providerPaymentId ?? <MissingValue />}
                   </td>
                 </tr>
               ))}
