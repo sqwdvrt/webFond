@@ -10,26 +10,44 @@ const migration = existsSync(migrationPath)
   ? readFileSync(migrationPath, "utf8").replace(/\s+/g, " ").trim()
   : "";
 
-function positionOf(sql: string) {
-  const position = migration.indexOf(sql);
-  expect(position, `Missing SQL: ${sql}`).toBeGreaterThanOrEqual(0);
+const publicationStatements = [
+  'ALTER TABLE "Document" ADD COLUMN "status" "PublicationStatus"',
+  `UPDATE "Document" SET "status" = CASE WHEN "publishedAt" IS NOT NULL THEN 'PUBLISHED'::"PublicationStatus" ELSE 'DRAFT'::"PublicationStatus" END`,
+  `ALTER TABLE "Document" ALTER COLUMN "status" SET DEFAULT 'DRAFT'`,
+  'ALTER TABLE "Document" ALTER COLUMN "status" SET NOT NULL',
+  `UPDATE "Project" SET "publishedAt" = "updatedAt" WHERE "status" = 'PUBLISHED' AND "publishedAt" IS NULL`,
+  `UPDATE "NewsPost" SET "publishedAt" = "updatedAt" WHERE "status" = 'PUBLISHED' AND "publishedAt" IS NULL`,
+  'CREATE INDEX "Project_status_publishedAt_id_idx"',
+  'CREATE INDEX "NewsPost_status_publishedAt_id_idx"',
+  'CREATE INDEX "Document_status_publishedAt_id_idx"',
+];
+
+function positionOf(source: string, statement: string) {
+  const position = source.indexOf(statement);
+  expect(position, `Missing SQL: ${statement}`).toBeGreaterThanOrEqual(0);
   return position;
+}
+
+function expectStatementsInOrder(source: string, statements: string[]) {
+  let previousPosition = -1;
+
+  for (const statement of statements) {
+    const position = positionOf(source, statement);
+    expect(position, `Out-of-order SQL: ${statement}`).toBeGreaterThan(
+      previousPosition,
+    );
+    previousPosition = position;
+  }
 }
 
 describe("content publication migration", () => {
   it("adds Document status as nullable before backfilling and constraining it", () => {
-    const addColumn = positionOf(
-      'ALTER TABLE "Document" ADD COLUMN "status" "PublicationStatus"',
-    );
-    const backfill = positionOf(
-      `UPDATE "Document" SET "status" = CASE WHEN "publishedAt" IS NOT NULL THEN 'PUBLISHED'::"PublicationStatus" ELSE 'DRAFT'::"PublicationStatus" END`,
-    );
-    const setDefault = positionOf(
-      `ALTER TABLE "Document" ALTER COLUMN "status" SET DEFAULT 'DRAFT'`,
-    );
-    const setNotNull = positionOf(
-      'ALTER TABLE "Document" ALTER COLUMN "status" SET NOT NULL',
-    );
+    const [addColumnSql, backfillSql, setDefaultSql, setNotNullSql] =
+      publicationStatements;
+    const addColumn = positionOf(migration, addColumnSql);
+    const backfill = positionOf(migration, backfillSql);
+    const setDefault = positionOf(migration, setDefaultSql);
+    const setNotNull = positionOf(migration, setNotNullSql);
 
     expect(migration.slice(addColumn, backfill)).not.toContain("NOT NULL");
     expect(migration.slice(addColumn, backfill)).not.toContain("DEFAULT");
@@ -38,18 +56,7 @@ describe("content publication migration", () => {
     expect(setDefault).toBeLessThan(setNotNull);
   });
 
-  it("repairs published content timestamps before creating list indexes", () => {
-    const projectBackfill = positionOf(
-      `UPDATE "Project" SET "publishedAt" = "updatedAt" WHERE "status" = 'PUBLISHED' AND "publishedAt" IS NULL`,
-    );
-    const newsBackfill = positionOf(
-      `UPDATE "NewsPost" SET "publishedAt" = "updatedAt" WHERE "status" = 'PUBLISHED' AND "publishedAt" IS NULL`,
-    );
-    const firstIndex = positionOf(
-      'CREATE INDEX "Project_status_publishedAt_id_idx"',
-    );
-
-    expect(projectBackfill).toBeLessThan(firstIndex);
-    expect(newsBackfill).toBeLessThan(firstIndex);
+  it("applies every data and index change in safe order", () => {
+    expectStatementsInOrder(migration, publicationStatements);
   });
 });
