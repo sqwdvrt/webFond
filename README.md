@@ -17,17 +17,32 @@ TypeScript, Tailwind CSS, PostgreSQL и Prisma.
 ```bash
 npm install
 cp .env.example .env
+npx prisma migrate deploy
 npm run db:generate
 npm run dev
 ```
 
 После запуска сайт доступен по адресу [http://localhost:3000](http://localhost:3000).
 
-Перед первым подключением базы укажите рабочий `DATABASE_URL` и создайте миграцию:
+Перед первым запуском укажите рабочий `DATABASE_URL`. Команда
+`prisma migrate deploy` применит начальную миграцию из `prisma/migrations`.
 
-```bash
-npx prisma migrate dev --name init
+## Административная часть
+
+Форма входа доступна по адресу
+[http://localhost:3000/admin/login](http://localhost:3000/admin/login). Для нее
+нужны серверные переменные:
+
+```dotenv
+ADMIN_USERNAME="replace-with-admin-username"
+ADMIN_PASSWORD="replace-with-a-strong-admin-password"
+AUTH_SECRET="replace-with-at-least-32-random-characters"
+ADMIN_TRUST_PROXY="false"
 ```
+
+`ADMIN_TRUST_PROXY=true` допустим только за reverse proxy, который перезаписывает
+клиентские forwarding-заголовки. Рабочие значения хранятся в `.env` и не
+добавляются в git.
 
 ## Проверки
 
