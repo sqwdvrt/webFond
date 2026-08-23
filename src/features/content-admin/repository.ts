@@ -257,12 +257,12 @@ type PublicRequisitesClient = {
 type RequisitesMutationClient = {
   siteSetting: {
     create(args: {
-      data: { key: typeof REQUISITES_KEY; value: RequisitesInput };
+      data: { key: typeof REQUISITES_KEY; value: Prisma.InputJsonValue };
       select: { updatedAt: true };
     }): Promise<{ updatedAt: Date }>;
     updateMany(args: {
       where: { key: typeof REQUISITES_KEY; updatedAt: Date };
-      data: { value: RequisitesInput };
+      data: { value: Prisma.InputJsonValue };
     }): Promise<{ count: number }>;
   };
 };
@@ -325,6 +325,25 @@ function isPrismaP2002(error: unknown) {
     "code" in error &&
     error.code === "P2002"
   );
+}
+
+function requisitesJsonValue(input: RequisitesInput) {
+  return {
+    version: input.version,
+    status: input.status,
+    fullName: input.fullName,
+    shortName: input.shortName,
+    ogrn: input.ogrn,
+    inn: input.inn,
+    kpp: input.kpp,
+    address: input.address,
+    email: input.email,
+    bankName: input.bankName,
+    recipientName: input.recipientName,
+    checkingAccount: input.checkingAccount,
+    correspondentAccount: input.correspondentAccount,
+    bik: input.bik,
+  } satisfies Prisma.JsonObject;
 }
 
 function editorialSuccess(
@@ -696,12 +715,14 @@ export async function deleteDocument(
 export async function saveRequisites(
   input: RequisitesInput,
   updatedAt: Date | null,
-  client: RequisitesMutationClient = prisma as unknown as RequisitesMutationClient,
+  client: RequisitesMutationClient = prisma,
 ): Promise<SaveRequisitesResult> {
+  const value = requisitesJsonValue(input);
+
   if (!updatedAt) {
     try {
       const created = await client.siteSetting.create({
-        data: { key: REQUISITES_KEY, value: input },
+        data: { key: REQUISITES_KEY, value },
         select: { updatedAt: true },
       });
       return { status: "ok", updatedAt: created.updatedAt };
@@ -713,7 +734,7 @@ export async function saveRequisites(
 
   const saved = await client.siteSetting.updateMany({
     where: { key: REQUISITES_KEY, updatedAt },
-    data: { value: input },
+    data: { value },
   });
   return saved.count === 1 ? { status: "ok" } : { status: "conflict" };
 }
@@ -721,18 +742,16 @@ export async function saveRequisites(
 export async function replaceInvalidRequisites(
   updatedAt: Date,
   replacement: RequisitesInput = defaultRequisitesDraft(),
-  client: RequisitesReplacementClient = prisma as unknown as RequisitesReplacementClient,
+  client: RequisitesReplacementClient = prisma,
 ): Promise<SaveRequisitesResult> {
-  const parsed = parseRequisitesSetting(
-    replacement as unknown as Prisma.JsonValue,
-  );
+  const parsed = parseRequisitesSetting(requisitesJsonValue(replacement));
   if (!parsed.ok || parsed.value.status !== "DRAFT") {
     throw new TypeError("Requisites replacement must be a valid draft");
   }
 
   const saved = await client.siteSetting.updateMany({
     where: { key: REQUISITES_KEY, updatedAt },
-    data: { value: parsed.value },
+    data: { value: requisitesJsonValue(parsed.value) },
   });
   return saved.count === 1 ? { status: "ok" } : { status: "conflict" };
 }
