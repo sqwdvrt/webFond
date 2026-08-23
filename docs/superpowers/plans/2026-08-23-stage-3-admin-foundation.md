@@ -35,7 +35,7 @@
 - `src/app/admin/layout.tsx`: noindex metadata и общий admin-контейнер.
 - `src/app/admin/admin.module.css`: изолированный responsive-интерфейс.
 - `.env.example`: документировать admin-переменные без рабочего пароля.
-- `.env`: локально установить `admin / admin12345` и случайный секрет; файл не коммитить.
+- `.env`: локально установить выбранные учетные данные и случайный секрет; файл не коммитить.
 - `README.md`: команды миграций и локального запуска админки.
 
 Не изменять и не добавлять в коммиты существующие пользовательские правки в
@@ -59,8 +59,8 @@ values. Preserve any existing entries. Generate a secret with
 NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 SITE_URL="http://localhost:3000"
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/byt_dobru?schema=public"
-ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="admin12345"
+ADMIN_USERNAME="<local-only username>"
+ADMIN_PASSWORD="<local-only password>"
 AUTH_SECRET="<64 random hex characters>"
 ADMIN_TRUST_PROXY="false"
 ```
@@ -216,9 +216,9 @@ from admin secrets until an auth request is handled.
 Update `.env.example`:
 
 ```dotenv
-AUTH_SECRET="replace-with-at-least-32-random-characters"
-ADMIN_USERNAME="replace-with-admin-username"
-ADMIN_PASSWORD="replace-with-a-strong-admin-password"
+AUTH_SECRET=""
+ADMIN_USERNAME=""
+ADMIN_PASSWORD=""
 ADMIN_TRUST_PROXY="false"
 ```
 
@@ -590,7 +590,7 @@ Start `npm run dev` on a free local port. Using
 
 - `/admin` redirects to `/admin/login`;
 - wrong password shows the neutral error and does not navigate;
-- `admin / admin12345` reaches `/admin`;
+- корректные локальные учетные данные открывают `/admin`;
 - reload preserves the session;
 - logout returns to `/admin/login` and `/admin` is protected again;
 - Tab order, focus, labels and mobile layout are coherent;

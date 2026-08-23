@@ -34,11 +34,15 @@ npm run dev
 нужны серверные переменные:
 
 ```dotenv
-ADMIN_USERNAME="replace-with-admin-username"
-ADMIN_PASSWORD="replace-with-a-strong-admin-password"
-AUTH_SECRET="replace-with-at-least-32-random-characters"
+ADMIN_USERNAME=""
+ADMIN_PASSWORD=""
+AUTH_SECRET=""
 ADMIN_TRUST_PROXY="false"
 ```
+
+Заполните логин и пароль вручную, а случайный секрет длиной не менее 32 символов
+можно получить командой `openssl rand -hex 32`. Пустые значения из
+`.env.example` намеренно не проходят проверку конфигурации.
 
 `ADMIN_TRUST_PROXY=true` допустим только за reverse proxy, который перезаписывает
 клиентские forwarding-заголовки. Рабочие значения хранятся в `.env` и не

@@ -16,7 +16,7 @@ async function loadCredentialsModule() {
 
 const config: AdminAuthConfig = {
   username: "admin",
-  password: "admin12345",
+  password: "fixture-passphrase-9087",
   secret: "s".repeat(32),
   trustProxy: false,
 };
@@ -26,10 +26,18 @@ describe("credentialsMatch", () => {
     const { credentialsMatch } = await loadCredentialsModule();
 
     expect(
-      credentialsMatch({ username: "admin", password: "admin12345", config }),
+      credentialsMatch({
+        username: "admin",
+        password: "fixture-passphrase-9087",
+        config,
+      }),
     ).toBe(true);
     expect(
-      credentialsMatch({ username: "editor", password: "admin12345", config }),
+      credentialsMatch({
+        username: "editor",
+        password: "fixture-passphrase-9087",
+        config,
+      }),
     ).toBe(false);
     expect(
       credentialsMatch({ username: "admin", password: "wrong", config }),

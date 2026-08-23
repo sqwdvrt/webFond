@@ -7,7 +7,7 @@ import type { AdminAuthConfig } from "./config";
 const modulePath = resolve(process.cwd(), "src/lib/admin-auth/session.ts");
 const config: AdminAuthConfig = {
   username: "admin",
-  password: "admin12345",
+  password: "fixture-passphrase-9087",
   secret: "s".repeat(32),
   trustProxy: false,
 };

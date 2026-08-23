@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -14,7 +14,7 @@ async function loadConfigModule() {
 
 const validEnv = {
   ADMIN_USERNAME: " admin ",
-  ADMIN_PASSWORD: " admin12345 ",
+  ADMIN_PASSWORD: " fixture-passphrase-9087 ",
   AUTH_SECRET: ` ${"s".repeat(32)} `,
   ADMIN_TRUST_PROXY: "false",
 };
@@ -25,7 +25,7 @@ describe("admin auth configuration", () => {
 
     expect(readAdminAuthConfig(validEnv)).toEqual({
       username: "admin",
-      password: " admin12345 ",
+      password: " fixture-passphrase-9087 ",
       secret: "s".repeat(32),
       trustProxy: false,
     });
@@ -41,7 +41,9 @@ describe("admin auth configuration", () => {
       expect(() => readAdminAuthConfig(env)).toThrow(
         new AdminAuthConfigurationError(name),
       );
-      expect(() => readAdminAuthConfig(env)).not.toThrow(/admin12345/);
+      expect(() => readAdminAuthConfig(env)).not.toThrow(
+        /fixture-passphrase-9087/,
+      );
     },
   );
 
@@ -73,5 +75,21 @@ describe("admin auth configuration", () => {
       readAdminAuthConfig({ ...validEnv, ADMIN_TRUST_PROXY: "true" })
         .trustProxy,
     ).toBe(true);
+  });
+
+  it("keeps the committed example configuration non-deployable", async () => {
+    const { readAdminAuthConfig } = await loadConfigModule();
+    const source = readFileSync(resolve(process.cwd(), ".env.example"), "utf8");
+    const exampleEnv = Object.fromEntries(
+      source
+        .split("\n")
+        .filter((line) => line && !line.startsWith("#"))
+        .map((line) => {
+          const [name, ...parts] = line.split("=");
+          return [name, parts.join("=").replace(/^"|"$/g, "")];
+        }),
+    );
+
+    expect(() => readAdminAuthConfig(exampleEnv)).toThrow();
   });
 });

@@ -36,7 +36,7 @@ async function loadLogoutActions() {
 
 const config: AdminAuthConfig = {
   username: "admin",
-  password: "admin12345",
+  password: "fixture-passphrase-9087",
   secret: "s".repeat(32),
   trustProxy: false,
 };
@@ -116,7 +116,7 @@ describe("admin auth flow", () => {
     const deps = dependencies();
 
     const result = await performLogin(
-      formData("admin", "admin12345"),
+      formData("admin", "fixture-passphrase-9087"),
       deps,
     );
 
@@ -133,7 +133,7 @@ describe("admin auth flow", () => {
     });
 
     expect(
-      await performLogin(formData("admin", "admin12345"), deps),
+      await performLogin(formData("admin", "fixture-passphrase-9087"), deps),
     ).toEqual({
       status: "error",
       message: "Вход временно недоступен. Попробуйте позже",
