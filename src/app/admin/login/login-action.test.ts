@@ -26,7 +26,7 @@ describe("loginAction", () => {
     vi.clearAllMocks();
     mocks.headers.mockResolvedValue(new Headers());
     mocks.readAdminAuthConfig.mockReturnValue({
-      username: "fixture-admin",
+      username: "fixture-operator",
       password: "fixture-passphrase-9087",
       secret: "s".repeat(32),
       trustProxy: false,
@@ -40,13 +40,13 @@ describe("loginAction", () => {
       throw redirected;
     });
     const data = new FormData();
-    data.set("username", "fixture-admin");
+    data.set("username", "fixture-operator");
     data.set("password", "fixture-passphrase-9087");
 
     await expect(
       loginAction({ status: "idle", message: "" }, data),
     ).rejects.toBe(redirected);
-    expect(mocks.setAdminSession).toHaveBeenCalledWith("fixture-admin");
+    expect(mocks.setAdminSession).toHaveBeenCalledWith("fixture-operator");
     expect(mocks.redirect).toHaveBeenCalledWith("/admin");
   });
 });

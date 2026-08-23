@@ -6,7 +6,7 @@ import type { AdminAuthConfig } from "./config";
 
 const modulePath = resolve(process.cwd(), "src/lib/admin-auth/session.ts");
 const config: AdminAuthConfig = {
-  username: "admin",
+  username: "fixture-operator",
   password: "fixture-passphrase-9087",
   secret: "s".repeat(32),
   trustProxy: false,
@@ -33,7 +33,7 @@ describe("admin session cookie adapter", () => {
       environment: "production",
     });
 
-    expect(payload.username).toBe("admin");
+    expect(payload.username).toBe("fixture-operator");
     expect(store.set).toHaveBeenCalledWith(
       ADMIN_SESSION_COOKIE,
       expect.any(String),

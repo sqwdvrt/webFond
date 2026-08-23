@@ -35,7 +35,7 @@ async function loadLogoutActions() {
 }
 
 const config: AdminAuthConfig = {
-  username: "admin",
+  username: "fixture-operator",
   password: "fixture-passphrase-9087",
   secret: "s".repeat(32),
   trustProxy: false,
@@ -88,7 +88,10 @@ describe("admin auth flow", () => {
     const { performLogin } = await loadLoginActions();
     const deps = dependencies();
 
-    const result = await performLogin(formData("admin", "wrong"), deps);
+    const result = await performLogin(
+      formData("fixture-operator", "wrong"),
+      deps,
+    );
 
     expect(result).toEqual({
       status: "error",
@@ -102,10 +105,12 @@ describe("admin auth flow", () => {
     const deps = dependencies();
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      await performLogin(formData("admin", "wrong"), deps);
+      await performLogin(formData("fixture-operator", "wrong"), deps);
     }
 
-    expect(await performLogin(formData("admin", "wrong"), deps)).toEqual({
+    expect(
+      await performLogin(formData("fixture-operator", "wrong"), deps),
+    ).toEqual({
       status: "error",
       message: "Вход временно недоступен. Попробуйте позже",
     });
@@ -116,12 +121,12 @@ describe("admin auth flow", () => {
     const deps = dependencies();
 
     const result = await performLogin(
-      formData("admin", "fixture-passphrase-9087"),
+      formData("fixture-operator", "fixture-passphrase-9087"),
       deps,
     );
 
     expect(result).toEqual({ status: "success" });
-    expect(deps.setSession).toHaveBeenCalledWith("admin");
+    expect(deps.setSession).toHaveBeenCalledWith("fixture-operator");
   });
 
   it("maps invalid server configuration to a safe error", async () => {
@@ -133,7 +138,10 @@ describe("admin auth flow", () => {
     });
 
     expect(
-      await performLogin(formData("admin", "fixture-passphrase-9087"), deps),
+      await performLogin(
+        formData("fixture-operator", "fixture-passphrase-9087"),
+        deps,
+      ),
     ).toEqual({
       status: "error",
       message: "Вход временно недоступен. Попробуйте позже",

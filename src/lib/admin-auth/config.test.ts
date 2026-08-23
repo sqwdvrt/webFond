@@ -13,7 +13,7 @@ async function loadConfigModule() {
 }
 
 const validEnv = {
-  ADMIN_USERNAME: " admin ",
+  ADMIN_USERNAME: " fixture-operator ",
   ADMIN_PASSWORD: " fixture-passphrase-9087 ",
   AUTH_SECRET: ` ${"s".repeat(32)} `,
   ADMIN_TRUST_PROXY: "false",
@@ -24,7 +24,7 @@ describe("admin auth configuration", () => {
     const { readAdminAuthConfig } = await loadConfigModule();
 
     expect(readAdminAuthConfig(validEnv)).toEqual({
-      username: "admin",
+      username: "fixture-operator",
       password: " fixture-passphrase-9087 ",
       secret: "s".repeat(32),
       trustProxy: false,

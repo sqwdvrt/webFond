@@ -20,7 +20,9 @@ describe("admin route boundaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAdminSession.mockResolvedValue(null);
-    mocks.requireAdminSession.mockResolvedValue({ username: "fixture-admin" });
+    mocks.requireAdminSession.mockResolvedValue({
+      username: "fixture-operator",
+    });
   });
 
   it("executes the session guard before rendering protected content", async () => {
@@ -42,7 +44,7 @@ describe("admin route boundaries", () => {
 
   it("redirects an active session away from the login page", async () => {
     const redirected = new Error("redirected");
-    mocks.getAdminSession.mockResolvedValue({ username: "fixture-admin" });
+    mocks.getAdminSession.mockResolvedValue({ username: "fixture-operator" });
     mocks.redirect.mockImplementation(() => {
       throw redirected;
     });

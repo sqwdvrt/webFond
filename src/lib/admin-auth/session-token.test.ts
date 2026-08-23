@@ -20,18 +20,22 @@ describe("admin session token", () => {
   it("creates a verifiable eight-hour session", async () => {
     const { createSessionToken, verifySessionToken } =
       await loadSessionTokenModule();
-    const created = createSessionToken({ username: "admin", secret, now: 100 });
+    const created = createSessionToken({
+      username: "fixture-operator",
+      secret,
+      now: 100,
+    });
 
     expect(created.payload).toEqual({
       version: 1,
-      username: "admin",
+      username: "fixture-operator",
       issuedAt: 100,
       expiresAt: 100 + 8 * 60 * 60,
     });
     expect(
       verifySessionToken({
         token: created.token,
-        username: "admin",
+        username: "fixture-operator",
         secret,
         now: 101,
       }),
@@ -41,7 +45,11 @@ describe("admin session token", () => {
   it("rejects tampered payloads and signatures", async () => {
     const { createSessionToken, verifySessionToken } =
       await loadSessionTokenModule();
-    const { token } = createSessionToken({ username: "admin", secret, now: 100 });
+    const { token } = createSessionToken({
+      username: "fixture-operator",
+      secret,
+      now: 100,
+    });
     const [payload, signature] = token.split(".");
     const tamperedPayload = Buffer.from(
       JSON.stringify({
@@ -56,7 +64,7 @@ describe("admin session token", () => {
     expect(
       verifySessionToken({
         token: `${tamperedPayload}.${signature}`,
-        username: "admin",
+        username: "fixture-operator",
         secret,
         now: 101,
       }),
@@ -64,7 +72,7 @@ describe("admin session token", () => {
     expect(
       verifySessionToken({
         token: `${payload}.${tamperedSignature}`,
-        username: "admin",
+        username: "fixture-operator",
         secret,
         now: 101,
       }),
@@ -74,14 +82,18 @@ describe("admin session token", () => {
   it("rejects signatures with an invalid byte length", async () => {
     const { createSessionToken, verifySessionToken } =
       await loadSessionTokenModule();
-    const { token } = createSessionToken({ username: "admin", secret, now: 100 });
+    const { token } = createSessionToken({
+      username: "fixture-operator",
+      secret,
+      now: 100,
+    });
     const [payload, signature] = token.split(".");
 
     for (const invalidSignature of [signature.slice(2), `${signature}AA`]) {
       expect(
         verifySessionToken({
           token: `${payload}.${invalidSignature}`,
-          username: "admin",
+          username: "fixture-operator",
           secret,
           now: 101,
         }),
@@ -92,12 +104,16 @@ describe("admin session token", () => {
   it("rejects the wrong secret, current username, and expired sessions", async () => {
     const { createSessionToken, verifySessionToken } =
       await loadSessionTokenModule();
-    const created = createSessionToken({ username: "admin", secret, now: 100 });
+    const created = createSessionToken({
+      username: "fixture-operator",
+      secret,
+      now: 100,
+    });
 
     expect(
       verifySessionToken({
         token: created.token,
-        username: "admin",
+        username: "fixture-operator",
         secret: "x".repeat(32),
         now: 101,
       }),
@@ -113,7 +129,7 @@ describe("admin session token", () => {
     expect(
       verifySessionToken({
         token: created.token,
-        username: "admin",
+        username: "fixture-operator",
         secret,
         now: created.payload.expiresAt,
       }),
@@ -123,7 +139,11 @@ describe("admin session token", () => {
   it("rejects malformed and unsupported token formats", async () => {
     const { createSessionToken, verifySessionToken } =
       await loadSessionTokenModule();
-    const created = createSessionToken({ username: "admin", secret, now: 100 });
+    const created = createSessionToken({
+      username: "fixture-operator",
+      secret,
+      now: 100,
+    });
     const [, signature] = created.token.split(".");
     const wrongVersion = Buffer.from(
       JSON.stringify({ ...created.payload, version: 2 }),
@@ -137,7 +157,12 @@ describe("admin session token", () => {
       `${created.token}.extra`,
     ]) {
       expect(
-        verifySessionToken({ token, username: "admin", secret, now: 101 }),
+        verifySessionToken({
+          token,
+          username: "fixture-operator",
+          secret,
+          now: 101,
+        }),
       ).toBeNull();
     }
   });
