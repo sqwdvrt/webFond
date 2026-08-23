@@ -39,6 +39,7 @@ model Donation {
   updatedAt         DateTime       @updatedAt
 
   @@index([status, createdAt])
+  @@index([createdAt, id])
 }
 
 model Project {
