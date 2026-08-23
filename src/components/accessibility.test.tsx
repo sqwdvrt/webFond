@@ -65,11 +65,10 @@ describe("public accessibility", () => {
     await expectNoHighImpactViolations(container);
   });
 
-  it("keeps project page headings in order", () => {
+  it("keeps the project page heading hierarchy simple", () => {
     const { container } = render(<ProjectsPage />);
-    expect(Array.from(container.querySelectorAll("h1, h2, h3")).map((heading) => heading.tagName)).toEqual([
-      "H1", "H2", "H3", "H3", "H3", "H3", "H3", "H3", "H3", "H3",
-    ]);
+    expect(Array.from(container.querySelectorAll("h1, h2, h3")).map((heading) => heading.tagName)).toEqual(["H1"]);
+    expect(container.querySelectorAll("ul.activity-list > li")).toHaveLength(8);
   });
 
   it("keeps green bands and the dual focus ring above WCAG thresholds", () => {

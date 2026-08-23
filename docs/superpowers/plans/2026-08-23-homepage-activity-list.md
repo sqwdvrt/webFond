@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the homepage activity cards with an accessible, compact list of eight charter-faithful summaries while leaving `/projects` unchanged.
+**Goal:** Replace activity cards on the homepage and `/projects` with an accessible, compact list of eight charter-faithful summaries.
 
-**Architecture:** Keep each exact charter description and its homepage summary together in `src/content/projects.ts`. Render the summaries directly as a semantic list on the homepage, retain `ProjectCard` only for the full `/projects` presentation, and remove the now-unused compact card variant.
+**Architecture:** Keep each exact charter description and its public summary together in `src/content/projects.ts`. Render the summaries directly as a semantic list on the homepage and `/projects`, then remove the unused `ProjectCard` component and styles.
 
 **Tech Stack:** Next.js App Router, React 19, TypeScript, CSS, Vitest, Testing Library.
 
@@ -41,7 +41,7 @@ Expected: FAIL because `homepageDescription` does not exist.
 
 - [ ] **Step 3: Add the summaries to the content model**
 
-Add `homepageDescription: string` to `ProjectContent` and add the approved summary beside every exact `description`. Do not change `description` or `status`.
+Add `homepageDescription: string` to `ProjectContent` and add the approved summary beside every exact `description`. Do not change `description`.
 
 - [ ] **Step 4: Run the content test and verify GREEN**
 
@@ -56,7 +56,7 @@ git add src/content/projects.ts src/content/projects.test.ts
 git commit -m "content: add homepage activity summaries"
 ```
 
-### Task 2: Replace homepage cards with the compact list
+### Task 2: Replace activity cards with the compact list
 
 **Files:**
 - Modify: `src/app/page.test.tsx`
@@ -64,7 +64,8 @@ git commit -m "content: add homepage activity summaries"
 - Modify: `src/app/globals.css`
 - Modify: `src/components/content/project-card.tsx`
 - Modify: `src/components/content/public-components.test.tsx`
-- Verify: `src/app/projects/projects-pages.test.tsx`
+- Modify: `src/app/projects/page.tsx`
+- Modify: `src/app/projects/projects-pages.test.tsx`
 
 - [ ] **Step 1: Write the failing homepage test**
 
@@ -115,7 +116,7 @@ Remove `.project-section-status`, `.project-grid-compact`, and `.project-card-co
 
 - [ ] **Step 5: Remove the unused compact card API**
 
-Simplify `ProjectCardProps` to only `project: ProjectContent`, delete the `compact` branch, and remove the compact-component test from `public-components.test.tsx`. The default card markup must remain unchanged.
+Render the same introduction and semantic list on `/projects`. Remove the page-level status heading and disclaimer. Delete `ProjectCard`, its component test, the unused `status` content field, and all card-specific CSS after both public pages use the list.
 
 - [ ] **Step 6: Run focused tests and verify GREEN**
 

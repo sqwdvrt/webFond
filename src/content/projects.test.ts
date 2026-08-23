@@ -31,7 +31,7 @@ describe("charter activities", () => {
 
   it("does not expose project slugs, invented names, or metrics", () => {
     for (const activity of projects) {
-      expect(activity.status).toBe("Виды деятельности по уставу");
+      expect(activity).not.toHaveProperty("status");
       expect(activity).not.toHaveProperty("slug");
       expect(activity).not.toHaveProperty("href");
       expect(activity).not.toHaveProperty("title");

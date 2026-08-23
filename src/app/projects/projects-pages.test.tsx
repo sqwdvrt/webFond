@@ -11,12 +11,17 @@ describe("project pages", () => {
     const { container } = render(<ProjectsPage />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
-    expect(screen.getByText("Конкретные программы и проекты будут опубликованы после их утверждения фондом")).toBeVisible();
-    expect(container.querySelectorAll(".project-status")).toHaveLength(8);
-    expect(container.querySelectorAll(".project-card-compact")).toHaveLength(0);
-    expect(Array.from(container.querySelectorAll(".project-card h3")).map((heading) => heading.textContent)).toEqual(
-      projects.map((project) => project.description),
+    expect(screen.getByText("Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства.")).toBeVisible();
+    expect(screen.queryByText("Виды деятельности по уставу")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Конкретные программы и проекты будут опубликованы/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+    const activityList = container.querySelector("ul.activity-list");
+    expect(activityList).toHaveAttribute("role", "list");
+    expect(Array.from(activityList?.querySelectorAll(":scope > li") ?? []).map((item) => item.textContent)).toEqual(
+      projects.map((project) => project.homepageDescription),
     );
+    expect(activityList?.querySelector("article, a, svg")).not.toBeInTheDocument();
+    expect(container.querySelector(".project-card, .project-status")).not.toBeInTheDocument();
     expect(container.textContent).not.toMatch(/Направления помощи|Помощь рядом|Забота о старших|Поддержка детям|Три направления/);
     expect(Array.from(container.querySelectorAll("a")).map((link) => link.getAttribute("href"))).not.toEqual(
       expect.arrayContaining([

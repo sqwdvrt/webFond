@@ -3,9 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { EmptyState } from "@/components/content/empty-state";
 import { PageHero } from "@/components/content/page-hero";
-import { ProjectCard } from "@/components/content/project-card";
 import { SectionHeading } from "@/components/content/section-heading";
-import { projects } from "@/content/projects";
 
 describe("public content components", () => {
   it("renders a semantic page hero and section heading", () => {
@@ -17,13 +15,6 @@ describe("public content components", () => {
     );
     expect(screen.getByRole("heading", { level: 1, name: "Короткий заголовок" })).toBeVisible();
     expect(screen.getByRole("heading", { level: 2, name: "Направления" })).toBeVisible();
-  });
-
-  it("renders a charter activity without a detail link", () => {
-    render(<ProjectCard project={projects[0]} />);
-    expect(screen.getByText("Виды деятельности по уставу")).toBeVisible();
-    expect(screen.getByText(/Помощь социально незащищенным гражданам/)).toBeVisible();
-    expect(screen.queryByRole("link", { name: /Подробнее/ })).toBeNull();
   });
 
   it("renders an honest empty state", () => {
