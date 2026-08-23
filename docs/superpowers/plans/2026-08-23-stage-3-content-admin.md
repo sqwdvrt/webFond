@@ -57,6 +57,8 @@ for existing published rows, then three indexes. The integration test is enabled
 only by explicit `CONTENT_MIGRATION_TEST_DATABASE_URL` whose parsed hostname is
 `localhost` or `127.0.0.1` and database name ends in `_test`. It uses
 `child_process.execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-1", ...])`,
+but first parses the URL, clears `.search`, and passes the resulting PostgreSQL
+URI without Prisma's `?schema=public` parameter to `psql`.
 creates a unique isolated schema plus legacy enum/tables/rows, executes the whole
 migration file with `--file` and `PGOPTIONS=-c search_path=<schema>`, verifies
 backfill, and drops the schema in `afterAll` even after failure. It never points
@@ -67,6 +69,11 @@ at the development database.
 Run: `npm test -- src/db/schema.test.ts src/db/content-migration.test.ts`
 
 Expected: FAIL because status/index/migration are absent.
+
+Then create `byt_dobru_content_test`, run the integration test with
+`CONTENT_MIGRATION_TEST_DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test'`,
+observe failure because the migration is absent, and drop the test database even
+after that expected failure.
 
 - [ ] **Step 3: Implement schema and migration**
 
@@ -83,7 +90,7 @@ npm run db:validate
 npm run db:generate
 dropdb --if-exists byt_dobru_content_test
 createdb byt_dobru_content_test
-CONTENT_MIGRATION_TEST_DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test?schema=public' npm test -- src/db/content-migration.integration.test.ts
+CONTENT_MIGRATION_TEST_DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test' npm test -- src/db/content-migration.integration.test.ts
 DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test?schema=public' npx prisma migrate deploy
 DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test?schema=public' npx prisma migrate status
 dropdb byt_dobru_content_test
@@ -136,7 +143,13 @@ Use structured `FormData.getAll`, regular expressions only for bounded field
 formats, and standard `URL` for remote links. Return field-keyed Russian errors;
 never echo an unknown field.
 
-- [ ] **Step 4: Write failing requisites tests**
+- [ ] **Step 4: Run editorial/document tests and verify GREEN**
+
+Run: `npm test -- src/features/content-admin/validation.test.ts`
+
+Expected: current tests PASS.
+
+- [ ] **Step 5: Write failing requisites tests**
 
 Cover exact digit lengths, email, trim-before-validation, incomplete draft,
 complete publication, unknown/malformed JSON, safe default from `siteConfig`, and
@@ -148,13 +161,23 @@ parseRequisitesSetting(value: Prisma.JsonValue): RequisitesParseResult
 defaultRequisitesDraft(): RequisitesSetting
 ```
 
-- [ ] **Step 5: Implement requisites validation and verify GREEN**
+- [ ] **Step 6: Run requisites tests and verify RED**
+
+Run: `npm test -- src/features/content-admin/validation.test.ts`
+
+Expected: FAIL only on the newly added requisites cases.
+
+- [ ] **Step 7: Implement requisites validation**
+
+Implement only the requisites behavior required by Step 5.
+
+- [ ] **Step 8: Run all validation tests and verify GREEN**
 
 Run: `npm test -- src/features/content-admin/validation.test.ts`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/features/content-admin
@@ -195,7 +218,13 @@ getAdminRequisites(); getPublishedRequisites()
 Runtime-validate requisites JSON. Public invalid JSON returns the safe fallback
 state; admin invalid JSON returns a discriminated recoverable error.
 
-- [ ] **Step 4: Write failing mutation/locking tests**
+- [ ] **Step 4: Run repository read tests and verify GREEN**
+
+Run: `npm test -- src/features/content-admin/repository.test.ts`
+
+Expected: current tests PASS.
+
+- [ ] **Step 5: Write failing mutation/locking tests**
 
 Cover create, unique-slug conflict mapping, updateMany by `id + updatedAt`, zero-
 row conflict, first-publication timestamp, no requisites delete, initial
@@ -211,17 +240,25 @@ deleteMany({
 Assert success only for count 1. Count 0 maps to a neutral conflict/forbidden
 result, so a stale action cannot delete a newer or previously published row.
 
-- [ ] **Step 5: Implement mutations and verify repository**
+- [ ] **Step 6: Run mutation/locking tests and verify RED**
+
+Run: `npm test -- src/features/content-admin/repository.test.ts`
+
+Expected: FAIL only on the newly added mutation and locking cases.
+
+- [ ] **Step 7: Implement repository mutations**
 
 Expose `create/update/delete` functions per entity plus
 `saveRequisites` and `replaceInvalidRequisites`. Return discriminated
 `ok | conflict | duplicate | forbidden | missing`; do not leak Prisma errors.
 
+- [ ] **Step 8: Run repository tests and verify GREEN**
+
 Run: `npm test -- src/features/content-admin/repository.test.ts`
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/features/content-admin/repository.ts src/features/content-admin/repository.test.ts
@@ -253,7 +290,11 @@ type MutationEffect = {
 Project/news first publication, archive, deletion and published-slug rename all
 include `/sitemap.xml`; slug changes include old/new detail paths. Document
 publication-state transitions include `/reports` and `/sitemap.xml`; requisites
-includes `/requisites`. Deduplicate paths. Test each transition separately.
+includes `/requisites`. Every project mutation also includes `/admin/projects`
+and `/projects`; every news mutation includes `/admin/news` and `/news`; every
+document mutation includes `/admin/documents` and `/reports`; every requisites
+mutation includes `/admin/requisites` and `/requisites`. Deduplicate paths. Test
+each transition separately.
 
 - [ ] **Step 2: Run mutation tests and verify RED**
 
@@ -376,6 +417,9 @@ message, eligible/ineligible delete, and `notFound()` for missing ID. Every list
 new and edit page test injects `requireSession` and repository dependencies and
 asserts the session check occurs before any repository read; the protected layout
 is defense in depth, not the page's only authorization.
+The `[id]` route uses the Next.js 16 signature
+`{ params: Promise<{ id: string }> }` and awaits `params` before lookup; test with
+an actual resolved Promise so a synchronous assumption fails.
 
 - [ ] **Step 2: Run project admin tests and verify RED**
 
@@ -436,6 +480,7 @@ git commit -m "feat: manage projects and news"
 Cover list/create/edit, title/category/document URL/status, optimistic token,
 eligible delete, no PDF-format promise, neutral error and accessibility. Assert
 page-level `requireAdminSession()` runs before every repository read.
+The `[id]` route receives and awaits `params: Promise<{ id: string }>`.
 
 - [ ] **Step 2: Run documents tests and verify RED**
 
@@ -525,6 +570,9 @@ but keeps charter. Detail renders only published, calls `notFound` only on null,
 propagates database errors, and generates canonical metadata.
 The project error boundary test requires a Client Component with `"use client"`,
 typed `error/reset` props, neutral copy and a retry button.
+Both the detail page and `generateMetadata` receive
+`params: Promise<{ slug: string }>` and explicitly `await params`; tests pass a
+Promise and fail if it is read synchronously.
 
 - [ ] **Step 6: Run project page tests and verify RED**
 
@@ -547,6 +595,8 @@ Cover published list, honest empty state, temporary error, conditional robots,
 published detail metadata and inaccessible draft/archive through repository
 filtering.
 The news error boundary has the same explicit Client Component contract.
+Its detail page and `generateMetadata` also await
+`params: Promise<{ slug: string }>` in Next.js 16 style.
 
 - [ ] **Step 10: Run news page tests and verify RED**
 
