@@ -38,6 +38,7 @@
 - Create: `prisma/migrations/20260823020000_content_publication/migration.sql`
 - Modify: `src/db/schema.test.ts`
 - Create: `src/db/content-migration.test.ts`
+- Create: `src/db/content-migration.integration.test.ts`
 
 - [ ] **Step 1: Write failing schema and migration tests**
 
@@ -50,12 +51,16 @@ expect(newsModel).toContain("@@index([status, publishedAt, id])");
 expect(documentModel).toContain("@@index([status, publishedAt, id])");
 ```
 
-The SQL test must require this order: nullable `Document.status`, backfill by
+The source-level SQL test must require this order: nullable `Document.status`, backfill by
 `publishedAt`, `NOT NULL` plus default, project/news `publishedAt = updatedAt`
-for existing published rows, then three indexes. Add a PostgreSQL integration
-test guarded by `DATABASE_URL` that inserts legacy rows in a transaction,
-executes the migration SQL against temporary tables/schema, and verifies status
-and timestamp preservation.
+for existing published rows, then three indexes. The integration test is enabled
+only by explicit `CONTENT_MIGRATION_TEST_DATABASE_URL` whose parsed hostname is
+`localhost` or `127.0.0.1` and database name ends in `_test`. It uses
+`child_process.execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-1", ...])`,
+creates a unique isolated schema plus legacy enum/tables/rows, executes the whole
+migration file with `--file` and `PGOPTIONS=-c search_path=<schema>`, verifies
+backfill, and drops the schema in `afterAll` even after failure. It never points
+at the development database.
 
 - [ ] **Step 2: Run tests and verify RED**
 
@@ -76,11 +81,18 @@ Run:
 npm test -- src/db/schema.test.ts src/db/content-migration.test.ts
 npm run db:validate
 npm run db:generate
-npx prisma migrate deploy
-npx prisma migrate status
+dropdb --if-exists byt_dobru_content_test
+createdb byt_dobru_content_test
+CONTENT_MIGRATION_TEST_DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test?schema=public' npm test -- src/db/content-migration.integration.test.ts
+DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test?schema=public' npx prisma migrate deploy
+DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_test?schema=public' npx prisma migrate status
+dropdb byt_dobru_content_test
 ```
 
 Expected: tests pass, schema valid, migration applied, database up to date.
+Apply to the development database only after a preflight parses `.env` and
+asserts exact host `localhost`, port `5432` and database `byt_dobru`; then run
+`npx prisma migrate deploy`. Never print the password or full URL.
 
 - [ ] **Step 5: Commit**
 
@@ -186,9 +198,18 @@ state; admin invalid JSON returns a discriminated recoverable error.
 - [ ] **Step 4: Write failing mutation/locking tests**
 
 Cover create, unique-slug conflict mapping, updateMany by `id + updatedAt`, zero-
-row conflict, first-publication timestamp, hard-delete only `DRAFT` with null
-`publishedAt`, no requisites delete, initial requisites create, requisites
-updateMany by `key + updatedAt`, and malformed-setting replacement.
+row conflict, first-publication timestamp, no requisites delete, initial
+requisites create, requisites updateMany by `key + updatedAt`, and malformed-
+setting replacement. Delete must call exactly:
+
+```ts
+deleteMany({
+  where: { id, updatedAt, status: "DRAFT", publishedAt: null },
+})
+```
+
+Assert success only for count 1. Count 0 maps to a neutral conflict/forbidden
+result, so a stale action cannot delete a newer or previously published row.
 
 - [ ] **Step 5: Implement mutations and verify repository**
 
@@ -229,29 +250,46 @@ type MutationEffect = {
 };
 ```
 
-Project/news updates include old/new slugs; archive/delete includes old slug;
-document publication includes `/reports` and `/sitemap.xml`; requisites includes
-`/requisites`. Deduplicate paths.
+Project/news first publication, archive, deletion and published-slug rename all
+include `/sitemap.xml`; slug changes include old/new detail paths. Document
+publication-state transitions include `/reports` and `/sitemap.xml`; requisites
+includes `/requisites`. Deduplicate paths. Test each transition separately.
 
-- [ ] **Step 2: Verify RED and implement mutation cores**
+- [ ] **Step 2: Run mutation tests and verify RED**
 
 Run: `npm test -- src/features/content-admin/mutations.test.ts`
 
-Expected RED, then PASS after implementation.
+Expected: FAIL because `mutations.ts` does not exist.
 
-- [ ] **Step 3: Write failing Next wrapper tests**
+- [ ] **Step 3: Implement minimal mutation cores**
+
+Implement only behavior required by Step 1.
+
+- [ ] **Step 4: Run mutation tests and verify GREEN**
+
+Run: `npm test -- src/features/content-admin/mutations.test.ts`
+
+Expected: PASS.
+
+- [ ] **Step 5: Write failing Next wrapper tests**
 
 Assert wrappers call every `revalidatePath`, then redirect. Assert no revalidate
 or redirect on form error. Source-integrity test requires top-level `"use server"`
 and excludes form payload logging.
 
-- [ ] **Step 4: Implement server action wrappers**
+- [ ] **Step 6: Run wrapper tests and verify RED**
+
+Run: `npm test -- 'src/app/admin/(protected)/content-actions.test.ts'`
+
+Expected: FAIL because `content-actions.ts` does not exist.
+
+- [ ] **Step 7: Implement server action wrappers**
 
 Export separate async actions for project/news/document create/update/delete,
 save requisites and replace invalid requisites. Keep pure orchestration in
 `mutations.ts`; wrappers only bind production dependencies and Next effects.
 
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 8: Verify GREEN and commit**
 
 ```bash
 npm test -- src/features/content-admin/mutations.test.ts 'src/app/admin/(protected)/content-actions.test.ts'
@@ -266,6 +304,8 @@ git commit -m "feat: mutate content securely"
 - Create: `src/app/admin/(protected)/admin-shell.test.tsx`
 - Create: `src/app/admin/(protected)/content-ui.tsx`
 - Create: `src/app/admin/(protected)/content-ui.test.tsx`
+- Create: `src/app/admin/(protected)/error.tsx`
+- Create: `src/app/admin/(protected)/admin-error.test.tsx`
 - Modify: `src/app/admin/(protected)/layout.tsx`
 - Modify: `src/app/admin/(protected)/page.tsx`
 - Modify: `src/app/admin/admin.module.css`
@@ -278,12 +318,17 @@ Test status labels, compact list, field errors, pending button state, success
 status and delete confirmation only when `status === DRAFT && !publishedAt`.
 Run Axe on desktop markup for populated and empty list/form states.
 
+The protected `error.tsx` test requires top-level `"use client"`, typed
+`{ error: Error & { digest?: string }; reset: () => void }`, a neutral message
+without database details, and a working retry button. It is the shared database-
+failure boundary for all content admin sections.
+
 - [ ] **Step 2: Verify RED**
 
 Run:
 
 ```bash
-npm test -- 'src/app/admin/(protected)/admin-shell.test.tsx' 'src/app/admin/(protected)/content-ui.test.tsx'
+npm test -- 'src/app/admin/(protected)/admin-shell.test.tsx' 'src/app/admin/(protected)/content-ui.test.tsx' 'src/app/admin/(protected)/admin-error.test.tsx'
 ```
 
 Expected: FAIL because components do not exist.
@@ -294,6 +339,7 @@ Use lucide icons, a persistent restrained nav, 6px controls, no nested cards,
 horizontal nav/table scroll at narrow widths, and tooltips for unfamiliar icon-
 only controls. `content-ui.tsx` may share presentational pieces but must not hide
 entity-specific field definitions behind a generic schema renderer.
+Implement the protected client error boundary in the same step.
 
 - [ ] **Step 4: Update dashboard and responsive CSS**
 
@@ -303,7 +349,7 @@ account/logout header inside the page. Confirm fixed controls cannot shift.
 - [ ] **Step 5: Verify and commit**
 
 ```bash
-npm test -- 'src/app/admin/(protected)/admin-shell.test.tsx' 'src/app/admin/(protected)/content-ui.test.tsx' src/app/admin/admin-accessibility.test.tsx
+npm test -- 'src/app/admin/(protected)/admin-shell.test.tsx' 'src/app/admin/(protected)/content-ui.test.tsx' 'src/app/admin/(protected)/admin-error.test.tsx' src/app/admin/admin-accessibility.test.tsx
 git add 'src/app/admin/(protected)' src/app/admin/admin.module.css
 git commit -m "feat: unify admin workspace"
 ```
@@ -326,24 +372,47 @@ git commit -m "feat: unify admin workspace"
 
 Cover list/empty state, create link, edit URL, all fields, initial values,
 `updatedAt` hidden token, Russian status labels, validation errors, success
-message, eligible/ineligible delete, and `notFound()` for missing ID.
+message, eligible/ineligible delete, and `notFound()` for missing ID. Every list,
+new and edit page test injects `requireSession` and repository dependencies and
+asserts the session check occurs before any repository read; the protected layout
+is defense in depth, not the page's only authorization.
 
-- [ ] **Step 2: Implement projects routes/forms and verify**
-
-Use repository reads in server pages and action wrappers in client forms. Do not
-query Prisma directly from JSX. Preserve submitted values after errors.
+- [ ] **Step 2: Run project admin tests and verify RED**
 
 Run: `npm test -- 'src/app/admin/(protected)/projects/projects-admin.test.tsx'`
 
-- [ ] **Step 3: Write failing news admin tests**
+Expected: FAIL because project admin routes do not exist.
 
-Mirror behavior, but assert `/admin/news` paths/actions and news-specific labels.
+- [ ] **Step 3: Implement projects routes/forms**
 
-- [ ] **Step 4: Implement news routes/forms and verify**
+Each page calls `requireAdminSession()` before its repository read. Use repository
+reads in server pages and action wrappers in client forms. Do not query Prisma
+directly from JSX. Preserve submitted values after errors.
+
+- [ ] **Step 4: Run project admin tests and verify GREEN**
+
+Run: `npm test -- 'src/app/admin/(protected)/projects/projects-admin.test.tsx'`
+
+- [ ] **Step 5: Write failing news admin tests**
+
+Mirror behavior, including guard-before-read ordering, but assert `/admin/news`
+paths/actions and news-specific labels.
+
+- [ ] **Step 6: Run news admin tests and verify RED**
 
 Run: `npm test -- 'src/app/admin/(protected)/news/news-admin.test.tsx'`
 
-- [ ] **Step 5: Commit**
+Expected: FAIL because news admin routes do not exist.
+
+- [ ] **Step 7: Implement news routes/forms**
+
+Every page calls `requireAdminSession()` before its repository read.
+
+- [ ] **Step 8: Run news admin tests and verify GREEN**
+
+Run: `npm test -- 'src/app/admin/(protected)/news/news-admin.test.tsx'`
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add 'src/app/admin/(protected)/projects' 'src/app/admin/(protected)/news'
@@ -365,23 +434,46 @@ git commit -m "feat: manage projects and news"
 - [ ] **Step 1: Write failing documents tests**
 
 Cover list/create/edit, title/category/document URL/status, optimistic token,
-eligible delete, no PDF-format promise, neutral error and accessibility.
+eligible delete, no PDF-format promise, neutral error and accessibility. Assert
+page-level `requireAdminSession()` runs before every repository read.
 
-- [ ] **Step 2: Implement documents and verify**
+- [ ] **Step 2: Run documents tests and verify RED**
 
 Run: `npm test -- 'src/app/admin/(protected)/documents/documents-admin.test.tsx'`
 
-- [ ] **Step 3: Write failing requisites tests**
+Expected: FAIL because document admin routes do not exist.
+
+- [ ] **Step 3: Implement documents**
+
+Every page calls `requireAdminSession()` before repository access.
+
+- [ ] **Step 4: Run documents tests and verify GREEN**
+
+Run: `npm test -- 'src/app/admin/(protected)/documents/documents-admin.test.tsx'`
+
+- [ ] **Step 5: Write failing requisites tests**
 
 Cover fallback defaults, all legal/bank fields, status, initial create without
 token, update with token, malformed JSON error without rendering its values,
 confirmed safe-draft replacement and absence of delete.
+Assert page-level `requireAdminSession()` precedes `getAdminRequisites()` and a
+database rejection reaches the shared protected error boundary.
 
-- [ ] **Step 4: Implement requisites and verify**
+- [ ] **Step 6: Run requisites tests and verify RED**
 
 Run: `npm test -- 'src/app/admin/(protected)/requisites/requisites-admin.test.tsx'`
 
-- [ ] **Step 5: Commit**
+Expected: FAIL because requisites admin route/form do not exist.
+
+- [ ] **Step 7: Implement requisites**
+
+Call `requireAdminSession()` before repository access.
+
+- [ ] **Step 8: Run requisites tests and verify GREEN**
+
+Run: `npm test -- 'src/app/admin/(protected)/requisites/requisites-admin.test.tsx'`
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add 'src/app/admin/(protected)/documents' 'src/app/admin/(protected)/requisites'
@@ -410,29 +502,64 @@ git commit -m "feat: manage documents and requisites"
 Cover local/external image rendering, safe alt, paragraphs without HTML
 interpretation, cards and dates. Assert no `dangerouslySetInnerHTML` source.
 
-- [ ] **Step 2: Implement shared public components**
+- [ ] **Step 2: Run shared component tests and verify RED**
+
+Run: `npm test -- src/components/content/published-content.test.tsx`
+
+Expected: FAIL because the component does not exist.
+
+- [ ] **Step 3: Implement shared public components**
 
 Use stable image dimensions/aspect ratio and responsive text. External images
 must not be fetched server-side.
 
-- [ ] **Step 3: Write failing project page tests**
+- [ ] **Step 4: Run shared component tests and verify GREEN**
+
+Run: `npm test -- src/components/content/published-content.test.tsx`
+
+- [ ] **Step 5: Write failing project page tests**
 
 Inject public-read dependency. Assert charter list always remains; published
 cards append below; empty adds no block; database failure shows temporary error
 but keeps charter. Detail renders only published, calls `notFound` only on null,
 propagates database errors, and generates canonical metadata.
+The project error boundary test requires a Client Component with `"use client"`,
+typed `error/reset` props, neutral copy and a retry button.
 
-- [ ] **Step 4: Implement project list/detail/error**
+- [ ] **Step 6: Run project page tests and verify RED**
 
-Run project tests and retain all existing statutory copy assertions.
+Run: `npm test -- src/app/projects/projects-pages.test.tsx 'src/app/projects/[slug]/project-detail.test.tsx'`
 
-- [ ] **Step 5: Write failing news page tests**
+Expected: FAIL on missing dynamic behavior/routes.
+
+- [ ] **Step 7: Implement project list/detail/error**
+
+Implement `error.tsx` as the required Client Component. Retain all existing
+statutory copy assertions.
+
+- [ ] **Step 8: Run project page tests and verify GREEN**
+
+Run: `npm test -- src/app/projects/projects-pages.test.tsx 'src/app/projects/[slug]/project-detail.test.tsx'`
+
+- [ ] **Step 9: Write failing news page tests**
 
 Cover published list, honest empty state, temporary error, conditional robots,
 published detail metadata and inaccessible draft/archive through repository
 filtering.
+The news error boundary has the same explicit Client Component contract.
 
-- [ ] **Step 6: Implement news list/detail/error and verify**
+- [ ] **Step 10: Run news page tests and verify RED**
+
+Run: `npm test -- src/app/placeholder-pages.test.tsx 'src/app/news/[slug]/news-detail.test.tsx'`
+
+Expected: FAIL on missing dynamic behavior/routes.
+
+- [ ] **Step 11: Implement news list/detail/error**
+
+Implement `error.tsx` with `"use client"`, typed `error/reset`, neutral copy and
+retry.
+
+- [ ] **Step 12: Run all Task 8 tests and verify GREEN**
 
 Run:
 
@@ -440,7 +567,7 @@ Run:
 npm test -- src/components/content/published-content.test.tsx src/app/projects/projects-pages.test.tsx 'src/app/projects/[slug]/project-detail.test.tsx' src/app/placeholder-pages.test.tsx 'src/app/news/[slug]/news-detail.test.tsx'
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
 git add src/components/content src/app/projects src/app/news src/app/globals.css
@@ -465,24 +592,43 @@ Reports group published links by category, use exact safe href, keep empty state
 show temporary error distinctly and set conditional robots. Requisites use only
 validated `PUBLISHED`; draft/archived/malformed/error all preserve confirmed
 `siteConfig` legal rows and hide bank values.
+Both route error-boundary tests require Client Components with `"use client"`,
+typed `error/reset`, neutral copy and retry.
 
-- [ ] **Step 2: Implement reports and requisites**
+- [ ] **Step 2: Run reports/requisites tests and verify RED**
+
+Run: `npm test -- src/app/reports/reports-page.test.tsx src/app/information-pages.test.tsx`
+
+Expected: FAIL on missing dynamic behavior.
+
+- [ ] **Step 3: Implement reports and requisites**
 
 Keep external document links explicit and do not claim file type. Email remains
-a `mailto:` link where rendered.
+a `mailto:` link where rendered. Implement both `error.tsx` files as the tested
+Client Components.
 
-- [ ] **Step 3: Write failing async sitemap tests**
+- [ ] **Step 4: Run reports/requisites tests and verify GREEN**
+
+Run: `npm test -- src/app/reports/reports-page.test.tsx src/app/information-pages.test.tsx`
+
+- [ ] **Step 5: Write failing async sitemap tests**
 
 Inject public route dependency. Assert base static routes, conditional `/news`
 and `/reports`, published project/news details, absolute URLs, stable ordering,
 and exclusion of admin/draft/archive/document URLs. Database failure returns only
 safe static routes rather than failing sitemap generation.
 
-- [ ] **Step 4: Implement async sitemap and metadata behavior**
+- [ ] **Step 6: Run sitemap tests and verify RED**
+
+Run: `npm test -- src/app/seo-routes.test.ts`
+
+Expected: FAIL because sitemap is still static.
+
+- [ ] **Step 7: Implement async sitemap and metadata behavior**
 
 Update SEO tests for async `sitemap()` and collection `generateMetadata`.
 
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 8: Verify GREEN and commit**
 
 ```bash
 npm test -- src/app/reports/reports-page.test.tsx src/app/information-pages.test.tsx src/app/seo-routes.test.ts
@@ -513,13 +659,21 @@ npm run lint
 npm run typecheck
 npm run db:validate
 npm run db:generate
-npx prisma migrate deploy
-npx prisma migrate status
+dropdb --if-exists byt_dobru_content_qa
+createdb byt_dobru_content_qa
+DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_qa?schema=public' npx prisma migrate deploy
+DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_qa?schema=public' npx prisma migrate status
+dropdb byt_dobru_content_qa
 npm run build
 git diff --check
 ```
 
 Expected: all exit 0 and database schema is up to date.
+
+Then parse `.env` without printing it and require exact
+`{ hostname: "localhost", port: "5432", database: "byt_dobru" }`. Only after
+that preflight run `npx prisma migrate deploy && npx prisma migrate status` for
+the development database used by port 3001.
 
 - [ ] **Step 3: Request code review**
 
@@ -529,9 +683,20 @@ public status filtering, malformed JSON fallback, metadata/sitemap, responsive U
 and test gaps. Fix every Critical/Important finding with RED/GREEN tests and
 request re-review until approved.
 
-- [ ] **Step 4: Run browser CRUD QA with dedicated fixtures**
+- [ ] **Step 4: Run browser CRUD QA with disposable database and fixtures**
 
-Using the existing admin session and local PostgreSQL:
+Create a database used only for this check and start a separate server:
+
+```bash
+dropdb --if-exists byt_dobru_content_qa
+createdb byt_dobru_content_qa
+DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_qa?schema=public' npx prisma migrate deploy
+DATABASE_URL='postgresql://postgres:postgres@localhost:5432/byt_dobru_content_qa?schema=public' npm run dev -- --port 3011
+```
+
+Open a new in-app-browser tab at `http://localhost:3011/admin`. Use the unique
+prefix `codex-qa-<unix-timestamp>` in every slug/title and record every created
+ID from its edit URL. Run these checks:
 
 1. Create a draft project and verify it is absent publicly.
 2. Publish it and verify card/detail plus sitemap.
@@ -544,16 +709,23 @@ Using the existing admin session and local PostgreSQL:
 8. Verify desktop 1440 and mobile 390 layouts, no horizontal page overflow,
    accessible labels, no unexpected browser errors and privacy headers.
 
-Delete dedicated never-published fixtures and archive any fixture that was
-published; never alter unrelated records.
+Use a `try/finally` cleanup discipline: on success or failure, close the QA tab,
+stop the exact port-3011 server session, verify no listener remains on 3011, and
+run `dropdb --if-exists byt_dobru_content_qa`. Because the whole QA database is
+discarded, no fixture can leak into development data. Never run browser writes
+against port 3001 during this step.
 
 - [ ] **Step 5: Commit docs/review fixes and finish branch**
 
 ```bash
-git add PROJECT_PLAN.md README.md WORK_REPORT.md <review-fix-paths>
+git add PROJECT_PLAN.md README.md WORK_REPORT.md
 git commit -m "docs: complete stage 3 content admin"
 git status --short
 ```
+
+Commit each code-review fix immediately after its focused RED/GREEN verification
+using only its explicit file paths; do not defer review fixes into the docs
+commit and never use `git add .`.
 
 Only user-owned untracked `output/`, `scripts/` and `tmp/` may remain. Preserve
 the branch/worktree unless the user selects another integration option.
