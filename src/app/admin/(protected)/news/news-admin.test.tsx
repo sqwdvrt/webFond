@@ -9,13 +9,26 @@ import type {
 
 const actionState = vi.hoisted(() => ({
   state: { status: "idle", message: "" } as ContentFormState,
+  deleteState: { status: "idle", message: "" } as ContentFormState,
+  deleteAction: undefined as unknown,
 }));
 
 vi.mock("react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react")>();
   return {
     ...actual,
-    useActionState: (action: unknown) => [actionState.state, action, false],
+    useActionState: (
+      action: (state: ContentFormState, formData: FormData) => Promise<ContentFormState>,
+    ) => {
+      const initial = action === actionState.deleteAction
+        ? actionState.deleteState
+        : actionState.state;
+      const [state, setState] = actual.useState(initial);
+      const dispatch = async (formData: FormData) => {
+        setState(await action(state, formData));
+      };
+      return [state, dispatch, false];
+    },
   };
 });
 
@@ -72,6 +85,8 @@ function dependencies(overrides: Record<string, unknown> = {}) {
 describe("news admin pages", () => {
   beforeEach(() => {
     actionState.state = { status: "idle", message: "" };
+    actionState.deleteState = { status: "idle", message: "" };
+    actionState.deleteAction = undefined;
   });
 
   it("authenticates before listing news and renders create and edit links", async () => {
@@ -179,6 +194,8 @@ describe("NewsForm", () => {
 
   beforeEach(() => {
     actionState.state = { status: "idle", message: "" };
+    actionState.deleteState = { status: "idle", message: "" };
+    actionState.deleteAction = deleteAction;
     saveAction.mockClear();
     deleteAction.mockClear();
   });
@@ -265,6 +282,31 @@ describe("NewsForm", () => {
     const submitted = deleteAction.mock.calls[0]?.[1];
     expect(submitted).toBeInstanceOf(FormData);
     expect(submitted?.get("updatedAt")).toBe(updatedAt.toISOString());
+  });
+
+  it("displays a delete action error without replacing save feedback", async () => {
+    deleteAction.mockResolvedValueOnce({
+      status: "error",
+      message: "Удаление недоступно. Обновите страницу и повторите действие",
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(
+      <NewsForm
+        deleteAction={deleteAction}
+        initialValues={newsPost}
+        mode="edit"
+        saveAction={saveAction}
+        successMessage="Новость сохранена"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Удалить" }));
+
+    expect(await screen.findByRole("alert", { name: "Ошибка удаления" })).toHaveTextContent(
+      "Удаление недоступно. Обновите страницу и повторите действие",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Новость сохранена");
+    expect(screen.queryByRole("alert", { name: "Ошибка сохранения" })).not.toBeInTheDocument();
   });
 
   it.each([

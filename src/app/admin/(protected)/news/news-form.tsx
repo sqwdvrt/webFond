@@ -28,6 +28,14 @@ type NewsFormProps = {
 
 const initialState: ContentFormState = { status: "idle", message: "" };
 
+async function idleDeleteAction(
+  state: ContentFormState,
+  formData: FormData,
+) {
+  void formData;
+  return state;
+}
+
 const statusLabels = {
   DRAFT: "Черновик",
   PUBLISHED: "Опубликован",
@@ -42,6 +50,10 @@ export function NewsForm({
   successMessage,
 }: NewsFormProps) {
   const [state, formAction] = useActionState(saveAction, initialState);
+  const [deleteState, deleteFormAction] = useActionState(
+    deleteAction ?? idleDeleteAction,
+    initialState,
+  );
 
   function value(name: "title" | "slug" | "summary" | "content" | "imageUrl" | "status") {
     if (state.values && Object.hasOwn(state.values, name)) {
@@ -58,9 +70,9 @@ export function NewsForm({
   });
 
   const runDelete = deleteAction && initialValues
-    ? async (formData: FormData) => {
+    ? (formData: FormData) => {
         formData.set("updatedAt", initialValues.updatedAt.toISOString());
-        await deleteAction(initialState, formData);
+        deleteFormAction(formData);
       }
     : undefined;
 
@@ -68,7 +80,11 @@ export function NewsForm({
     <>
       <FormSuccess>{state.status === "idle" ? successMessage : undefined}</FormSuccess>
       {state.status === "error" ? (
-        <p className={styles.formMessage} role="alert">
+        <p
+          aria-label="Ошибка сохранения"
+          className={styles.formMessage}
+          role="alert"
+        >
           {state.message}
         </p>
       ) : null}
@@ -128,11 +144,22 @@ export function NewsForm({
       </form>
 
       {runDelete && initialValues ? (
-        <DeleteDraftButton
-          action={runDelete}
-          publishedAt={initialValues.publishedAt}
-          status={initialValues.status}
-        />
+        <>
+          {deleteState.status === "error" ? (
+            <p
+              aria-label="Ошибка удаления"
+              className={styles.formMessage}
+              role="alert"
+            >
+              {deleteState.message}
+            </p>
+          ) : null}
+          <DeleteDraftButton
+            action={runDelete}
+            publishedAt={initialValues.publishedAt}
+            status={initialValues.status}
+          />
+        </>
       ) : null}
     </>
   );
