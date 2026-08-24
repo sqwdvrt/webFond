@@ -1,41 +1,73 @@
-import { requireAdminSession } from "@/lib/admin-auth/session";
+import {
+  ArrowRight,
+  FileText,
+  FolderKanban,
+  HandCoins,
+  Landmark,
+  Newspaper,
+} from "lucide-react";
+import Link from "next/link";
 
 import styles from "../admin.module.css";
-import { logoutAction } from "./actions";
 
-export default async function AdminPage() {
-  const session = await requireAdminSession();
+const overviewSections = [
+  {
+    href: "/admin/projects",
+    label: "Проекты",
+    description: "Публикация и обновление программ фонда",
+    icon: FolderKanban,
+  },
+  {
+    href: "/admin/news",
+    label: "Новости",
+    description: "Материалы и события фонда",
+    icon: Newspaper,
+  },
+  {
+    href: "/admin/documents",
+    label: "Документы",
+    description: "Отчеты и публичные документы",
+    icon: FileText,
+  },
+  {
+    href: "/admin/requisites",
+    label: "Реквизиты",
+    description: "Юридические и банковские данные",
+    icon: Landmark,
+  },
+  {
+    href: "/admin/donations",
+    label: "Пожертвования",
+    description: "Список, фильтры и CSV-экспорт",
+    icon: HandCoins,
+  },
+] as const;
 
+export default function AdminPage() {
   return (
     <section className={styles.dashboard} aria-labelledby="admin-title">
       <div className={styles.dashboardHeader}>
         <div>
-          <span className={styles.eyebrow}>Фонд «Быть Добру»</span>
-          <h1 id="admin-title">Административная часть</h1>
+          <span className={styles.eyebrow}>Рабочая область</span>
+          <h1 id="admin-title">Обзор</h1>
         </div>
-        <form action={logoutAction}>
-          <button className={styles.secondaryButton} type="submit">
-            Выйти
-          </button>
-        </form>
       </div>
 
-      <div className={styles.dashboardContent}>
-        <p className={styles.accountLabel}>Текущая учетная запись</p>
-        <p className={styles.accountName}>{session.username}</p>
-        <div className={styles.adminNavigation}>
-          <Link href="/admin/donations">
-            <HandCoins aria-hidden="true" size={22} />
+      <nav
+        className={styles.overviewNavigation}
+        aria-label="Управление разделами"
+      >
+        {overviewSections.map(({ description, href, icon: Icon, label }) => (
+          <Link href={href} key={href}>
+            <Icon aria-hidden="true" size={20} />
             <span>
-              <strong>Пожертвования</strong>
-              <small>Список, фильтры и CSV-экспорт</small>
+              <strong>{label}</strong>
+              <small>{description}</small>
             </span>
-            <ArrowRight aria-hidden="true" size={20} />
+            <ArrowRight aria-hidden="true" size={18} />
           </Link>
-        </div>
-      </div>
+        ))}
+      </nav>
     </section>
   );
 }
-import { ArrowRight, HandCoins } from "lucide-react";
-import Link from "next/link";

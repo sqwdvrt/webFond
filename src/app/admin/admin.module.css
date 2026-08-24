@@ -484,3 +484,384 @@
     flex-direction: column;
   }
 }
+
+.workspace {
+  min-height: calc(100vh - var(--header-height));
+}
+
+.workspaceHeader {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 10;
+  color: var(--surface);
+  background: #24322a;
+  border-bottom: 1px solid #415047;
+}
+
+.workspaceHeaderInner,
+.adminNav,
+.workspaceMain {
+  width: min(100% - 40px, 1240px);
+  margin-inline: auto;
+}
+
+.workspaceHeaderInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 76px;
+}
+
+.workspaceBrand {
+  display: grid;
+  gap: 3px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.workspaceBrand span {
+  color: #b8c5bc;
+  font-size: 12px;
+}
+
+.workspaceBrand strong {
+  font-size: 17px;
+}
+
+.accountControls,
+.currentAccount,
+.logoutButton,
+.adminNav a {
+  display: inline-flex;
+  align-items: center;
+}
+
+.accountControls {
+  gap: 18px;
+}
+
+.currentAccount {
+  gap: 7px;
+  min-width: 0;
+  color: #dce5df;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.currentAccount span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logoutButton {
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 13px;
+  color: var(--surface);
+  background: transparent;
+  border: 1px solid #718078;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logoutButton:hover {
+  background: #34443a;
+}
+
+.adminNavViewport,
+.contentTableViewport {
+  overflow-x: auto;
+}
+
+.adminNavViewport {
+  border-top: 1px solid #415047;
+  scrollbar-width: thin;
+}
+
+.adminNav {
+  display: flex;
+  min-width: max-content;
+}
+
+.adminNav a {
+  gap: 7px;
+  min-height: 48px;
+  padding: 0 15px;
+  color: #dce5df;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.adminNav a:hover,
+.adminNav a:focus-visible {
+  color: #ffffff;
+  background: #34443a;
+}
+
+.workspaceMain {
+  min-width: 0;
+}
+
+.overviewNavigation {
+  margin-top: 30px;
+  border-top: 1px solid var(--line);
+}
+
+.overviewNavigation a {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 15px;
+  min-height: 82px;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.overviewNavigation a:hover strong,
+.overviewNavigation a:focus-visible strong {
+  color: var(--brand-dark);
+}
+
+.overviewNavigation span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.overviewNavigation strong {
+  font-size: 17px;
+}
+
+.overviewNavigation small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.contentTableViewport {
+  border-block: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.contentTableViewport:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.contentTable {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.contentTable caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.contentTable th,
+.contentTable td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.contentTable thead th {
+  color: var(--muted);
+  background: #f7f9f6;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.contentTable tbody th,
+.contentTable tbody td {
+  font-size: 14px;
+}
+
+.contentUpdatedAt {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.contentActionCell {
+  width: 52px;
+  text-align: right !important;
+}
+
+.publicationStatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.publicationStatusDRAFT {
+  color: #5b4c1d;
+  background: #f4e9bd;
+}
+
+.publicationStatusPUBLISHED {
+  color: #205b35;
+  background: #dcebdd;
+}
+
+.publicationStatusARCHIVED {
+  color: #505861;
+  background: #e3e7e9;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--ink);
+  border: 1px solid #aeb7b0;
+  border-radius: 6px;
+}
+
+.iconButton:hover,
+.iconButton:focus-visible {
+  color: var(--surface);
+  background: var(--ink);
+}
+
+.contentEmptyState {
+  display: grid;
+  align-content: center;
+  min-height: 160px;
+  padding: 28px 0;
+  color: var(--muted);
+  border-block: 1px solid var(--line);
+}
+
+.contentEmptyState p,
+.fieldError,
+.formSuccess,
+.adminError p {
+  margin: 0;
+}
+
+.fieldError {
+  color: #8b3029;
+  font-size: 13px;
+}
+
+.formSuccess {
+  color: #205b35;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 15px;
+  color: #8b3029;
+  background: transparent;
+  border: 1px solid #b9665e;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dangerButton:hover {
+  color: var(--surface);
+  background: #8b3029;
+}
+
+.adminError {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  width: min(100%, 680px);
+  padding: 64px 0 88px;
+}
+
+.adminError h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.adminError p {
+  color: var(--muted);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 720px) {
+  .workspaceHeader {
+    top: 0;
+  }
+
+  .workspaceHeaderInner,
+  .adminNav,
+  .workspaceMain {
+    width: min(100% - 32px, 1240px);
+  }
+
+  .workspaceHeaderInner {
+    gap: 16px;
+    min-height: 68px;
+  }
+
+  .workspaceBrand span,
+  .currentAccount {
+    display: none;
+  }
+
+  .workspaceBrand strong {
+    font-size: 15px;
+  }
+
+  .logoutButton {
+    min-width: 40px;
+    padding: 0 10px;
+  }
+
+  .overviewNavigation a {
+    min-height: 76px;
+  }
+
+  .overviewNavigation small {
+    line-height: 1.35;
+  }
+
+  .adminError {
+    padding: 44px 0 64px;
+  }
+}
