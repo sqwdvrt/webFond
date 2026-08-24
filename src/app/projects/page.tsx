@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedCard } from "@/components/content/published-content";
+import { foundationPurpose } from "@/content/foundation";
 import { projects } from "@/content/projects";
 import {
   listPublishedProjects,
@@ -40,7 +41,7 @@ export async function renderProjectsPage(
       <PageHero
         eyebrow="Устав фонда"
         title="Цели, предмет и виды деятельности фонда"
-        description="Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства."
+        description={foundationPurpose}
       />
       <section className="page-section">
         <div className="container">

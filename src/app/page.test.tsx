@@ -14,7 +14,9 @@ describe("HomePage", () => {
     expect(screen.getByRole("link", { name: "Помочь фонду" })).toHaveAttribute("href", "/help");
     expect(screen.getByRole("link", { name: "Нужна помощь?" })).toHaveAttribute("href", "/contacts#help-request");
     expect(screen.getByRole("heading", { level: 2, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
-    expect(screen.getByText("Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства.")).toBeVisible();
+    expect(screen.getByText(
+      "Основной целью создания Фонда и предметом деятельности Фонда является формирование имущества Фонда на основе добровольных имущественных взносов и других, не запрещенных законом поступлений и использование данного имущества на содействие утверждения в российском обществе идеалов гуманизма, бескорыстной взаимопомощи, атмосферы уважения к общечеловеческим ценностям. Приумножение и утверждение добра в мире.",
+    )).toBeVisible();
     const activityList = container.querySelector("ul.activity-list");
     expect(activityList).toBeInstanceOf(HTMLUListElement);
     expect(activityList).toHaveAttribute("role", "list");
