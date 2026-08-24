@@ -145,6 +145,15 @@ describe("shared content admin UI", () => {
     expect(screen.getByText("Черновик")).toBeVisible();
     expect(screen.getByText("Опубликован")).toBeVisible();
     expect(screen.getByText("В архиве")).toBeVisible();
+    expect(
+      (
+        await axe.run(document.body, {
+          rules: { "color-contrast": { enabled: false } },
+        })
+      ).violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
 
     formStatus.pending = true;
     rerender(<SubmitButton pendingLabel="Сохранение...">Сохранить</SubmitButton>);
