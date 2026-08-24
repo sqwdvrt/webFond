@@ -71,6 +71,21 @@ describe("published content", () => {
     );
   });
 
+  it("formats publication dates in the Europe/Moscow timezone", () => {
+    render(
+      <PublishedCard
+        href="/news/moscow-date"
+        imageUrl={null}
+        publishedAt={new Date("2026-08-22T21:30:00.000Z")}
+        summary="Новость на границе календарного дня"
+        title="Московская дата"
+      />,
+    );
+
+    expect(screen.getByText("23 августа 2026 г.")).toBeVisible();
+    expect(screen.queryByText("22 августа 2026 г.")).not.toBeInTheDocument();
+  });
+
   it("preserves plain-text paragraphs without interpreting HTML", () => {
     const content = "Первый абзац\nс новой строкой.\n\n<script>alert('xss')</script>";
     const { container } = render(<PublishedBody content={content} />);

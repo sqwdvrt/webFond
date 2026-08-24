@@ -6,15 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicEditorialDetailRow } from "@/features/content-admin/repository";
 
 const mocks = vi.hoisted(() => ({
-  getPublishedNewsPost: vi.fn(),
+  getPublishedNewsPostForRequest: vi.fn(),
   notFound: vi.fn((): never => {
     throw new Error("NEXT_NOT_FOUND");
   }),
 }));
 
-vi.mock("@/features/content-admin/repository", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/content-admin/repository")>()),
-  getPublishedNewsPost: mocks.getPublishedNewsPost,
+vi.mock("@/features/content-admin/public-loaders", () => ({
+  getPublishedNewsPostForRequest: mocks.getPublishedNewsPostForRequest,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
@@ -33,18 +32,18 @@ const newsPost: PublicEditorialDetailRow = {
 
 describe("published news detail", () => {
   beforeEach(() => {
-    mocks.getPublishedNewsPost.mockReset();
+    mocks.getPublishedNewsPostForRequest.mockReset();
     mocks.notFound.mockClear();
   });
 
   it("awaits promised params and renders only the published repository result", async () => {
-    mocks.getPublishedNewsPost.mockResolvedValue(newsPost);
+    mocks.getPublishedNewsPostForRequest.mockResolvedValue(newsPost);
 
     render(
       await NewsDetailPage({ params: Promise.resolve({ slug: newsPost.slug }) }),
     );
 
-    expect(mocks.getPublishedNewsPost).toHaveBeenCalledExactlyOnceWith(newsPost.slug);
+    expect(mocks.getPublishedNewsPostForRequest).toHaveBeenCalledExactlyOnceWith(newsPost.slug);
     expect(screen.getByRole("heading", { level: 1, name: newsPost.title })).toBeVisible();
     expect(screen.getByText(newsPost.summary!)).toBeVisible();
     expect(screen.getByText("Первый абзац новости.")).toBeVisible();
@@ -55,7 +54,7 @@ describe("published news detail", () => {
   });
 
   it("keeps drafts, archives and missing slugs inaccessible through the repository filter", async () => {
-    mocks.getPublishedNewsPost.mockResolvedValue(null);
+    mocks.getPublishedNewsPostForRequest.mockResolvedValue(null);
 
     await expect(
       NewsDetailPage({ params: Promise.resolve({ slug: "draft-or-archived" }) }),
@@ -65,7 +64,7 @@ describe("published news detail", () => {
 
   it("propagates repository failures instead of translating them to notFound", async () => {
     const failure = new Error("database unavailable");
-    mocks.getPublishedNewsPost.mockRejectedValue(failure);
+    mocks.getPublishedNewsPostForRequest.mockRejectedValue(failure);
 
     await expect(
       NewsDetailPage({ params: Promise.resolve({ slug: newsPost.slug }) }),
@@ -74,7 +73,7 @@ describe("published news detail", () => {
   });
 
   it("generates metadata only for a published news post", async () => {
-    mocks.getPublishedNewsPost.mockResolvedValue(newsPost);
+    mocks.getPublishedNewsPostForRequest.mockResolvedValue(newsPost);
 
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: newsPost.slug }) }),
@@ -84,7 +83,7 @@ describe("published news detail", () => {
       alternates: { canonical: `/news/${newsPost.slug}` },
     });
 
-    mocks.getPublishedNewsPost.mockResolvedValue(null);
+    mocks.getPublishedNewsPostForRequest.mockResolvedValue(null);
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: "draft" }) }),
     ).resolves.toEqual({});

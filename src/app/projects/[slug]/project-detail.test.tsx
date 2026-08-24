@@ -6,15 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PublicEditorialDetailRow } from "@/features/content-admin/repository";
 
 const mocks = vi.hoisted(() => ({
-  getPublishedProject: vi.fn(),
+  getPublishedProjectForRequest: vi.fn(),
   notFound: vi.fn((): never => {
     throw new Error("NEXT_NOT_FOUND");
   }),
 }));
 
-vi.mock("@/features/content-admin/repository", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/content-admin/repository")>()),
-  getPublishedProject: mocks.getPublishedProject,
+vi.mock("@/features/content-admin/public-loaders", () => ({
+  getPublishedProjectForRequest: mocks.getPublishedProjectForRequest,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
@@ -33,16 +32,16 @@ const project: PublicEditorialDetailRow = {
 
 describe("published project detail", () => {
   beforeEach(() => {
-    mocks.getPublishedProject.mockReset();
+    mocks.getPublishedProjectForRequest.mockReset();
     mocks.notFound.mockClear();
   });
 
   it("awaits promised params and renders the published repository result", async () => {
-    mocks.getPublishedProject.mockResolvedValue(project);
+    mocks.getPublishedProjectForRequest.mockResolvedValue(project);
 
     render(await ProjectPage({ params: Promise.resolve({ slug: project.slug }) }));
 
-    expect(mocks.getPublishedProject).toHaveBeenCalledExactlyOnceWith(project.slug);
+    expect(mocks.getPublishedProjectForRequest).toHaveBeenCalledExactlyOnceWith(project.slug);
     expect(screen.getByRole("heading", { level: 1, name: project.title })).toBeVisible();
     expect(screen.getByText(project.summary!)).toBeVisible();
     expect(screen.getByText("Первый абзац.")).toBeVisible();
@@ -51,7 +50,7 @@ describe("published project detail", () => {
   });
 
   it("calls notFound only when the published repository returns null", async () => {
-    mocks.getPublishedProject.mockResolvedValue(null);
+    mocks.getPublishedProjectForRequest.mockResolvedValue(null);
 
     await expect(
       ProjectPage({ params: Promise.resolve({ slug: "draft-or-missing" }) }),
@@ -61,7 +60,7 @@ describe("published project detail", () => {
 
   it("propagates repository failures to the route error boundary", async () => {
     const failure = new Error("database unavailable");
-    mocks.getPublishedProject.mockRejectedValue(failure);
+    mocks.getPublishedProjectForRequest.mockRejectedValue(failure);
 
     await expect(
       ProjectPage({ params: Promise.resolve({ slug: project.slug }) }),
@@ -70,7 +69,7 @@ describe("published project detail", () => {
   });
 
   it("generates published metadata with a canonical detail URL", async () => {
-    mocks.getPublishedProject.mockResolvedValue(project);
+    mocks.getPublishedProjectForRequest.mockResolvedValue(project);
 
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: project.slug }) }),
@@ -82,7 +81,7 @@ describe("published project detail", () => {
   });
 
   it("returns no metadata for an inaccessible entry", async () => {
-    mocks.getPublishedProject.mockResolvedValue(null);
+    mocks.getPublishedProjectForRequest.mockResolvedValue(null);
 
     await expect(
       generateMetadata({ params: Promise.resolve({ slug: "archived" }) }),

@@ -8,6 +8,8 @@ import {
   type PublicEditorialListRow,
 } from "@/features/content-admin/repository";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Цели, предмет и виды деятельности фонда",
   description: "Виды деятельности фонда «Быть Добру» по уставу.",

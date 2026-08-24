@@ -3,17 +3,17 @@ import type { Metadata } from "next";
 import { EmptyState } from "@/components/content/empty-state";
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedCard } from "@/components/content/published-content";
-import {
-  listPublishedNews,
-  type PublicEditorialListRow,
-} from "@/features/content-admin/repository";
+import { listPublishedNewsForRequest } from "@/features/content-admin/public-loaders";
+import type { PublicEditorialListRow } from "@/features/content-admin/repository";
+
+export const dynamic = "force-dynamic";
 
 type NewsPageDependencies = {
   listNews: () => Promise<PublicEditorialListRow[]>;
 };
 
 const defaultDependencies: NewsPageDependencies = {
-  listNews: listPublishedNews,
+  listNews: listPublishedNewsForRequest,
 };
 
 const baseMetadata = {

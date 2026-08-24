@@ -1,4 +1,6 @@
 import { render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -27,6 +29,12 @@ function newsDependencies(result: PublicEditorialListRow[] | Error) {
 }
 
 describe("news page", () => {
+  it("forces dynamic rendering so a caught database failure is not route-cached", () => {
+    const source = readFileSync(join(process.cwd(), "src/app/news/page.tsx"), "utf8");
+
+    expect(source).toContain('export const dynamic = "force-dynamic"');
+  });
+
   it("renders published news cards", async () => {
     const deps = newsDependencies([publishedNews]);
     render(await renderNewsPage(deps));

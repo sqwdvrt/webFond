@@ -1,4 +1,6 @@
 import { render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderProjectsPage } from "@/app/projects/page";
@@ -44,6 +46,15 @@ function expectCharterList(container: HTMLElement) {
 }
 
 describe("projects page", () => {
+  it("forces dynamic rendering so a caught database failure is not route-cached", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/app/projects/page.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain('export const dynamic = "force-dynamic"');
+  });
+
   it("keeps the statutory list and appends published project cards", async () => {
     const deps = dependencies([publishedProject]);
     const { container } = render(await renderProjectsPage(deps));

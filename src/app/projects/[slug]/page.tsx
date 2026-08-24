@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedDetail } from "@/components/content/published-content";
-import { getPublishedProject } from "@/features/content-admin/repository";
+import { getPublishedProjectForRequest } from "@/features/content-admin/public-loaders";
 
 type ProjectDetailProps = {
   params: Promise<{ slug: string }>;
@@ -11,7 +11,7 @@ type ProjectDetailProps = {
 
 export async function generateMetadata({ params }: ProjectDetailProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getPublishedProject(slug);
+  const project = await getPublishedProjectForRequest(slug);
 
   if (!project) return {};
 
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: ProjectDetailProps): Promise<
 
 export default async function ProjectPage({ params }: ProjectDetailProps) {
   const { slug } = await params;
-  const project = await getPublishedProject(slug);
+  const project = await getPublishedProjectForRequest(slug);
 
   if (!project) notFound();
 

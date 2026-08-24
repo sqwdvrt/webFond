@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedDetail } from "@/components/content/published-content";
-import { getPublishedNewsPost } from "@/features/content-admin/repository";
+import { getPublishedNewsPostForRequest } from "@/features/content-admin/public-loaders";
 
 type NewsDetailProps = {
   params: Promise<{ slug: string }>;
@@ -11,7 +11,7 @@ type NewsDetailProps = {
 
 export async function generateMetadata({ params }: NewsDetailProps): Promise<Metadata> {
   const { slug } = await params;
-  const newsPost = await getPublishedNewsPost(slug);
+  const newsPost = await getPublishedNewsPostForRequest(slug);
 
   if (!newsPost) return {};
 
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: NewsDetailProps): Promise<Met
 
 export default async function NewsDetailPage({ params }: NewsDetailProps) {
   const { slug } = await params;
-  const newsPost = await getPublishedNewsPost(slug);
+  const newsPost = await getPublishedNewsPostForRequest(slug);
 
   if (!newsPost) notFound();
 

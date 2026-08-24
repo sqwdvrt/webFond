@@ -17,7 +17,7 @@ type PublishedCardProps = {
 
 const publicationDate = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "long",
-  timeZone: "UTC",
+  timeZone: "Europe/Moscow",
 });
 
 export function PublishedImage({ imageUrl, title }: PublishedImageProps) {
