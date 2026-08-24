@@ -5,7 +5,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import HomePage from "@/app/page";
-import ProjectsPage from "@/app/projects/page";
+import { renderProjectsPage } from "@/app/projects/page";
 import { DonationPreview } from "@/components/donation/donation-preview";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -65,8 +65,10 @@ describe("public accessibility", () => {
     await expectNoHighImpactViolations(container);
   });
 
-  it("keeps the project page heading hierarchy simple", () => {
-    const { container } = render(<ProjectsPage />);
+  it("keeps the project page heading hierarchy simple", async () => {
+    const { container } = render(
+      await renderProjectsPage({ listProjects: async () => [] }),
+    );
     expect(Array.from(container.querySelectorAll("h1, h2, h3")).map((heading) => heading.tagName)).toEqual(["H1"]);
     expect(container.querySelectorAll("ul.activity-list > li")).toHaveLength(8);
   });

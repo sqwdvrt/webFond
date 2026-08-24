@@ -8,7 +8,7 @@ import { metadata as contactsMetadata } from "@/app/contacts/page";
 import { metadata as helpMetadata } from "@/app/help/page";
 import { metadata as projectsMetadata } from "@/app/projects/page";
 import { metadata as requisitesMetadata } from "@/app/requisites/page";
-import { metadata as newsMetadata } from "@/app/news/page";
+import { generateNewsMetadata } from "@/app/news/page";
 import { metadata as reportsMetadata } from "@/app/reports/page";
 import { metadata as privacyMetadata } from "@/app/privacy/page";
 import { metadata as consentMetadata } from "@/app/personal-data-consent/page";
@@ -53,7 +53,8 @@ describe("SEO routes", () => {
     expect(projectsMetadata.alternates?.canonical).toBe("/projects");
   });
 
-  it("keeps every placeholder route noindex", () => {
+  it("keeps every placeholder route noindex", async () => {
+    const newsMetadata = await generateNewsMetadata({ listNews: async () => [] });
     for (const page of [newsMetadata, reportsMetadata, privacyMetadata, consentMetadata, offerMetadata, cookiesMetadata]) {
       expect(page.robots).toEqual({ index: false, follow: true });
     }
