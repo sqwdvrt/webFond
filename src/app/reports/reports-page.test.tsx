@@ -45,6 +45,18 @@ describe("reports page", () => {
     expect(deps.listDocuments).toHaveBeenCalledOnce();
   });
 
+  it("marks an uppercase HTTPS document URL as external", async () => {
+    render(await renderReportsPage(dependencies([{
+      ...publishedDocuments[1],
+      fileUrl: "HTTPS://documents.example.org/charter",
+    }])));
+
+    const link = screen.getByRole("link", { name: /Устав фонда/ });
+    expect(link).toHaveTextContent("Внешняя ссылка");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+  });
+
   it("shows the honest empty state for an empty published list", async () => {
     render(await renderReportsPage(dependencies([])));
     expect(screen.getByText("Проверенные отчеты появятся здесь")).toBeVisible();

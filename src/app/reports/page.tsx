@@ -65,7 +65,7 @@ function groupByCategory(documents: PublicDocumentRow[]) {
 }
 
 function isExternalDocument(fileUrl: string) {
-  return fileUrl.startsWith("https://");
+  return /^https:\/\//i.test(fileUrl);
 }
 
 export async function renderReportsPage(
