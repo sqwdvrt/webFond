@@ -256,7 +256,7 @@ describe("neutral mutation failures", () => {
     ["duplicate", "Такой адрес уже используется"],
     ["conflict", "Данные изменились. Обновите страницу и повторите действие"],
     ["missing", "Данные изменились. Обновите страницу и повторите действие"],
-  ] as const)("maps %s to a neutral form error without an effect", async (status, message) => {
+  ] as const)("maps update %s to a neutral form error with parsed values", async (status, message) => {
     const repositoryResult = { status } as UpdateEditorialResult;
     const result = await updateProjectMutation("entry-1", formWithToken(), {
       requireSession,
@@ -267,10 +267,56 @@ describe("neutral mutation failures", () => {
 
     expect(result).toEqual({
       ok: false,
-      state: { status: "error", message },
+      state: { status: "error", message, values: editorialInput },
     });
     expect(result).not.toHaveProperty("effect");
   });
+
+  it("returns parsed values when editorial creation finds a duplicate slug", async () => {
+    const result = await createProjectMutation(new FormData(), {
+      requireSession,
+      parse: () => ok(editorialInput),
+      create: vi.fn(async (): Promise<CreateEditorialResult> => ({
+        status: "duplicate",
+      })),
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      state: {
+        status: "error",
+        message: "Такой адрес уже используется",
+        values: editorialInput,
+      },
+    });
+  });
+
+  it.each(["not-a-date", "2026-08-23T13:00:00.000Z"])(
+    "returns parsed editorial values for invalid optimistic-lock token %s",
+    async (token) => {
+      const update = vi.fn<() => Promise<UpdateEditorialResult>>();
+      const result = await updateProjectMutation(
+        "entry-1",
+        formWithToken(token),
+        {
+          requireSession,
+          parse: () => ok(editorialInput),
+          update,
+          now: () => now,
+        },
+      );
+
+      expect(result).toEqual({
+        ok: false,
+        state: {
+          status: "error",
+          message: "Данные изменились. Обновите страницу и повторите действие",
+          values: editorialInput,
+        },
+      });
+      expect(update).not.toHaveBeenCalled();
+    },
+  );
 
   it("maps a forbidden delete to a neutral form error without an effect", async () => {
     const result = await deleteDocumentMutation("document-1", formWithToken(), {
@@ -299,10 +345,45 @@ describe("neutral mutation failures", () => {
         now: () => now,
       });
 
-      expect(result).toMatchObject({ ok: false, state: { status: "error" } });
+      expect(result).toMatchObject({
+        ok: false,
+        state: { status: "error", values: documentInput },
+      });
       expect(update).not.toHaveBeenCalled();
     },
   );
+
+  it("returns parsed requisites values for a repository conflict", async () => {
+    const result = await saveRequisitesMutation(formWithToken(), {
+      requireSession,
+      parse: () => ok(requisitesInput),
+      save: vi.fn(async (): Promise<SaveRequisitesResult> => ({
+        status: "conflict",
+      })),
+      now: () => now,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      state: { status: "error", values: requisitesInput },
+    });
+  });
+
+  it("returns parsed requisites values for an invalid optimistic-lock token", async () => {
+    const save = vi.fn<() => Promise<SaveRequisitesResult>>();
+    const result = await saveRequisitesMutation(formWithToken("not-a-date"), {
+      requireSession,
+      parse: () => ok(requisitesInput),
+      save,
+      now: () => now,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      state: { status: "error", values: requisitesInput },
+    });
+    expect(save).not.toHaveBeenCalled();
+  });
 
   it("allows a missing token only when requisites have not been created", async () => {
     const data = new FormData();

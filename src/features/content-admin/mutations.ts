@@ -75,8 +75,28 @@ const FORBIDDEN_MESSAGE =
   "Удаление недоступно. Обновите страницу и повторите действие";
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function error(message: string): MutationOutcome {
-  return { ok: false, state: { status: "error", message } };
+type FormValue = string | number | null;
+
+function parsedValues<T extends { [K in keyof T]: FormValue }>(
+  input: T,
+): Partial<Record<string, FormValue>> {
+  return Object.fromEntries(Object.entries(input)) as Partial<
+    Record<string, FormValue>
+  >;
+}
+
+function error(
+  message: string,
+  values?: Partial<Record<string, FormValue>>,
+): MutationOutcome {
+  return {
+    ok: false,
+    state: {
+      status: "error",
+      message,
+      ...(values ? { values } : {}),
+    },
+  };
 }
 
 function validationError<T>(
@@ -116,12 +136,15 @@ function readUpdatedAt(
   return value;
 }
 
-function repositoryError(status: "duplicate" | "conflict" | "missing" | "forbidden") {
-  if (status === "duplicate") return error(DUPLICATE_MESSAGE);
+function repositoryError(
+  status: "duplicate" | "conflict" | "missing" | "forbidden",
+  values?: Partial<Record<string, FormValue>>,
+) {
+  if (status === "duplicate") return error(DUPLICATE_MESSAGE, values);
   if (status === "conflict" || status === "missing") {
-    return error(CONFLICT_MESSAGE);
+    return error(CONFLICT_MESSAGE, values);
   }
-  return error(FORBIDDEN_MESSAGE);
+  return error(FORBIDDEN_MESSAGE, values);
 }
 
 type EditorialSection = {
@@ -162,7 +185,9 @@ async function createEditorialMutation(
   if (!parsed.ok) return validationError(parsed);
 
   const result = await dependencies.create(parsed.value);
-  if (result.status !== "ok") return repositoryError(result.status);
+  if (result.status !== "ok") {
+    return repositoryError(result.status, parsedValues(parsed.value));
+  }
 
   const paths: string[] = [section.adminPath, section.publicPath];
   if (result.isPublished) {
@@ -185,10 +210,12 @@ async function updateEditorialMutation(
   if (!parsed.ok) return validationError(parsed);
 
   const updatedAt = readUpdatedAt(formData, dependencies.now());
-  if (!updatedAt) return error(CONFLICT_MESSAGE);
+  if (!updatedAt) return error(CONFLICT_MESSAGE, parsedValues(parsed.value));
 
   const result = await dependencies.update(id, updatedAt, parsed.value);
-  if (result.status !== "ok") return repositoryError(result.status);
+  if (result.status !== "ok") {
+    return repositoryError(result.status, parsedValues(parsed.value));
+  }
 
   return success(
     editorialPaths(section, result),
@@ -285,10 +312,12 @@ export async function updateDocumentMutation(
   if (!parsed.ok) return validationError(parsed);
 
   const updatedAt = readUpdatedAt(formData, dependencies.now());
-  if (!updatedAt) return error(CONFLICT_MESSAGE);
+  if (!updatedAt) return error(CONFLICT_MESSAGE, parsedValues(parsed.value));
 
   const result = await dependencies.update(id, updatedAt, parsed.value);
-  if (result.status !== "ok") return repositoryError(result.status);
+  if (result.status !== "ok") {
+    return repositoryError(result.status, parsedValues(parsed.value));
+  }
 
   const paths: string[] = ["/admin/documents", "/reports"];
   if (result.wasPublished !== result.isPublished) paths.push("/sitemap.xml");
@@ -346,10 +375,14 @@ export async function saveRequisitesMutation(
   if (!parsed.ok) return validationError(parsed);
 
   const updatedAt = readUpdatedAt(formData, dependencies.now(), true);
-  if (updatedAt === undefined) return error(CONFLICT_MESSAGE);
+  if (updatedAt === undefined) {
+    return error(CONFLICT_MESSAGE, parsedValues(parsed.value));
+  }
 
   const result = await dependencies.save(parsed.value, updatedAt);
-  if (result.status !== "ok") return repositoryError(result.status);
+  if (result.status !== "ok") {
+    return repositoryError(result.status, parsedValues(parsed.value));
+  }
 
   return success(
     ["/admin/requisites", "/requisites"],

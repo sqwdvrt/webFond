@@ -130,7 +130,13 @@ export function ProjectForm({
 
         <div className={styles.field}>
           <label htmlFor="status">Статус</label>
-          <select {...field("status")} defaultValue={String(value("status"))} id="status" name="status">
+          <select
+            {...field("status")}
+            defaultValue={String(value("status"))}
+            id="status"
+            key={String(value("status"))}
+            name="status"
+          >
             {Object.entries(statusLabels).map(([status, label]) => (
               <option key={status} value={status}>{label}</option>
             ))}
