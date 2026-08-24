@@ -104,6 +104,20 @@
   opacity: 0.72;
 }
 
+.submitButton {
+  display: inline-grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.submitButtonLabel {
+  grid-area: 1 / 1;
+}
+
+.submitButtonLabelHidden {
+  visibility: hidden;
+}
+
 .dashboard {
   width: min(100% - 40px, 1040px);
   margin-inline: auto;
@@ -839,9 +853,17 @@
     min-height: 68px;
   }
 
-  .workspaceBrand span,
-  .currentAccount {
+  .workspaceBrand span {
     display: none;
+  }
+
+  .accountControls {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .currentAccount {
+    max-width: 128px;
   }
 
   .workspaceBrand strong {

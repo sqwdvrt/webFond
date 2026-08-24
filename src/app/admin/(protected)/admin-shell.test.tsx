@@ -39,6 +39,10 @@ describe("AdminShell", () => {
     expect(css).toMatch(
       /\.adminNavViewport,\s*\.contentTableViewport\s*\{[^}]*overflow-x:\s*auto/,
     );
+    expect(css).not.toMatch(
+      /\.workspaceBrand span,\s*\.currentAccount\s*\{[^}]*display:\s*none/,
+    );
+    expect(css).toContain(".submitButtonLabel");
   });
 
   it("shows one account header and all protected sections", async () => {

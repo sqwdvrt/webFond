@@ -96,15 +96,48 @@ describe("shared content admin UI", () => {
     ).toEqual([]);
   });
 
-  it("exposes field errors, success status and every publication label", () => {
+  it("exposes accessible form states and every publication label", async () => {
     const { rerender } = render(
-      <>
+      <form>
+        <label htmlFor="title">Заголовок</label>
+        <input id="title" aria-describedby="title-error" defaultValue="" />
+        <FieldError id="title-error" />
+        <FormSuccess />
+        <PublicationStatusBadge status="DRAFT" />
+        <PublicationStatusBadge status="PUBLISHED" />
+        <PublicationStatusBadge status="ARCHIVED" />
+        <SubmitButton pendingLabel="Сохранение...">Сохранить</SubmitButton>
+      </form>,
+    );
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(
+      (
+        await axe.run(document.body, {
+          rules: { "color-contrast": { enabled: false } },
+        })
+      ).violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+
+    rerender(
+      <form>
+        <label htmlFor="title">Заголовок</label>
+        <input
+          id="title"
+          aria-describedby="title-error"
+          aria-invalid="true"
+          defaultValue="Материал"
+        />
         <FieldError id="title-error">Введите заголовок</FieldError>
         <FormSuccess>Материал сохранен</FormSuccess>
         <PublicationStatusBadge status="DRAFT" />
         <PublicationStatusBadge status="PUBLISHED" />
         <PublicationStatusBadge status="ARCHIVED" />
-      </>,
+        <SubmitButton pendingLabel="Сохранение...">Сохранить</SubmitButton>
+      </form>,
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent("Введите заголовок");
@@ -116,6 +149,16 @@ describe("shared content admin UI", () => {
     formStatus.pending = true;
     rerender(<SubmitButton pendingLabel="Сохранение...">Сохранить</SubmitButton>);
     expect(screen.getByRole("button", { name: "Сохранение..." })).toBeDisabled();
+    expect(screen.getByRole("button")).toHaveTextContent("СохранитьСохранение...");
+    expect(
+      (
+        await axe.run(document.body, {
+          rules: { "color-contrast": { enabled: false } },
+        })
+      ).violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
   });
 
   it("asks for confirmation only for a never-published draft", () => {

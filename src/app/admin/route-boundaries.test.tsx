@@ -1,3 +1,4 @@
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -38,7 +39,10 @@ describe("admin route boundaries", () => {
   it("renders protected content for an active session", async () => {
     const children = <p>Protected content</p>;
 
-    expect(await ProtectedAdminLayout({ children })).toBe(children);
+    render(await ProtectedAdminLayout({ children }));
+
+    expect(screen.getByText("fixture-operator")).toBeVisible();
+    expect(screen.getByText("Protected content")).toBeVisible();
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
   });
 
