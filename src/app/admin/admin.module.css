@@ -838,10 +838,6 @@
 }
 
 @media (max-width: 720px) {
-  .workspaceHeader {
-    top: 0;
-  }
-
   .workspaceHeaderInner,
   .adminNav,
   .workspaceMain {

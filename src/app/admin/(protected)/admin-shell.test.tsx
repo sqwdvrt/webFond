@@ -43,6 +43,14 @@ describe("AdminShell", () => {
       /\.workspaceBrand span,\s*\.currentAccount\s*\{[^}]*display:\s*none/,
     );
     expect(css).toContain(".submitButtonLabel");
+
+    const stickyOffsets = [
+      ...css.matchAll(/\.workspaceHeader\s*\{[^}]*top:\s*([^;]+);/g),
+    ].map((match) => match[1].trim());
+    expect(stickyOffsets).not.toHaveLength(0);
+    expect(stickyOffsets.every((offset) => offset === "var(--header-height)")).toBe(
+      true,
+    );
   });
 
   it("shows one account header and all protected sections", async () => {
@@ -69,6 +77,7 @@ describe("AdminShell", () => {
     }
 
     expect(screen.getByRole("heading", { name: "Содержимое раздела" })).toBeVisible();
+    expect(screen.queryByRole("main")).not.toBeInTheDocument();
 
     const results = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } },

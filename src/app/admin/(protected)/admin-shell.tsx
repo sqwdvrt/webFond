@@ -67,7 +67,7 @@ export function AdminShell({
         </div>
       </header>
 
-      <main className={styles.workspaceMain}>{children}</main>
+      <div className={styles.workspaceMain}>{children}</div>
     </div>
   );
 }
