@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -19,6 +21,12 @@ describe("SEO routes", () => {
   it("sets site origin and Open Graph brand image", () => {
     expect(metadata.metadataBase).toBeInstanceOf(URL);
     expect(metadata.openGraph?.images).toBeTruthy();
+  });
+
+  it("forces dynamic sitemap rendering so a caught database failure is not cached", () => {
+    const source = readFileSync(join(process.cwd(), "src/app/sitemap.ts"), "utf8");
+
+    expect(source).toContain('export const dynamic = "force-dynamic"');
   });
 
   it("returns stable absolute static, collection and published detail routes", async () => {

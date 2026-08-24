@@ -9,6 +9,8 @@ import {
   type PublicEditorialListRow,
 } from "@/features/content-admin/repository";
 
+export const dynamic = "force-dynamic";
+
 type SitemapDependencies = {
   listProjects: () => Promise<PublicEditorialListRow[]>;
   listNews: () => Promise<PublicEditorialListRow[]>;
