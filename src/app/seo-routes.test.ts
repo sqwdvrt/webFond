@@ -9,7 +9,7 @@ import { metadata as helpMetadata } from "@/app/help/page";
 import { metadata as projectsMetadata } from "@/app/projects/page";
 import { metadata as requisitesMetadata } from "@/app/requisites/page";
 import { generateNewsMetadata } from "@/app/news/page";
-import { metadata as reportsMetadata } from "@/app/reports/page";
+import { generateReportsMetadata } from "@/app/reports/page";
 import { metadata as privacyMetadata } from "@/app/privacy/page";
 import { metadata as consentMetadata } from "@/app/personal-data-consent/page";
 import { metadata as offerMetadata } from "@/app/donation-offer/page";
@@ -21,16 +21,60 @@ describe("SEO routes", () => {
     expect(metadata.openGraph?.images).toBeTruthy();
   });
 
-  it("includes indexable routes and excludes placeholders", () => {
-    const urls = sitemap().map((entry) => entry.url);
-    for (const path of ["/", "/about", "/help", "/projects", "/requisites", "/contacts"]) {
-      expect(urls).toContain(new URL(path, metadata.metadataBase as URL).toString());
-    }
-    for (const path of ["/projects/pomoshch-ryadom", "/projects/zabota-o-starshih", "/projects/podderzhka-detyam"]) {
-      expect(urls).not.toContain(new URL(path, metadata.metadataBase as URL).toString());
-    }
-    expect(urls.some((url) => url.endsWith("/news"))).toBe(false);
-    expect(urls.some((url) => url.endsWith("/reports"))).toBe(false);
+  it("returns stable absolute static, collection and published detail routes", async () => {
+    const result = await sitemap({
+      listProjects: async () => [
+        { id: "project-z", title: "Z", slug: "z-project", summary: null, imageUrl: null, publishedAt: new Date("2026-08-23") },
+        { id: "project-a", title: "A", slug: "a-project", summary: null, imageUrl: null, publishedAt: new Date("2026-08-22") },
+      ],
+      listNews: async () => [
+        { id: "news-1", title: "News", slug: "published-news", summary: null, imageUrl: null, publishedAt: new Date("2026-08-23") },
+      ],
+      listDocuments: async () => [
+        { id: "document-1", title: "Report", category: "Reports", fileUrl: "https://files.example.org/private-document", publishedAt: new Date("2026-08-23") },
+      ],
+    });
+    const origin = metadata.metadataBase as URL;
+    const baseUrls = ["/", "/about", "/help", "/projects", "/requisites", "/contacts"]
+      .map((path) => new URL(path, origin).toString());
+    const dynamicUrls = [
+      "/news",
+      "/news/published-news",
+      "/projects/a-project",
+      "/projects/z-project",
+      "/reports",
+    ].map((path) => new URL(path, origin).toString());
+
+    expect(result.map((entry) => entry.url)).toEqual([...baseUrls, ...dynamicUrls]);
+    expect(result.every((entry) => new URL(entry.url).origin === origin.origin)).toBe(true);
+    expect(result.map((entry) => entry.url)).not.toEqual(expect.arrayContaining([
+      new URL("/admin", origin).toString(),
+      new URL("/projects/draft-project", origin).toString(),
+      new URL("/news/archived-news", origin).toString(),
+      "https://files.example.org/private-document",
+    ]));
+  });
+
+  it("omits empty optional collections and returns only safe static routes on failure", async () => {
+    const emptyDependencies = {
+      listProjects: async () => [],
+      listNews: async () => [],
+      listDocuments: async () => [],
+    };
+    const baseUrls = ["/", "/about", "/help", "/projects", "/requisites", "/contacts"]
+      .map((path) => new URL(path, metadata.metadataBase as URL).toString());
+
+    await expect(sitemap(emptyDependencies)).resolves.toEqual(
+      expect.arrayContaining(baseUrls.map((url) => expect.objectContaining({ url }))),
+    );
+    expect((await sitemap(emptyDependencies)).map((entry) => entry.url)).toEqual(baseUrls);
+
+    const failure = new Error("database unavailable");
+    const failed = await sitemap({
+      ...emptyDependencies,
+      listNews: async () => { throw failure; },
+    });
+    expect(failed.map((entry) => entry.url)).toEqual(baseUrls);
   });
 
   it("blocks service routes from crawlers", () => {
@@ -55,8 +99,27 @@ describe("SEO routes", () => {
 
   it("keeps every placeholder route noindex", async () => {
     const newsMetadata = await generateNewsMetadata({ listNews: async () => [] });
+    const reportsMetadata = await generateReportsMetadata({ listDocuments: async () => [] });
     for (const page of [newsMetadata, reportsMetadata, privacyMetadata, consentMetadata, offerMetadata, cookiesMetadata]) {
       expect(page.robots).toEqual({ index: false, follow: true });
     }
+  });
+
+  it("gives populated optional collections canonical indexable metadata", async () => {
+    const newsMetadata = await generateNewsMetadata({ listNews: async () => [
+      { id: "news-1", title: "News", slug: "news", summary: null, imageUrl: null, publishedAt: new Date("2026-08-23") },
+    ] });
+    const reportsMetadata = await generateReportsMetadata({ listDocuments: async () => [
+      { id: "document-1", title: "Report", category: "Reports", fileUrl: "/document", publishedAt: new Date("2026-08-23") },
+    ] });
+
+    expect(newsMetadata).toMatchObject({
+      alternates: { canonical: "/news" },
+      robots: { index: true, follow: true },
+    });
+    expect(reportsMetadata).toMatchObject({
+      alternates: { canonical: "/reports" },
+      robots: { index: true, follow: true },
+    });
   });
 });

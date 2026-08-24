@@ -7,7 +7,6 @@ import {
   generateNewsMetadata,
   renderNewsPage,
 } from "@/app/news/page";
-import ReportsPage, { metadata as reportsMetadata } from "@/app/reports/page";
 import type { PublicEditorialListRow } from "@/features/content-admin/repository";
 
 const publishedNews: PublicEditorialListRow = {
@@ -78,16 +77,5 @@ describe("news page", () => {
       alternates: { canonical: "/news" },
       robots: { index: true, follow: true },
     });
-  });
-});
-
-describe("remaining placeholder pages", () => {
-  it("shows the exact reports empty state", () => {
-    render(<ReportsPage />);
-    expect(screen.getByText("Проверенные отчеты появятся здесь")).toBeVisible();
-  });
-
-  it("keeps reports out of search indexes", () => {
-    expect(reportsMetadata.robots).toEqual({ index: false, follow: true });
   });
 });
