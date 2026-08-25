@@ -1,10 +1,19 @@
+import type { Metadata } from "next";
+
 import { LegalPlaceholder, legalPlaceholderMetadata } from "@/components/legal/legal-placeholder";
 import {
   donationOfferPublication,
   type DonationOfferPublication,
 } from "@/content/donation-offer";
 
-export const metadata = legalPlaceholderMetadata("Оферта пожертвования");
+export const metadata: Metadata =
+  donationOfferPublication.status === "published"
+    ? {
+        title: donationOfferPublication.title,
+        description:
+          "Публичная оферта о заключении договора пожертвования Фонду «Быть Добру».",
+      }
+    : legalPlaceholderMetadata("Оферта пожертвования");
 
 export function renderDonationOfferPage(offer: DonationOfferPublication) {
   if (offer.status === "placeholder") {

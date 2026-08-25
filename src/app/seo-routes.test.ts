@@ -108,9 +108,16 @@ describe("SEO routes", () => {
   it("keeps every placeholder route noindex", async () => {
     const newsMetadata = await generateNewsMetadata({ listNews: async () => [] });
     const reportsMetadata = await generateReportsMetadata({ listDocuments: async () => [] });
-    for (const page of [newsMetadata, reportsMetadata, privacyMetadata, consentMetadata, offerMetadata, cookiesMetadata]) {
+    for (const page of [newsMetadata, reportsMetadata, privacyMetadata, consentMetadata, cookiesMetadata]) {
       expect(page.robots).toEqual({ index: false, follow: true });
     }
+  });
+
+  it("indexes the published donation offer", () => {
+    expect(offerMetadata.title).toBe(
+      "Публичная оферта о заключении договора пожертвования",
+    );
+    expect(offerMetadata.robots).not.toEqual({ index: false, follow: true });
   });
 
   it("gives populated optional collections canonical indexable metadata", async () => {

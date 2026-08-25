@@ -26,10 +26,23 @@ describe("public content integrity", () => {
     }
   });
 
-  it("does not publish unapproved donation offer text", () => {
-    expect(donationOfferPublication).toEqual({
-      status: "placeholder",
-      version: null,
-    });
+  it("keeps the published donation offer complete and versioned", () => {
+    expect(donationOfferPublication.status).toBe("published");
+    if (donationOfferPublication.status !== "published") {
+      return;
+    }
+
+    expect(donationOfferPublication.version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(donationOfferPublication.title.trim().length).toBeGreaterThan(0);
+    expect(donationOfferPublication.sections.length).toBeGreaterThan(0);
+
+    for (const section of donationOfferPublication.sections) {
+      expect(section.heading.trim().length).toBeGreaterThan(0);
+      expect(section.paragraphs.length).toBeGreaterThan(0);
+      for (const paragraph of section.paragraphs) {
+        expect(paragraph.trim().length).toBeGreaterThan(0);
+        expect(paragraph).not.toContain("—");
+      }
+    }
   });
 });
