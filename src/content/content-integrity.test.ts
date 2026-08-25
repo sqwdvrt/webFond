@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { donationOfferPublication } from "@/content/donation-offer";
 import { projects } from "@/content/projects";
 
 function publicSourceFiles(directory: string): string[] {
@@ -23,5 +24,12 @@ describe("public content integrity", () => {
     for (const activity of projects) {
       expect(activity.description).not.toMatch(/\d/);
     }
+  });
+
+  it("does not publish unapproved donation offer text", () => {
+    expect(donationOfferPublication).toEqual({
+      status: "placeholder",
+      version: null,
+    });
   });
 });

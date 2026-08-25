@@ -106,12 +106,101 @@ npm run db:validate
 
 ## Платежи
 
-Планируется только разовое пожертвование через СБП и динамический QR-код ЮKassa.
-Подписок и автоматических списаний в проекте нет. Секрет ЮKassa используется только
-на сервере и не должен иметь префикс `NEXT_PUBLIC_`.
+Контур разового пожертвования через СБП реализован, но по умолчанию выключен.
+`PAYMENTS_ENABLED=false`, пока нет утверждённой оферты и тестовых ключей ЮKassa.
+Секрет ЮKassa используется только на сервере и не должен иметь префикс
+`NEXT_PUBLIC_`.
 
-На текущем этапе онлайн-оплата не подключена. Страница `/help` показывает
-неактивную заготовку и не отправляет данные.
+Нужные серверные переменные:
+
+```dotenv
+PAYMENTS_ENABLED=false
+PAYMENTS_OFFER_VERSION=
+PAYMENTS_RATE_LIMIT_SECRET=
+PAYMENTS_TRUST_PROXY=false
+YOOKASSA_SHOP_ID=""
+YOOKASSA_SECRET_KEY=""
+YOOKASSA_RETURN_URL="http://localhost:3000/donation/result"
+```
+
+`PAYMENTS_ENABLED=true` включает `/help` и `POST /api/payments/create` только если
+оферта опубликована и `PAYMENTS_OFFER_VERSION` совпадает с её версией. Production
+требует HTTPS и `PAYMENTS_TRUST_PROXY=true` за reverse proxy, который сам
+формирует forwarding-заголовки.
+
+Маршруты:
+
+- `POST /api/payments/create` — создание разового платежа СБП;
+- `POST /api/payments/webhook` — уведомления ЮKassa `payment.succeeded` и
+  `payment.canceled`;
+- `/donation/result` — проверка результата, страница не индексируется.
+
+Webhook не доверяет телу уведомления: сервер запрашивает платёж в ЮKassa и только
+после этого меняет статус. Подписок и автосписаний нет.
+
+После изменения схемы:
+
+```bash
+npx prisma migrate deploy
+```
+
+Проверки платежного контура:
+
+```bash
+npm test
+PAYMENTS_TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/foundation_payments_test" \
+  npm run test:integration:payments
+```
+
+Интеграционная команда обязательна: без безопасного URL тестовой базы она
+завершается ошибкой, а не skip. Имя базы должно оканчиваться на `_test`.
+
+До тестового магазина ЮKassa внешний QR, возврат на сайт и доставка webhook
+проверяются детерминированными тестами с подменённым HTTP. Живой тестовый платёж
+остаётся в этапе 5.
+
+## Vercel
+
+Сайт рассчитан на Next.js на Vercel и PostgreSQL в Neon. Сборка на Vercel
+выполняет `prisma generate`, затем `prisma migrate deploy`, затем `next build`.
+Локальная команда `npm run build` миграции не применяет.
+
+1. Импортируйте репозиторий в [Vercel](https://vercel.com/new) (Framework Preset:
+   Next.js). Файл `vercel.json` уже задаёт команду сборки.
+2. База Postgres уже подготовлена в Neon: проект `byt-dobru-foundation`.
+   В Vercel Environment Variables добавьте значения из `.env.vercel.local`.
+   Production — ветка Neon `main`, Preview — ветка `preview`, чтобы миграции
+   превью не меняли боевую схему.
+3. После первого деплоя подставьте фактический HTTPS-домен в `NEXT_PUBLIC_SITE_URL`,
+   `SITE_URL` и `YOOKASSA_RETURN_URL` и задеплойте ещё раз.
+4. Платежи в первом выпуске выключены: `PAYMENTS_ENABLED=false`.
+   На Vercel задайте `ADMIN_TRUST_PROXY=true` и `PAYMENTS_TRUST_PROXY=true`:
+   платформа сама подставляет forwarding-заголовки.
+
+| Переменная | Production |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | `https://<домен>` без пути, query и фрагмента |
+| `SITE_URL` | тот же origin, что и `NEXT_PUBLIC_SITE_URL` |
+| `DATABASE_URL` | Neon pooled URL (`-pooler`) с `sslmode=require`, `pgbouncer=true` и `connect_timeout=15` |
+| `DATABASE_URL_UNPOOLED` | Neon direct URL без `-pooler`, для `prisma migrate deploy` |
+| `AUTH_SECRET` | случайная строка не короче 32 символов |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | рабочие логин и пароль админки |
+| `ADMIN_TRUST_PROXY` | `true` |
+| `PAYMENTS_ENABLED` | `false` |
+| `PAYMENTS_OFFER_VERSION` | пусто, пока оферта не утверждена |
+| `PAYMENTS_RATE_LIMIT_SECRET` | случайная строка не короче 32 символов |
+| `PAYMENTS_TRUST_PROXY` | `true` |
+| `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` | пусто, пока платежи выключены |
+| `YOOKASSA_RETURN_URL` | `https://<домен>/donation/result` |
+
+Webhook ЮKassa, когда платежи включат:
+
+```text
+https://<домен>/api/payments/webhook
+```
+
+Секреты и строки подключения в git не коммитятся. Локальная копия для панели
+Vercel может лежать в gitignored-файле `.env.vercel.local`.
 
 ## Ограничения контента
 

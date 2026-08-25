@@ -15,6 +15,10 @@ const contentPublicationMigrationPath = resolve(
   process.cwd(),
   "prisma/migrations/20260823020000_content_publication/migration.sql",
 );
+const paymentRateLimitMigrationPath = resolve(
+  process.cwd(),
+  "prisma/migrations/20260824195000_payment_rate_limit_bucket/migration.sql",
+);
 
 const schema = readFileSync(schemaPath, "utf8");
 const migration = existsSync(migrationPath)
@@ -25,6 +29,9 @@ const donationListMigration = existsSync(donationListMigrationPath)
   : "";
 const contentPublicationMigration = existsSync(contentPublicationMigrationPath)
   ? readFileSync(contentPublicationMigrationPath, "utf8")
+  : "";
+const paymentRateLimitMigration = existsSync(paymentRateLimitMigrationPath)
+  ? readFileSync(paymentRateLimitMigrationPath, "utf8")
   : "";
 
 const requiredModels = [
@@ -37,6 +44,11 @@ const requiredModels = [
 ];
 
 describe("Prisma schema", () => {
+  it("uses a pooled url and a direct url for serverless deploys", () => {
+    expect(schema).toContain('url       = env("DATABASE_URL")');
+    expect(schema).toContain('directUrl = env("DATABASE_URL_UNPOOLED")');
+  });
+
   it("keeps only the managed-content and operational models", () => {
     for (const model of requiredModels) {
       expect(schema).toContain(`model ${model} {`);
@@ -76,5 +88,36 @@ describe("Prisma schema", () => {
         `CREATE INDEX "${model}_status_publishedAt_id_idx" ON "${model}"("status", "publishedAt", "id")`,
       );
     }
+  });
+
+  it("defines the payment rate-limit bucket model", () => {
+    expect(schema).toContain(`model PaymentRateLimitBucket {
+  key         String
+  windowStart DateTime
+  count       Int
+  expiresAt   DateTime
+
+  @@id([key, windowStart])
+  @@index([expiresAt])
+}`);
+  });
+
+  it("creates the payment rate-limit bucket table in a forward-only migration", () => {
+    expect(paymentRateLimitMigration).toContain(
+      'CREATE TABLE "PaymentRateLimitBucket"',
+    );
+    expect(paymentRateLimitMigration).toContain(
+      '"windowStart" TIMESTAMP(3) NOT NULL',
+    );
+    expect(paymentRateLimitMigration).toContain(
+      '"expiresAt" TIMESTAMP(3) NOT NULL',
+    );
+    expect(paymentRateLimitMigration).toContain(
+      'CONSTRAINT "PaymentRateLimitBucket_pkey" PRIMARY KEY ("key", "windowStart")',
+    );
+    expect(paymentRateLimitMigration).toContain(
+      'CREATE INDEX "PaymentRateLimitBucket_expiresAt_idx" ON "PaymentRateLimitBucket"("expiresAt")',
+    );
+    expect(paymentRateLimitMigration).not.toMatch(/\b(?:ALTER|DROP)\b/);
   });
 });
