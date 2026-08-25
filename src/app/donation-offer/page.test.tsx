@@ -24,17 +24,30 @@ const publishedOffer: DonationOfferPublication = {
 };
 
 describe("donation offer page", () => {
-  it("renders the existing legal placeholder for the real publication", () => {
+  it("renders the approved published offer from content", async () => {
+    const { donationOfferPublication } = await import("@/content/donation-offer");
+    expect(donationOfferPublication.status).toBe("published");
+    if (donationOfferPublication.status !== "published") {
+      return;
+    }
+
     render(<DonationOfferPage />);
 
     expect(
-      screen.getByRole("heading", { name: "Оферта пожертвования", level: 1 }),
-    ).toBeVisible();
-    expect(
       screen.getByRole("heading", {
-        name: "Текст требует утверждения юристом",
+        name: donationOfferPublication.title,
+        level: 1,
       }),
     ).toBeVisible();
+    expect(
+      screen.queryByText("Текст требует утверждения юристом"),
+    ).not.toBeInTheDocument();
+
+    for (const section of donationOfferPublication.sections) {
+      expect(
+        screen.getByRole("heading", { name: section.heading, level: 2 }),
+      ).toBeVisible();
+    }
   });
 
   it("renders every field from an injected published offer", () => {
