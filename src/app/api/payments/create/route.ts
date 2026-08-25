@@ -29,6 +29,7 @@ type CreatePaymentRouteDependencies = {
   ) => Promise<CreatePaymentOutcome>;
   now: () => Date;
   environment: string | undefined;
+  reportConfigError: (code: PaymentsConfigurationError["code"]) => void;
 };
 
 const defaultDependencies: CreatePaymentRouteDependencies = {
@@ -42,6 +43,9 @@ const defaultDependencies: CreatePaymentRouteDependencies = {
     }),
   now: () => new Date(),
   environment: process.env.NODE_ENV,
+  reportConfigError: (code) => {
+    console.error("payment_create_config", code);
+  },
 };
 
 function jsonResponse(
@@ -167,6 +171,7 @@ export async function handlePaymentCreate(
     return mapOutcome(outcome);
   } catch (error) {
     if (error instanceof PaymentsConfigurationError) {
+      dependencies.reportConfigError(error.code);
       return jsonResponse(503, { error: "configuration_unavailable" });
     }
     return jsonResponse(500, { error: "internal_error" });

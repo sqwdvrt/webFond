@@ -18,7 +18,7 @@ const PRESET_AMOUNTS = [
 ] as const;
 
 const ERROR_MESSAGES: Record<string, string> = {
-  invalid_request: "Проверьте сумму и принятие оферты.",
+  invalid_request: "Проверьте сумму, согласие на обработку данных и принятие оферты.",
   stale_attempt:
     "Предыдущая попытка оплаты устарела. Подтвердите новый платеж.",
   conflict: "Эта попытка оплаты уже использована с другой суммой.",
@@ -72,6 +72,7 @@ export function DonationForm({
   const [selectedPreset, setSelectedPreset] = useState<number | "other">(300);
   const [otherAmount, setOtherAmount] = useState("");
   const [acceptedOffer, setAcceptedOffer] = useState(false);
+  const [acceptedPersonalData, setAcceptedPersonalData] = useState(false);
   const [website, setWebsite] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +88,12 @@ export function DonationForm({
     const amountRoubles = readSelectedAmount(selectedPreset, otherAmount);
     if (amountRoubles === null) {
       setError("Укажите сумму от 100 до 100 000 рублей.");
+      return;
+    }
+    if (!acceptedPersonalData) {
+      setError(
+        "Чтобы продолжить, дайте согласие на обработку персональных данных.",
+      );
       return;
     }
     if (!acceptedOffer) {
@@ -123,6 +130,7 @@ export function DonationForm({
         body: JSON.stringify({
           amountRoubles,
           acceptedOffer: true,
+          acceptedPersonalData: true,
           attemptId: resolved.attempt.id,
           website,
         }),
@@ -154,7 +162,7 @@ export function DonationForm({
 
   return (
     <section className="donation-preview" aria-labelledby={headingId}>
-      <h2 id={headingId}>Разовое пожертвование через СБП</h2>
+      <h2 id={headingId}>Разовое пожертвование</h2>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -162,6 +170,25 @@ export function DonationForm({
         }}
         noValidate
       >
+        <label className="donation-offer donation-offer-first">
+          <input
+            type="checkbox"
+            checked={acceptedPersonalData}
+            onChange={(event) => setAcceptedPersonalData(event.target.checked)}
+          />
+          <span>
+            Я даю{" "}
+            <a href="/personal-data-consent">
+              согласие на обработку персональных данных
+            </a>{" "}
+            и ознакомился с{" "}
+            <a href="/privacy">
+              Политикой Фонда в отношении обработки персональных данных
+            </a>
+            .
+          </span>
+        </label>
+
         <fieldset>
           <legend>Сумма разового пожертвования</legend>
           <div className="amount-grid">
@@ -230,7 +257,7 @@ export function DonationForm({
           type="submit"
           disabled={pending}
         >
-          {pending ? "Создаём платёж..." : "Оплатить через СБП"}
+          {pending ? "Создаём платёж..." : "Оплатить онлайн"}
         </button>
         {needsNewAttempt ? (
           <button

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { LegalPlaceholder, legalPlaceholderMetadata } from "@/components/legal/legal-placeholder";
+import { PublishedLegalDocumentView } from "@/components/legal/published-legal-document";
 import {
   donationOfferPublication,
   type DonationOfferPublication,
@@ -12,6 +13,7 @@ export const metadata: Metadata =
         title: donationOfferPublication.title,
         description:
           "Публичная оферта о заключении договора пожертвования Фонду «Быть Добру».",
+        alternates: { canonical: "/donation-offer" },
       }
     : legalPlaceholderMetadata("Оферта пожертвования");
 
@@ -21,19 +23,17 @@ export function renderDonationOfferPage(offer: DonationOfferPublication) {
   }
 
   return (
-    <section className="page-section">
-      <div className="container published-body">
-        <h1>{offer.title}</h1>
-        {offer.sections.map((section, sectionIndex) => (
-          <section key={sectionIndex}>
-            <h2>{section.heading}</h2>
-            {section.paragraphs.map((paragraph, paragraphIndex) => (
-              <p key={paragraphIndex}>{paragraph}</p>
-            ))}
-          </section>
-        ))}
-      </div>
-    </section>
+    <PublishedLegalDocumentView
+      document={{
+        status: "published",
+        version: offer.version,
+        title: offer.title,
+        description:
+          "Публичная оферта о заключении договора пожертвования Фонду «Быть Добру».",
+        canonical: "/donation-offer",
+        sections: offer.sections,
+      }}
+    />
   );
 }
 

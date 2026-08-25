@@ -8,6 +8,7 @@ import {
 const validInput = {
   amountRoubles: 300,
   acceptedOffer: true,
+  acceptedPersonalData: true,
   attemptId: "123e4567-e89b-42d3-a456-426614174000",
   website: "",
 } as const;
@@ -50,13 +51,17 @@ describe("parsePaymentCreateInput", () => {
     ).toEqual({ kind: "invalid" });
   });
 
-  it("requires literal offer acceptance", () => {
+  it("requires literal offer and personal data acceptance", async () => {
     expect(
       parsePaymentCreateInput({ ...validInput, acceptedOffer: false }),
     ).toEqual({ kind: "invalid" });
     expect(
+      parsePaymentCreateInput({ ...validInput, acceptedPersonalData: false }),
+    ).toEqual({ kind: "invalid" });
+    expect(
       parsePaymentCreateInput({
         amountRoubles: 300,
+        acceptedOffer: true,
         attemptId: validInput.attemptId,
         website: "",
       }),
@@ -78,6 +83,7 @@ describe("parsePaymentCreateInput", () => {
     const withoutWebsite = {
       amountRoubles: validInput.amountRoubles,
       acceptedOffer: validInput.acceptedOffer,
+      acceptedPersonalData: validInput.acceptedPersonalData,
       attemptId: validInput.attemptId,
     };
 

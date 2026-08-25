@@ -3,6 +3,11 @@ import { extname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { donationOfferPublication } from "@/content/donation-offer";
+import {
+  cookiesPublication,
+  personalDataConsentPublication,
+  privacyPolicyPublication,
+} from "@/content/legal";
 import { projects } from "@/content/projects";
 
 function publicSourceFiles(directory: string): string[] {
@@ -26,22 +31,30 @@ describe("public content integrity", () => {
     }
   });
 
-  it("keeps the published donation offer complete and versioned", () => {
-    expect(donationOfferPublication.status).toBe("published");
-    if (donationOfferPublication.status !== "published") {
-      return;
-    }
+  it("keeps published legal documents complete and without placeholders", () => {
+    for (const document of [
+      donationOfferPublication,
+      privacyPolicyPublication,
+      personalDataConsentPublication,
+      cookiesPublication,
+    ]) {
+      expect(document.status).toBe("published");
+      if (document.status !== "published") {
+        continue;
+      }
 
-    expect(donationOfferPublication.version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(donationOfferPublication.title.trim().length).toBeGreaterThan(0);
-    expect(donationOfferPublication.sections.length).toBeGreaterThan(0);
+      expect(document.version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(document.title.trim().length).toBeGreaterThan(0);
+      expect(document.sections.length).toBeGreaterThan(0);
 
-    for (const section of donationOfferPublication.sections) {
-      expect(section.heading.trim().length).toBeGreaterThan(0);
-      expect(section.paragraphs.length).toBeGreaterThan(0);
-      for (const paragraph of section.paragraphs) {
-        expect(paragraph.trim().length).toBeGreaterThan(0);
-        expect(paragraph).not.toContain("—");
+      for (const section of document.sections) {
+        expect(section.heading.trim().length).toBeGreaterThan(0);
+        expect(section.paragraphs.length).toBeGreaterThan(0);
+        for (const paragraph of section.paragraphs) {
+          expect(paragraph.trim().length).toBeGreaterThan(0);
+          expect(paragraph).not.toContain("—");
+          expect(paragraph).not.toMatch(/УКАЗАТЬ|ПРОЕКТ ДОКУМЕНТА/i);
+        }
       }
     }
   });

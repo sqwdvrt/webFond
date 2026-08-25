@@ -67,13 +67,45 @@ function renderForm(
 }
 
 describe("DonationForm", () => {
-  it("submits a valid SBP payload without personal data", async () => {
+  it("places personal data consent before the amount and requires both consents", async () => {
+    const user = userEvent.setup();
+    const { fetchImpl } = renderForm();
+    const consent = screen.getByRole("checkbox", {
+      name: /согласие на обработку персональных данных/i,
+    });
+    const amountLegend = screen.getByText("Сумма разового пожертвования");
+
+    expect(consent.compareDocumentPosition(amountLegend) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(
+      screen.getByRole("link", {
+        name: "согласие на обработку персональных данных",
+      }),
+    ).toHaveAttribute("href", "/personal-data-consent");
+    expect(
+      screen.getByRole("link", {
+        name: "Политикой Фонда в отношении обработки персональных данных",
+      }),
+    ).toHaveAttribute("href", "/privacy");
+
+    await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/согласи|оферт|сумм/i);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("submits a valid payment payload without name or email", async () => {
     const user = userEvent.setup();
     const { assign, fetchImpl, storage } = renderForm();
 
     await user.click(screen.getByLabelText("1 000 ₽"));
-    await user.click(screen.getByRole("checkbox"));
-    await user.click(screen.getByRole("button", { name: "Оплатить через СБП" }));
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: /согласие на обработку персональных данных/i,
+      }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: /оферту пожертвования/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
 
     await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
     const [, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
@@ -81,13 +113,16 @@ describe("DonationForm", () => {
     expect(payload).toEqual({
       amountRoubles: 1000,
       acceptedOffer: true,
+      acceptedPersonalData: true,
       attemptId: ATTEMPT_ID,
       website: "",
     });
-    expect(JSON.stringify(payload)).not.toMatch(/name|email|phone|receipt|personal/i);
+    expect(payload).not.toHaveProperty("name");
+    expect(payload).not.toHaveProperty("email");
+    expect(payload).not.toHaveProperty("phone");
+    expect(payload).not.toHaveProperty("receipt");
     expect(screen.queryByLabelText(/имя/i)).toBeNull();
     expect(screen.queryByLabelText(/email/i)).toBeNull();
-    expect(screen.queryByRole("link", { name: /персональн/i })).toBeNull();
     expect(screen.getByRole("link", { name: /оферту пожертвования/i })).toHaveAttribute(
       "href",
       "/donation-offer",
@@ -105,7 +140,7 @@ describe("DonationForm", () => {
     const { fetchImpl } = renderForm();
 
     await user.type(screen.getByLabelText("Другая сумма"), "50");
-    await user.click(screen.getByRole("button", { name: "Оплатить через СБП" }));
+    await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(/оферт|сумм/i);
     expect(fetchImpl).not.toHaveBeenCalled();
@@ -133,11 +168,18 @@ describe("DonationForm", () => {
     renderForm({ fetchImpl });
 
     await user.click(screen.getByLabelText("500 ₽"));
-    await user.click(screen.getByRole("checkbox"));
-    await user.click(screen.getByRole("button", { name: "Оплатить через СБП" }));
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: /согласие на обработку персональных данных/i,
+      }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: /оферту пожертвования/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
     expect(await screen.findByRole("alert")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Оплатить через СБП" }));
+    await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
     await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(2));
     const first = JSON.parse(String(fetchImpl.mock.calls[0]![1].body));
     const second = JSON.parse(String(fetchImpl.mock.calls[1]![1].body));

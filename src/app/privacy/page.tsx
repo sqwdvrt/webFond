@@ -1,3 +1,11 @@
-import { LegalPlaceholder, legalPlaceholderMetadata } from "@/components/legal/legal-placeholder";
-export const metadata = legalPlaceholderMetadata("Политика конфиденциальности");
-export default function Page() { return <LegalPlaceholder title="Политика конфиденциальности" />; }
+import {
+  publishedLegalMetadata,
+  PublishedLegalDocumentView,
+} from "@/components/legal/published-legal-document";
+import { privacyPolicyPublication } from "@/content/legal";
+
+export const metadata = publishedLegalMetadata(privacyPolicyPublication);
+
+export default function Page() {
+  return <PublishedLegalDocumentView document={privacyPolicyPublication} />;
+}

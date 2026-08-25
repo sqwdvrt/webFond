@@ -21,6 +21,10 @@ export const siteConfig = {
       "/projects",
       "/requisites",
       "/contacts",
+      "/privacy",
+      "/personal-data-consent",
+      "/donation-offer",
+      "/cookies",
     ],
   },
   navigation: [

@@ -1,4 +1,7 @@
-import type { YooKassaConfig } from "./types";
+import {
+  isSupportedYooKassaPaymentMethod,
+  type YooKassaConfig,
+} from "./types";
 
 const PAYMENTS_ENDPOINT = "https://api.yookassa.ru/v3/payments";
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -22,9 +25,11 @@ export type YooKassaPayment = {
     kopecks: number;
     currency: string;
   };
-  paymentMethod: {
-    type: string;
-  };
+  paymentMethod:
+    | {
+        type: string;
+      }
+    | undefined;
   confirmation:
     | {
         type: string;
@@ -121,6 +126,25 @@ function parseStatus(value: unknown): YooKassaPaymentStatus {
   }
 }
 
+function parsePaymentMethod(
+  value: unknown,
+): YooKassaPayment["paymentMethod"] {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (!isRecord(value)) {
+    throw protocolError();
+  }
+
+  const type = readNonblankString(value.type);
+  if (!isSupportedYooKassaPaymentMethod(type)) {
+    throw protocolError();
+  }
+
+  return { type };
+}
+
 function parseConfirmation(
   value: unknown,
 ): YooKassaPayment["confirmation"] {
@@ -163,10 +187,6 @@ function parsePayment(value: unknown): YooKassaPayment {
     throw protocolError();
   }
 
-  if (!isRecord(value.payment_method)) {
-    throw protocolError();
-  }
-
   if (!isRecord(value.metadata)) {
     throw protocolError();
   }
@@ -188,9 +208,7 @@ function parsePayment(value: unknown): YooKassaPayment {
       kopecks: parseMoney(value.amount.value),
       currency: readNonblankString(value.amount.currency),
     },
-    paymentMethod: {
-      type: readNonblankString(value.payment_method.type),
-    },
+    paymentMethod: parsePaymentMethod(value.payment_method),
     confirmation: parseConfirmation(value.confirmation),
     capturedAt,
     metadata: {
@@ -290,7 +308,6 @@ export function createYooKassaClient(
         },
         body: JSON.stringify({
           amount: { value: amountValue, currency: "RUB" },
-          payment_method_data: { type: "sbp" },
           confirmation: {
             type: "redirect",
             return_url: input.returnUrl,
@@ -305,7 +322,6 @@ export function createYooKassaClient(
       if (
         payment.amount.kopecks !== input.amountKopecks ||
         payment.amount.currency !== "RUB" ||
-        payment.paymentMethod.type !== "sbp" ||
         payment.metadata.donationId !== input.donationId ||
         (payment.confirmation !== undefined &&
           payment.confirmation.type !== "redirect") ||

@@ -43,8 +43,18 @@ describe("SEO routes", () => {
       ],
     });
     const origin = metadata.metadataBase as URL;
-    const baseUrls = ["/", "/about", "/help", "/projects", "/requisites", "/contacts"]
-      .map((path) => new URL(path, origin).toString());
+    const baseUrls = [
+      "/",
+      "/about",
+      "/help",
+      "/projects",
+      "/requisites",
+      "/contacts",
+      "/privacy",
+      "/personal-data-consent",
+      "/donation-offer",
+      "/cookies",
+    ].map((path) => new URL(path, origin).toString());
     const dynamicUrls = [
       "/news",
       "/news/published-news",
@@ -69,8 +79,18 @@ describe("SEO routes", () => {
       listNews: async () => [],
       listDocuments: async () => [],
     };
-    const baseUrls = ["/", "/about", "/help", "/projects", "/requisites", "/contacts"]
-      .map((path) => new URL(path, metadata.metadataBase as URL).toString());
+    const baseUrls = [
+      "/",
+      "/about",
+      "/help",
+      "/projects",
+      "/requisites",
+      "/contacts",
+      "/privacy",
+      "/personal-data-consent",
+      "/donation-offer",
+      "/cookies",
+    ].map((path) => new URL(path, metadata.metadataBase as URL).toString());
 
     await expect(sitemap(emptyDependencies)).resolves.toEqual(
       expect.arrayContaining(baseUrls.map((url) => expect.objectContaining({ url }))),
@@ -105,12 +125,23 @@ describe("SEO routes", () => {
     expect(projectsMetadata.alternates?.canonical).toBe("/projects");
   });
 
-  it("keeps every placeholder route noindex", async () => {
+  it("keeps empty news and reports noindex", async () => {
     const newsMetadata = await generateNewsMetadata({ listNews: async () => [] });
     const reportsMetadata = await generateReportsMetadata({ listDocuments: async () => [] });
-    for (const page of [newsMetadata, reportsMetadata, privacyMetadata, consentMetadata, cookiesMetadata]) {
+    for (const page of [newsMetadata, reportsMetadata]) {
       expect(page.robots).toEqual({ index: false, follow: true });
     }
+  });
+
+  it("indexes published legal documents", () => {
+    for (const page of [privacyMetadata, consentMetadata, cookiesMetadata, offerMetadata]) {
+      expect(page.title).toBeTruthy();
+      expect(page.description).toBeTruthy();
+      expect(page.robots).not.toEqual({ index: false, follow: true });
+    }
+    expect(privacyMetadata.alternates?.canonical).toBe("/privacy");
+    expect(consentMetadata.alternates?.canonical).toBe("/personal-data-consent");
+    expect(cookiesMetadata.alternates?.canonical).toBe("/cookies");
   });
 
   it("indexes the published donation offer", () => {

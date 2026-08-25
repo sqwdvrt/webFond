@@ -362,6 +362,7 @@ a {
 .other-amount input { min-height: 48px; padding: 0 12px; background: var(--warm-white); border: 1px solid var(--line); border-radius: 6px; }
 .donation-preview h2 { margin: 0 0 18px; font-size: 24px; font-weight: 700; }
 .donation-offer { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; }
+.donation-offer-first { margin-top: 0; margin-bottom: 22px; }
 .donation-offer a { color: var(--brand-dark); font-weight: 700; text-decoration: underline; }
 .donation-error { margin: 16px 0 0; color: #8a1f11; }
 .donation-honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }

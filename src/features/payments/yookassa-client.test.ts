@@ -62,7 +62,7 @@ async function rejectedValue(operation: Promise<unknown>): Promise<unknown> {
 }
 
 describe("createPayment", () => {
-  it("sends the exact SBP payment request and parses the pending response", async () => {
+  it("sends a redirect payment without forcing a method and parses the pending response", async () => {
     const { client, fetch, signal, timeoutSignal } = clientFixture();
     fetch.mockResolvedValue(jsonResponse(pendingFixture));
 
@@ -105,7 +105,6 @@ describe("createPayment", () => {
     });
     expect(JSON.parse(init?.body as string)).toEqual({
       amount: { value: "300.00", currency: "RUB" },
-      payment_method_data: { type: "sbp" },
       confirmation: {
         type: "redirect",
         return_url: RETURN_URL,
@@ -115,6 +114,46 @@ describe("createPayment", () => {
       metadata: { donationId: DONATION_ID },
     });
   });
+
+  it("accepts a pending checkout response before a method is chosen", async () => {
+    const { client, fetch } = clientFixture();
+    const body = copyFixture(pendingFixture) as Record<string, unknown>;
+    delete body.payment_method;
+    fetch.mockResolvedValue(jsonResponse(body));
+
+    await expect(
+      client.createPayment({
+        amountKopecks: 30_000,
+        donationId: DONATION_ID,
+        returnUrl: RETURN_URL,
+      }),
+    ).resolves.toMatchObject({
+      paymentMethod: undefined,
+    });
+  });
+
+  it.each(["sbp", "bank_card", "yoo_money"] as const)(
+    "accepts a pending create response with payment method %s",
+    async (type) => {
+      const { client, fetch } = clientFixture();
+      fetch.mockResolvedValue(
+        jsonResponse({
+          ...copyFixture(pendingFixture),
+          payment_method: { type },
+        }),
+      );
+
+      await expect(
+        client.createPayment({
+          amountKopecks: 30_000,
+          donationId: DONATION_ID,
+          returnUrl: RETURN_URL,
+        }),
+      ).resolves.toMatchObject({
+        paymentMethod: { type },
+      });
+    },
+  );
 
   it.each([
     ["succeeded", succeededFixture],
@@ -142,7 +181,7 @@ describe("createPayment", () => {
     ["amount", { amount: { value: "300.01", currency: "RUB" } }],
     ["currency", { amount: { value: "300.00", currency: "USD" } }],
     ["metadata", { metadata: { donationId: "another-donation" } }],
-    ["payment method", { payment_method: { type: "bank_card" } }],
+    ["payment method", { payment_method: { type: "sberbank" } }],
     ["confirmation type", { confirmation: { type: "embedded" } }],
     ["pending confirmation", { confirmation: undefined }],
   ])("rejects a create response with mismatched %s", async (_, replacement) => {

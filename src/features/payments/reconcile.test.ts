@@ -180,7 +180,18 @@ describe("reconcileVerifiedPayment", () => {
     },
     {
       name: "payment method",
-      providerPayment: payment({ paymentMethod: { type: "bank_card" } }),
+      providerPayment: payment({ paymentMethod: { type: "sberbank" } }),
+      alertCode: paymentAlertCodes.paymentMethodMismatch,
+    },
+    {
+      name: "missing terminal payment method",
+      providerPayment: payment({
+        status: "succeeded",
+        paid: true,
+        capturedAt: "2026-08-24T18:05:04.321Z",
+        paymentMethod: undefined,
+        confirmation: undefined,
+      }),
       alertCode: paymentAlertCodes.paymentMethodMismatch,
     },
   ])(
@@ -242,6 +253,37 @@ describe("provider payment binding", () => {
     expect(fixture.repository.transitionPending).not.toHaveBeenCalled();
     expect(fixture.stored).toMatchObject({ providerPaymentId: PAYMENT_ID });
   });
+
+  it("accepts a pending payment before a method is chosen", async () => {
+    const fixture = repositoryFixture();
+
+    await expect(
+      reconcileVerifiedPayment(
+        {
+          payment: payment({ paymentMethod: undefined }),
+          terminalEvent: null,
+        },
+        { repository: fixture.repository },
+      ),
+    ).resolves.toMatchObject({ kind: "pending" });
+  });
+
+  it.each(["sbp", "bank_card", "yoo_money"] as const)(
+    "accepts payment method %s",
+    async (type) => {
+      const fixture = repositoryFixture();
+
+      await expect(
+        reconcileVerifiedPayment(
+          {
+            payment: payment({ paymentMethod: { type } }),
+            terminalEvent: null,
+          },
+          { repository: fixture.repository },
+        ),
+      ).resolves.toMatchObject({ kind: "pending" });
+    },
+  );
 
   it("accepts the same provider ID on replay", async () => {
     const stored = donation({ providerPaymentId: PAYMENT_ID });

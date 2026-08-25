@@ -12,6 +12,7 @@ const BODY_LIMIT = 8192;
 const validBody = {
   amountRoubles: 300,
   acceptedOffer: true,
+  acceptedPersonalData: true,
   attemptId: ATTEMPT_ID,
   website: "",
 };
@@ -52,6 +53,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
     })),
     now: () => new Date("2026-08-24T18:00:00.000Z"),
     environment: "test",
+    reportConfigError: vi.fn(),
     ...overrides,
   };
 }
@@ -220,6 +222,9 @@ describe("payment create HTTP guards", () => {
     });
     expectPrivacy(response);
     expect(deps.createPayment).not.toHaveBeenCalled();
+    expect(deps.reportConfigError).toHaveBeenCalledExactlyOnceWith(
+      "payments-disabled",
+    );
   });
 
   it("hashes the client key from request headers before create", async () => {

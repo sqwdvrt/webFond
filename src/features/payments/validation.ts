@@ -7,6 +7,7 @@ import type {
 
 const PAYMENT_INPUT_KEYS = [
   "acceptedOffer",
+  "acceptedPersonalData",
   "amountRoubles",
   "attemptId",
   "website",
@@ -47,6 +48,7 @@ export function parsePaymentCreateInput(
     !hasExactPaymentInputKeys(value) ||
     value.website !== "" ||
     value.acceptedOffer !== true ||
+    value.acceptedPersonalData !== true ||
     typeof value.attemptId !== "string" ||
     !UUID_V4_PATTERN.test(value.attemptId) ||
     typeof value.amountRoubles !== "number" ||
@@ -60,6 +62,7 @@ export function parsePaymentCreateInput(
   const input: PaymentCreateInput = {
     amountRoubles: value.amountRoubles,
     acceptedOffer: true,
+    acceptedPersonalData: true,
     attemptId: value.attemptId,
     website: "",
   };

@@ -23,6 +23,14 @@ describe("siteConfig", () => {
     expect(siteConfig.helpHref).toBe("/help");
     expect(siteConfig.routes.contactsForHelp).toBe("/contacts#help-request");
     expect(siteConfig.routes.public).toContain("/requisites");
+    expect(siteConfig.routes.public).toEqual(
+      expect.arrayContaining([
+        "/privacy",
+        "/personal-data-consent",
+        "/donation-offer",
+        "/cookies",
+      ]),
+    );
   });
 
   it("uses a valid local site origin fallback", () => {

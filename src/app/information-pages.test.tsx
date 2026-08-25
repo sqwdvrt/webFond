@@ -55,8 +55,8 @@ describe("information pages", () => {
 
   it("renders the live donation form when payments are enabled", () => {
     render(renderHelpPage({ paymentsEnabled: () => true }));
-    expect(screen.getByRole("button", { name: "Оплатить через СБП" })).toBeEnabled();
-    expect(screen.queryByText("СБП подключается.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeEnabled();
+    expect(screen.queryByText("Онлайн-оплата подключается.")).not.toBeInTheDocument();
   });
 
   it("fails closed to the preview when availability throws", () => {

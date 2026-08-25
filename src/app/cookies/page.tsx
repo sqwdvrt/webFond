@@ -1,3 +1,11 @@
-import { LegalPlaceholder, legalPlaceholderMetadata } from "@/components/legal/legal-placeholder";
-export const metadata = legalPlaceholderMetadata("Использование файлов cookie");
-export default function Page() { return <LegalPlaceholder title="Использование файлов cookie" />; }
+import {
+  publishedLegalMetadata,
+  PublishedLegalDocumentView,
+} from "@/components/legal/published-legal-document";
+import { cookiesPublication } from "@/content/legal";
+
+export const metadata = publishedLegalMetadata(cookiesPublication);
+
+export default function Page() {
+  return <PublishedLegalDocumentView document={cookiesPublication} />;
+}

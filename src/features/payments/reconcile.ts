@@ -7,7 +7,10 @@ import {
   type PaymentAlertReporter,
 } from "./alerts";
 import type { PaymentRepository } from "./repository";
-import type { SupportedWebhookEvent } from "./types";
+import {
+  isSupportedYooKassaPaymentMethod,
+  type SupportedWebhookEvent,
+} from "./types";
 import {
   YooKassaHttpError,
   YooKassaProtocolError,
@@ -110,7 +113,15 @@ export async function reconcileVerifiedPayment(
   if (payment.amount.currency !== "RUB" || donation.currency !== "RUB") {
     return permanentRejection(paymentAlertCodes.currencyMismatch, report);
   }
-  if (payment.paymentMethod?.type !== "sbp") {
+  const paymentMethodType = payment.paymentMethod?.type;
+  if (paymentMethodType !== undefined) {
+    if (!isSupportedYooKassaPaymentMethod(paymentMethodType)) {
+      return permanentRejection(
+        paymentAlertCodes.paymentMethodMismatch,
+        report,
+      );
+    }
+  } else if (payment.status !== "pending") {
     return permanentRejection(
       paymentAlertCodes.paymentMethodMismatch,
       report,

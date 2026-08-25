@@ -13,7 +13,11 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    exclude: [...configDefaults.exclude, paymentIntegrationPath],
+    exclude: [
+      ...configDefaults.exclude,
+      paymentIntegrationPath,
+      ".worktrees/**",
+    ],
     setupFiles: ["./vitest.setup.ts"],
   },
 });
