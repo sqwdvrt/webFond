@@ -1,9 +1,13 @@
 import { fileURLToPath } from "node:url";
 
-import { configDefaults, defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
+
+import { requireSafePaymentsTestDatabaseUrl } from "./src/features/payments/test-database-url.js";
 
 const paymentIntegrationPath =
   "src/features/payments/payments.integration.test.ts";
+
+requireSafePaymentsTestDatabaseUrl();
 
 export default defineConfig({
   resolve: {
@@ -12,8 +16,7 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "jsdom",
-    exclude: [...configDefaults.exclude, paymentIntegrationPath],
-    setupFiles: ["./vitest.setup.ts"],
+    environment: "node",
+    include: [paymentIntegrationPath],
   },
 });

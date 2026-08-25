@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import AboutPage from "@/app/about/page";
 import ContactsPage from "@/app/contacts/page";
-import HelpPage from "@/app/help/page";
+import HelpPage, { renderHelpPage } from "@/app/help/page";
 import RequisitesError from "@/app/requisites/error";
 import { renderRequisitesPage } from "@/app/requisites/page";
 import { siteConfig } from "@/config/site";
@@ -51,6 +51,23 @@ describe("information pages", () => {
     render(<HelpPage />);
     expect(screen.getByRole("group")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Онлайн-оплата скоро будет доступна" })).toBeDisabled();
+  });
+
+  it("renders the live donation form when payments are enabled", () => {
+    render(renderHelpPage({ paymentsEnabled: () => true }));
+    expect(screen.getByRole("button", { name: "Оплатить через СБП" })).toBeEnabled();
+    expect(screen.queryByText("СБП подключается.")).not.toBeInTheDocument();
+  });
+
+  it("fails closed to the preview when availability throws", () => {
+    render(
+      renderHelpPage({
+        paymentsEnabled: () => {
+          throw new Error("config");
+        },
+      }),
+    );
+    expect(screen.getByRole("group")).toBeDisabled();
   });
 
   it("shows confirmed contacts and no application form", () => {

@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 enum DonationStatus {
@@ -101,4 +103,14 @@ model ContactRequest {
   updatedAt DateTime             @updatedAt
 
   @@index([status, createdAt])
+}
+
+model PaymentRateLimitBucket {
+  key         String
+  windowStart DateTime
+  count       Int
+  expiresAt   DateTime
+
+  @@id([key, windowStart])
+  @@index([expiresAt])
 }

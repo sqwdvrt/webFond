@@ -348,7 +348,7 @@ a {
 .page-hero h1 { max-width: 900px; margin: 18px 0; font-size: clamp(48px, 6vw, 76px); }
 .page-hero h1, .hero h1 { overflow-wrap: anywhere; }
 .page-hero p { max-width: 740px; margin: 0; color: var(--muted); font-size: 19px; }
-.donation-preview { max-width: 700px; padding: 30px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.donation-preview { position: relative; max-width: 700px; padding: 30px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 .status-note { padding: 15px 17px; color: var(--brand-dark); background: var(--brand-soft); border-left: 4px solid var(--brand); }
 .donation-preview fieldset { margin: 28px 0 0; padding: 0; border: 0; }
 .donation-preview legend { margin-bottom: 14px; font-weight: 700; }
@@ -356,8 +356,16 @@ a {
 .amount-grid label { position: relative; }
 .amount-grid input { position: absolute; opacity: 0; }
 .amount-grid span { min-height: 48px; display: grid; place-items: center; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; }
+.amount-grid input:checked + span { color: var(--brand-dark); border-color: var(--brand); background: var(--brand-soft); }
+.amount-grid input:focus-visible + span { outline: 3px solid var(--surface); outline-offset: 3px; box-shadow: 0 0 0 6px #111111; }
 .other-amount { display: grid; gap: 8px; margin-top: 18px; color: var(--muted); font-size: 14px; }
 .other-amount input { min-height: 48px; padding: 0 12px; background: var(--warm-white); border: 1px solid var(--line); border-radius: 6px; }
+.donation-preview h2 { margin: 0 0 18px; font-size: 24px; font-weight: 700; }
+.donation-offer { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; }
+.donation-offer a { color: var(--brand-dark); font-weight: 700; text-decoration: underline; }
+.donation-error { margin: 16px 0 0; color: #8a1f11; }
+.donation-honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+.donation-preview .button { margin: 22px 12px 0 0; }
 .button-muted { margin: 22px 0 0; color: #737c76; background: #e5e8e5; }
 .preview-note { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
 .text-grid { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 56px; }
