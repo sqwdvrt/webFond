@@ -43,4 +43,14 @@ describe("charter activities", () => {
       /Помощь рядом|Забота о старших|Поддержка детям|pomoshch-ryadom|zabota-o-starshih|podderzhka-detyam/,
     );
   });
+
+  it("groups charter activities into three public clusters", async () => {
+    const { charterGroups } = await import("@/content/projects");
+    expect(charterGroups.map((group) => group.title)).toEqual([
+      "Люди",
+      "Места и территории",
+      "Как собираем помощь",
+    ]);
+    expect(charterGroups.flatMap((group) => [...group.items])).toEqual(projects);
+  });
 });

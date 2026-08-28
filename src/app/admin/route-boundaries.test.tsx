@@ -5,9 +5,13 @@ const mocks = vi.hoisted(() => ({
   getAdminSession: vi.fn(),
   redirect: vi.fn(),
   requireAdminSession: vi.fn(),
+  usePathname: vi.fn(() => "/admin"),
 }));
 
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("next/navigation", () => ({
+  redirect: mocks.redirect,
+  usePathname: mocks.usePathname,
+}));
 vi.mock("@/lib/admin-auth/session", () => ({
   getAdminSession: mocks.getAdminSession,
   requireAdminSession: mocks.requireAdminSession,
@@ -24,6 +28,7 @@ describe("admin route boundaries", () => {
     mocks.requireAdminSession.mockResolvedValue({
       username: "fixture-operator",
     });
+    mocks.usePathname.mockReturnValue("/admin");
   });
 
   it("executes the session guard before rendering protected content", async () => {

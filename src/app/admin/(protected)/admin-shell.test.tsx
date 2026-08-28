@@ -14,6 +14,7 @@ vi.mock("@/lib/admin-auth/session", () => ({
 
 import { AdminShell } from "./admin-shell";
 import ProtectedAdminLayout from "./layout";
+import { usePathname } from "next/navigation";
 
 describe("AdminShell", () => {
   it("defines the shared workspace, content controls and narrow viewport scrolling", () => {
@@ -43,6 +44,7 @@ describe("AdminShell", () => {
       /\.workspaceBrand span,\s*\.currentAccount\s*\{[^}]*display:\s*none/,
     );
     expect(css).toContain(".submitButtonLabel");
+    expect(css).toContain('a[aria-current="page"]');
 
     const stickyOffsets = [
       ...css.matchAll(/\.workspaceHeader\s*\{[^}]*top:\s*([^;]+);/g),
@@ -65,6 +67,7 @@ describe("AdminShell", () => {
 
     const links = [
       ["Обзор", "/admin"],
+      ["Письма", "/admin/messages"],
       ["Проекты", "/admin/projects"],
       ["Новости", "/admin/news"],
       ["Документы", "/admin/documents"],
@@ -88,11 +91,28 @@ describe("AdminShell", () => {
       ),
     ).toEqual([]);
   });
+
+  it("marks the open section as the current page", () => {
+    vi.mocked(usePathname).mockReturnValue("/admin/news");
+    render(
+      <AdminShell username="fixture-operator">
+        <h1>Содержимое раздела</h1>
+      </AdminShell>,
+    );
+
+    expect(screen.getByRole("link", { name: "Новости" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Обзор" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
 });
 
 describe("ProtectedAdminLayout", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mocks.requireAdminSession.mockReset();
     mocks.requireAdminSession.mockResolvedValue({
       username: "fixture-operator",
     });

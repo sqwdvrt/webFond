@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PageHero } from "@/components/content/page-hero";
 import { DonationForm } from "@/components/donation/donation-form";
@@ -9,8 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Помочь фонду",
-  description:
-    "Способы участия и подготовка разового пожертвования онлайн.",
+  description: "Поддержать фонд «Быть Добру». Пожертвование через СБП.",
   alternates: { canonical: "/help" },
 };
 
@@ -21,6 +21,27 @@ type HelpPageDependencies = {
 const defaultDependencies: HelpPageDependencies = {
   paymentsEnabled: () => readPaymentsAvailability().enabled,
 };
+
+const trustItems = [
+  {
+    title: "Система быстрых платежей",
+    text: "Пожертвование переводится разово через СБП.",
+  },
+  {
+    title: "Платежные данные",
+    text: "Реквизиты карты обрабатывает платежный сервис. Фонд их не хранит.",
+  },
+  {
+    title: "Разовый перевод",
+    text: "Пожертвование не предполагает подписку и автоматические списания.",
+  },
+  {
+    title: "Оферта",
+    text: "Перед оплатой необходимо принять опубликованную оферту пожертвования.",
+    href: "/donation-offer",
+    linkLabel: "Читать оферту",
+  },
+] as const;
 
 export function renderHelpPage(
   dependencies: HelpPageDependencies = defaultDependencies,
@@ -36,19 +57,38 @@ export function renderHelpPage(
     <>
       <PageHero
         eyebrow="Помочь фонду"
-        title="Разовая помощь онлайн"
+        title="Поддержать фонд"
         description={
           enabled
-            ? "Можно сделать разовое пожертвование картой, через СБП или ЮMoney. Подписок, автосписаний и сохранения карты нет."
-            : "Подключение оплаты готовится. Подписок, автосписаний и сохранения карты не будет."
+            ? "Разовое пожертвование через СБП."
+            : "Онлайн-оплата через СБП находится в подключении."
         }
       />
       <section className="page-section">
-        <div className="container text-grid">
-          <div>
-            <span className="section-number">01 Пожертвование</span>
+        <div className="container">
+          <div className="section-heading">
+            <span className="section-number">01</span>
+            <div>
+              <h2>Пожертвование</h2>
+              <p>
+                {enabled
+                  ? "Выберите сумму и перейдите к оплате через СБП."
+                  : "Выберите сумму пожертвования."}
+              </p>
+            </div>
           </div>
-          {enabled ? <DonationForm /> : <DonationPreview />}
+          <div className="help-layout">
+            {enabled ? <DonationForm /> : <DonationPreview />}
+            <div className="trust-grid">
+              {trustItems.map((item) => (
+                <article key={item.title}>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                  {"href" in item ? <Link href={item.href}>{item.linkLabel}</Link> : null}
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
       <section className="page-section surface-band">
@@ -57,11 +97,14 @@ export function renderHelpPage(
             <span className="section-number">02 Другие способы</span>
           </div>
           <div className="prose">
-            <h2>Участие без платежа</h2>
+            <h2>Другие формы участия</h2>
             <p>
-              Информация о волонтерстве, партнерстве и информационной поддержке
-              готовится к публикации.
+              Если хотите помочь как волонтер, партнер или рассказать о фонде,
+              напишите нам.
             </p>
+            <Link className="button button-secondary" href="/contacts">
+              Написать фонду
+            </Link>
           </div>
         </div>
       </section>

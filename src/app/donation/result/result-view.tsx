@@ -24,8 +24,8 @@ export function ResultView({ kind }: DonationResultView) {
       <section className="page-hero">
         <div className="container page-hero-inner">
           <span className="eyebrow">Пожертвование</span>
-          <h1>Платеж не завершён</h1>
-          <p>Оплата не прошла. Можно вернуться и попробовать ещё раз.</p>
+          <h1>Платеж не завершен</h1>
+          <p>Оплата не прошла. Вы можете повторить перевод.</p>
           <div className="hero-actions">
             <Link className="button button-primary" href="/help">
               Повторить перевод
@@ -42,7 +42,7 @@ export function ResultView({ kind }: DonationResultView) {
         <div className="container page-hero-inner">
           <span className="eyebrow">Пожертвование</span>
           <h1>Платеж обрабатывается</h1>
-          <p>Статус ещё не подтверждён. Обновите страницу через несколько секунд.</p>
+          <p>Статус еще не подтвержден. Обновите страницу через несколько секунд.</p>
         </div>
       </section>
     );
@@ -52,8 +52,8 @@ export function ResultView({ kind }: DonationResultView) {
     <section className="page-hero">
       <div className="container page-hero-inner">
         <span className="eyebrow">Пожертвование</span>
-        <h1>Не удалось проверить платёж</h1>
-        <p>Проверка у платёжного сервиса временно недоступна. Обновите страницу позже.</p>
+        <h1>Не удалось проверить платеж</h1>
+        <p>Проверка у платежного сервиса временно недоступна. Обновите страницу позже.</p>
       </div>
     </section>
   );

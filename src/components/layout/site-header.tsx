@@ -3,11 +3,17 @@
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { siteConfig } from "@/config/site";
 
+function isCurrentPath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteHeader() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const closeMenu = () => setIsMenuOpen(false);
@@ -18,7 +24,12 @@ export function SiteHeader() {
       if (event.key === "Escape") setIsMenuOpen(false);
     };
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isMenuOpen]);
 
   return (
@@ -27,10 +38,11 @@ export function SiteHeader() {
         <Link className="brand-link" href="/" aria-label={siteConfig.name}>
           <span className="brand-mark">
             <Image
-              src="/brand/logo.jpg"
-              width={1254}
-              height={1254}
-              alt="Логотип фонда «Быть Добру»"
+              src="/brand/mark.jpg"
+              width={880}
+              height={880}
+              sizes="52px"
+              alt="Знак фонда «Быть Добру»: руки, росток и птица"
               priority
             />
           </span>
@@ -42,7 +54,11 @@ export function SiteHeader() {
 
         <nav className="desktop-navigation" aria-label="Основная">
           {siteConfig.navigation.map((item) => (
-            <Link key={item.href} href={item.href}>
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isCurrentPath(pathname, item.href) ? "page" : undefined}
+            >
               {item.label}
             </Link>
           ))}
@@ -67,26 +83,34 @@ export function SiteHeader() {
       </div>
 
       {isMenuOpen ? (
-        <nav
-          className="mobile-navigation"
-          id="mobile-navigation"
-          aria-label="Мобильная"
-        >
-          <div className="container mobile-navigation-inner">
-            {siteConfig.navigation.map((item) => (
-              <Link key={item.href} href={item.href} onClick={closeMenu}>
-                {item.label}
+        <>
+          <div className="menu-backdrop" onClick={closeMenu} />
+          <nav
+            className="mobile-navigation"
+            id="mobile-navigation"
+            aria-label="Мобильная"
+          >
+            <div className="container mobile-navigation-inner">
+              {siteConfig.navigation.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isCurrentPath(pathname, item.href) ? "page" : undefined}
+                  onClick={closeMenu}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <Link
+                className="button button-primary mobile-help"
+                href={siteConfig.helpHref}
+                onClick={closeMenu}
+              >
+                Помочь
               </Link>
-            ))}
-            <Link
-              className="button button-primary mobile-help"
-              href={siteConfig.helpHref}
-              onClick={closeMenu}
-            >
-              Помочь
-            </Link>
-          </div>
-        </nav>
+            </div>
+          </nav>
+        </>
       ) : null}
     </header>
   );

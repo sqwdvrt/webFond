@@ -31,9 +31,11 @@ function expectCharterList(container: HTMLElement) {
     name: "Цели, предмет и виды деятельности фонда",
   })).toBeVisible();
   expect(screen.getByText(
-    "Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства.",
+    "По уставу фонд вправе поддерживать людей, сохранять значимые места и объединять тех, кто хочет помочь. Ниже перечень видов деятельности.",
   )).toBeVisible();
-  expect(screen.queryByText("Виды деятельности по уставу")).not.toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Люди" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Места и территории" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Как собираем помощь" })).toBeVisible();
 
   const activityList = container.querySelector("ul.activity-list");
   expect(activityList).toHaveAttribute("role", "list");
@@ -85,7 +87,7 @@ describe("projects page", () => {
 
     expectCharterList(container);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Проекты временно недоступны. Попробуйте обновить страницу позже.",
+      "Проекты сейчас не открываются. Попробуйте позже.",
     );
     expect(screen.queryByText("database unavailable")).not.toBeInTheDocument();
   });

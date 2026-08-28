@@ -4,6 +4,7 @@ import {
   FolderKanban,
   HandCoins,
   Landmark,
+  Mail,
   Newspaper,
 } from "lucide-react";
 import Link from "next/link";
@@ -11,6 +12,12 @@ import Link from "next/link";
 import styles from "../admin.module.css";
 
 const overviewSections = [
+  {
+    href: "/admin/messages",
+    label: "Письма",
+    description: "Сообщения с контактной формы",
+    icon: Mail,
+  },
   {
     href: "/admin/projects",
     label: "Проекты",

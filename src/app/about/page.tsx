@@ -1,10 +1,110 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import { PageHero } from "@/components/content/page-hero";
 import { siteConfig } from "@/config/site";
+import { charterGroups } from "@/content/projects";
 
-export const metadata: Metadata = { title: "О фонде", description: "Миссия, уставные виды деятельности и подтвержденные сведения о фонде «Быть Добру».", alternates: { canonical: "/about" } };
+export const metadata: Metadata = {
+  title: "О фонде",
+  description:
+    "Благотворительный фонд «Быть Добру». Зарегистрирован в Москве 17 июля 2025 года.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
-  return <><PageHero eyebrow="О фонде" title="О фонде" description="Поддержка людей, оказавшихся в трудной жизненной ситуации, и развитие взаимопомощи." /><section className="page-section"><div className="container text-grid"><div><span className="section-number">01 История</span></div><div className="prose"><h2>Фонд зарегистрирован 17 июля 2025 года в Москве</h2><p>Цель фонда: поддержка людей, оказавшихся в трудной жизненной ситуации, и развитие взаимопомощи.</p><p>Виды деятельности фонда указаны в уставе и опубликованы на отдельной странице.</p></div></div></section><section className="page-section surface-band"><div className="container text-grid"><div><span className="section-number">02 Принципы</span></div><div className="principles"><p><strong>Гуманизм</strong><span>Внимание к достоинству и обстоятельствам каждого человека.</span></p><p><strong>Взаимопомощь</strong><span>Объединение людей вокруг добрых дел.</span></p><p><strong>Уважение</strong><span>Ответственное и бережное отношение.</span></p><Link className="button button-primary" href="/projects">Виды деятельности</Link></div></div></section><section className="page-section"><div className="container legal-summary"><h2>Юридические сведения</h2><p>ОГРН {siteConfig.legal.ogrn}, ИНН {siteConfig.legal.inn}, КПП {siteConfig.legal.kpp}</p><Link href="/requisites">Все реквизиты</Link></div></section></>;
+  return (
+    <>
+      <PageHero
+        eyebrow="О фонде"
+        title="Быть Добру"
+        description={siteConfig.tagline}
+      />
+
+      <section className="page-section">
+        <div className="container text-grid">
+          <div>
+            <span className="section-number">01 Кто мы</span>
+          </div>
+          <div className="prose">
+            <h2>Фонд зарегистрирован 17 июля 2025 года в Москве</h2>
+            <p>
+              Благотворительный фонд «Быть Добру» действует по уставу: поддержка
+              людей в трудной ситуации и тех, кто хочет помочь.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-section surface-band">
+        <div className="container">
+          <div className="section-heading">
+            <span className="section-number">02</span>
+            <div>
+              <h2>Кому можем помогать</h2>
+            </div>
+          </div>
+          <div className="info-grid">
+            {charterGroups.map((group) => (
+              <article className="info-card" key={group.title}>
+                <h3>{group.title}</h3>
+                <p>{group.lead}</p>
+                <ul>
+                  {group.items.map((item) => (
+                    <li key={item.description}>{item.homepageDescription}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="quiet-row">
+            <Link href="/projects">Полный перечень по уставу</Link>
+          </p>
+        </div>
+      </section>
+
+      <section className="page-section surface-band">
+        <div className="container">
+          <div className="section-heading">
+            <span className="section-number">03</span>
+            <div>
+              <h2>Сведения</h2>
+            </div>
+          </div>
+          <div className="fact-strip">
+            <dl>
+              <dt>Дата регистрации</dt>
+              <dd>{siteConfig.legal.registeredAt}</dd>
+            </dl>
+            <dl>
+              <dt>Город</dt>
+              <dd>Москва</dd>
+            </dl>
+            <dl>
+              <dt>ОГРН</dt>
+              <dd>{siteConfig.legal.ogrn}</dd>
+            </dl>
+            <dl>
+              <dt>ИНН</dt>
+              <dd>{siteConfig.legal.inn}</dd>
+            </dl>
+            <dl>
+              <dt>Почта</dt>
+              <dd>
+                <a href={`mailto:${siteConfig.legal.emailLabel}`}>
+                  {siteConfig.legal.emailLabel}
+                </a>
+              </dd>
+            </dl>
+            <dl>
+              <dt>Все данные</dt>
+              <dd>
+                <Link href="/requisites">Реквизиты фонда</Link>
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }

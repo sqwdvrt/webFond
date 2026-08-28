@@ -72,6 +72,27 @@
   border-color: #a63f36;
 }
 
+.field input[type="file"] {
+  min-height: 0;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+}
+
+.uploadFileLabel {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.uploadHint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
 .formMessage {
   min-height: 24px;
   margin: -4px 0 0;
@@ -620,6 +641,12 @@
   background: #34443a;
 }
 
+.adminNav a[aria-current="page"] {
+  color: #ffffff;
+  background: #34443a;
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
 .workspaceMain {
   min-width: 0;
 }
@@ -835,6 +862,41 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.messageList {
+  display: grid;
+  gap: 16px;
+}
+
+.messageCard {
+  padding: 22px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.messageCard header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+}
+
+.messageCard a {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+.messageCard time {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.messageCard p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 720px) {

@@ -4,8 +4,7 @@ export function DonationPreview() {
   return (
     <section className="donation-preview" aria-labelledby="donation-preview-title">
       <div className="status-note">
-        <strong id="donation-preview-title">Онлайн-оплата подключается.</strong>{" "}
-        Платежи на сайте пока недоступны.
+        <strong id="donation-preview-title">Онлайн-оплата через СБП находится в подключении.</strong>
       </div>
       <label className="donation-offer donation-offer-first">
         <input type="checkbox" disabled />
@@ -37,9 +36,9 @@ export function DonationPreview() {
         </label>
       </fieldset>
       <button className="button button-muted" type="button" disabled>
-        Онлайн-оплата скоро будет доступна
+        Оплатить онлайн
       </button>
-      <p className="preview-note">Только разовый платеж. Без подписки и автосписаний.</p>
+      <p className="preview-note">Принимаются разовые пожертвования.</p>
     </section>
   );
 }

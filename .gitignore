@@ -18,6 +18,10 @@ coverage/
 .env.*.local
 .env.vercel.local
 
+# Uploaded editorial files
+public/uploads/*
+!public/uploads/.gitkeep
+
 # Vercel
 .vercel
 

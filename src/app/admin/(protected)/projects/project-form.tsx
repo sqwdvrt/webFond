@@ -12,6 +12,7 @@ import {
   FormSuccess,
   SubmitButton,
 } from "../content-ui";
+import { MediaUrlField } from "../media-url-field";
 
 type FormAction = (
   state: ContentFormState,
@@ -122,11 +123,18 @@ export function ProjectForm({
           <FieldError id="content-error">{state.errors?.content}</FieldError>
         </div>
 
-        <div className={styles.field}>
-          <label htmlFor="imageUrl">Изображение</label>
-          <input {...field("imageUrl")} defaultValue={String(value("imageUrl"))} id="imageUrl" maxLength={4096} name="imageUrl" type="text" />
-          <FieldError id="imageUrl-error">{state.errors?.imageUrl}</FieldError>
-        </div>
+        <MediaUrlField
+          accept="image/jpeg,image/png,image/webp"
+          describedBy="imageUrl-error"
+          error={state.errors?.imageUrl}
+          hint="Можно вставить ссылку или загрузить JPEG, PNG, WebP."
+          id="imageUrl"
+          kind="image"
+          label="Изображение"
+          name="imageUrl"
+          uploadLabel="Загрузить изображение"
+          value={String(value("imageUrl"))}
+        />
 
         <div className={styles.field}>
           <label htmlFor="status">Статус</label>

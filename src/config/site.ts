@@ -7,13 +7,14 @@ export const siteConfig = {
   name: "Фонд «Быть Добру»",
   shortName: "ФБД",
   tagline: "Делая мир лучше",
+  headline: "Помогаем быть рядом",
   description:
-    "Благотворительный фонд поддержки людей, оказавшихся в трудной жизненной ситуации.",
+    "Фонд «Быть Добру». Поддержка людей в трудной ситуации и тех, кто хочет помочь.",
   siteUrl: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   foundedAt: "2025-07-17",
   helpHref: "/help",
   routes: {
-    contactsForHelp: "/contacts#help-request",
+    contactsForHelp: "/contacts",
     public: [
       "/",
       "/about",
@@ -42,5 +43,6 @@ export const siteConfig = {
     address:
       "109462, г. Москва, б-р Волжский, д. 51, стр. 17, помещ. 101",
     email: "SOROVOI@MAIL.RU",
+    emailLabel: "sorovoi@mail.ru",
   },
 } as const;

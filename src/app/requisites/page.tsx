@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/content/empty-state";
 import { PageHero } from "@/components/content/page-hero";
+import { CopyRequisitesButton } from "@/components/requisites/copy-button";
 import { siteConfig } from "@/config/site";
+import { formatPublishedRequisitesCopy } from "@/features/content-admin/requisites-copy";
 import {
   getPublishedRequisites,
   type PublishedRequisitesResult,
@@ -40,7 +42,7 @@ function confirmedLegalRows(): RequisitesRow[] {
     ["ИНН", siteConfig.legal.inn],
     ["КПП", siteConfig.legal.kpp],
     ["Адрес", siteConfig.legal.address],
-    ["Email", emailLink(siteConfig.legal.email)],
+    ["Email", emailLink(siteConfig.legal.emailLabel)],
   ];
 }
 
@@ -52,7 +54,7 @@ function publishedRows(requisites: RequisitesInput): RequisitesRow[] {
     ["ИНН", requisites.inn],
     ["КПП", requisites.kpp],
     ["Адрес", requisites.address],
-    ["Email", emailLink(requisites.email)],
+    ["Email", emailLink(requisites.email.toLowerCase())],
     ["Банк", requisites.bankName],
     ["Получатель", requisites.recipientName],
     ["Расчетный счет", requisites.checkingAccount],
@@ -80,7 +82,7 @@ export async function renderRequisitesPage(
       <PageHero
         eyebrow="Реквизиты"
         title="Сведения о фонде"
-        description="На странице указаны только подтвержденные регистрационные данные."
+        description="Юридические сведения фонда."
       />
       <section className="page-section">
         <div className="container requisites-layout">
@@ -92,14 +94,16 @@ export async function renderRequisitesPage(
               </div>
             ))}
           </dl>
-          {published ? null : result === null ? (
+          {published ? (
+            <CopyRequisitesButton text={formatPublishedRequisitesCopy(published)} />
+          ) : result === null ? (
             <p className="status-note" role="status">
-              Банковские реквизиты временно недоступны. Попробуйте обновить страницу позже.
+              Банковские данные сейчас не открываются. Попробуйте позже.
             </p>
           ) : (
             <EmptyState
-              title="Банковские реквизиты готовятся к публикации"
-              description="Они появятся после подтверждения владельцем фонда."
+              title="Банковские реквизиты"
+              description="Сведения о расчетном счете будут размещены дополнительно."
             />
           )}
         </div>

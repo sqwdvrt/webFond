@@ -24,8 +24,8 @@ export function SiteFooter() {
         <div>
           <h2>Контакты</h2>
           <address>
-            <a href={`mailto:${siteConfig.legal.email}`}>
-              {siteConfig.legal.email}
+            <a href={`mailto:${siteConfig.legal.emailLabel}`}>
+              {siteConfig.legal.emailLabel}
             </a>
             <span>{siteConfig.legal.address}</span>
           </address>

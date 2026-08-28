@@ -12,6 +12,7 @@ import {
   FormSuccess,
   SubmitButton,
 } from "../content-ui";
+import { MediaUrlField } from "../media-url-field";
 
 type FormAction = (
   state: ContentFormState,
@@ -103,11 +104,19 @@ export function DocumentForm({
           <FieldError id="category-error">{state.errors?.category}</FieldError>
         </div>
 
-        <div className={styles.field}>
-          <label htmlFor="fileUrl">Ссылка на документ</label>
-          <input {...field("fileUrl")} defaultValue={String(value("fileUrl"))} id="fileUrl" maxLength={2048} name="fileUrl" required type="text" />
-          <FieldError id="fileUrl-error">{state.errors?.fileUrl}</FieldError>
-        </div>
+        <MediaUrlField
+          accept="application/pdf"
+          describedBy="fileUrl-error"
+          error={state.errors?.fileUrl}
+          hint="Можно вставить ссылку или загрузить PDF."
+          id="fileUrl"
+          kind="document"
+          label="Ссылка на документ"
+          name="fileUrl"
+          required
+          uploadLabel="Загрузить документ"
+          value={String(value("fileUrl"))}
+        />
 
         <div className={styles.field}>
           <label htmlFor="status">Статус</label>

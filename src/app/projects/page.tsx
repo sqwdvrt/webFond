@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedCard } from "@/components/content/published-content";
-import { projects } from "@/content/projects";
+import { charterGroups, projects } from "@/content/projects";
 import {
   listPublishedProjects,
   type PublicEditorialListRow,
@@ -40,10 +40,18 @@ export async function renderProjectsPage(
       <PageHero
         eyebrow="Устав фонда"
         title="Цели, предмет и виды деятельности фонда"
-        description="Фонд помогает людям, которым особенно нужна поддержка, и объединяет необходимые для этого усилия и средства."
+        description="По уставу фонд вправе поддерживать людей, сохранять значимые места и объединять тех, кто хочет помочь. Ниже перечень видов деятельности."
       />
       <section className="page-section">
         <div className="container">
+          <div className="charter-groups info-grid">
+            {charterGroups.map((group) => (
+              <article className="info-card" key={group.title}>
+                <h2>{group.title}</h2>
+                <p>{group.lead}</p>
+              </article>
+            ))}
+          </div>
           <ul className="activity-list" role="list">
             {projects.map((project) => (
               <li key={project.description}>{project.homepageDescription}</li>
@@ -55,7 +63,7 @@ export async function renderProjectsPage(
         <section className="page-section">
           <div className="container">
             <p className="status-note" role="status">
-              Проекты временно недоступны. Попробуйте обновить страницу позже.
+              Проекты сейчас не открываются. Попробуйте позже.
             </p>
           </div>
         </section>

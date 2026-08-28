@@ -18,9 +18,16 @@ import { metadata as offerMetadata } from "@/app/donation-offer/page";
 import { metadata as cookiesMetadata } from "@/app/cookies/page";
 
 describe("SEO routes", () => {
-  it("sets site origin and Open Graph brand image", () => {
+  it("sets site origin and a 1200 by 630 Open Graph image", () => {
     expect(metadata.metadataBase).toBeInstanceOf(URL);
-    expect(metadata.openGraph?.images).toBeTruthy();
+    expect(metadata.openGraph?.images).toEqual([
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: expect.any(String),
+      },
+    ]);
   });
 
   it("forces dynamic sitemap rendering so a caught database failure is not cached", () => {

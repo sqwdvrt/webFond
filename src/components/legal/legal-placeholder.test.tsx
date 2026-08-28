@@ -6,7 +6,7 @@ import { LegalPlaceholder, legalPlaceholderMetadata } from "@/components/legal/l
 describe("LegalPlaceholder", () => {
   it("does not invent legal clauses", () => {
     render(<LegalPlaceholder title="Политика конфиденциальности" />);
-    expect(screen.getByText(/требует утверждения юристом/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Документ готовится к публикации" })).toBeVisible();
   });
 
   it("is noindex", () => {

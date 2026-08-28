@@ -12,7 +12,7 @@ describe("SiteHeader", () => {
       screen.getByRole("link", { name: "Фонд «Быть Добру»" }),
     ).toHaveAttribute("href", "/");
     expect(
-      screen.getByRole("img", { name: "Логотип фонда «Быть Добру»" }),
+      screen.getByRole("img", { name: "Знак фонда «Быть Добру»: руки, росток и птица" }),
     ).toBeVisible();
     expect(screen.getByRole("navigation", { name: "Основная" })).toBeVisible();
     expect(screen.getAllByRole("link", { name: "Помочь" })[0]).toHaveAttribute(

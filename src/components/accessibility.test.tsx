@@ -69,7 +69,12 @@ describe("public accessibility", () => {
     const { container } = render(
       await renderProjectsPage({ listProjects: async () => [] }),
     );
-    expect(Array.from(container.querySelectorAll("h1, h2, h3")).map((heading) => heading.tagName)).toEqual(["H1"]);
+    expect(Array.from(container.querySelectorAll("h1, h2, h3")).map((heading) => heading.tagName)).toEqual([
+      "H1",
+      "H2",
+      "H2",
+      "H2",
+    ]);
     expect(container.querySelectorAll("ul.activity-list > li")).toHaveLength(8);
   });
 

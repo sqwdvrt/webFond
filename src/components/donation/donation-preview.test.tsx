@@ -6,9 +6,7 @@ import { DonationPreview } from "@/components/donation/donation-preview";
 describe("DonationPreview", () => {
   it("is visibly unavailable and cannot submit data", () => {
     render(<DonationPreview />);
-    expect(screen.getByText("Онлайн-оплата подключается.").parentElement).toHaveTextContent(
-      "Онлайн-оплата подключается. Платежи на сайте пока недоступны.",
-    );
+    expect(screen.getByText("Онлайн-оплата через СБП находится в подключении.")).toBeVisible();
     expect(screen.getByRole("checkbox", {
       name: /согласие на обработку персональных данных/i,
     })).toBeDisabled();
@@ -29,6 +27,6 @@ describe("DonationPreview", () => {
     expect(screen.getByLabelText("Другая сумма")).toBeDisabled();
     expect(screen.queryByLabelText(/имя/i)).toBeNull();
     expect(screen.queryByLabelText(/email/i)).toBeNull();
-    expect(screen.getByRole("button", { name: "Онлайн-оплата скоро будет доступна" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeDisabled();
   });
 });

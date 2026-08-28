@@ -40,23 +40,29 @@ function requisitesDependencies(
 }
 
 describe("information pages", () => {
-  it("uses only approved about copy", () => {
+  it("uses only confirmed about copy without abstract principles", () => {
     render(<AboutPage />);
-    expect(screen.getByRole("heading", { level: 1, name: "О фонде" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Быть Добру" })).toBeVisible();
     expect(screen.getByText(/зарегистрирован 17 июля 2025 года в Москве/)).toBeVisible();
-    expect(screen.getByText(/Гуманизм/)).toBeVisible();
+    expect(screen.queryByText(/Заявки на помощь через сайт не принимаем/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Цифры и отчеты не выдумываем/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/не заполняем заранее/)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Люди" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Места и территории" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Как собираем помощь" })).toBeVisible();
+    expect(screen.queryByText(/Гуманизм|Взаимопомощь|Уважение/)).not.toBeInTheDocument();
   });
 
   it("keeps help payments disabled", () => {
     render(<HelpPage />);
     expect(screen.getByRole("group")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Онлайн-оплата скоро будет доступна" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeDisabled();
   });
 
   it("renders the live donation form when payments are enabled", () => {
     render(renderHelpPage({ paymentsEnabled: () => true }));
     expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeEnabled();
-    expect(screen.queryByText("Онлайн-оплата подключается.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Онлайн-оплата через СБП находится в подключении.")).not.toBeInTheDocument();
   });
 
   it("fails closed to the preview when availability throws", () => {
@@ -70,11 +76,14 @@ describe("information pages", () => {
     expect(screen.getByRole("group")).toBeDisabled();
   });
 
-  it("shows confirmed contacts and no application form", () => {
+  it("shows confirmed contacts and a message form that is not a help application", () => {
     render(<ContactsPage />);
-    expect(screen.getByRole("link", { name: "SOROVOI@MAIL.RU" })).toHaveAttribute("href", "mailto:SOROVOI@MAIL.RU");
-    expect(screen.getByText(/Сайт не принимает и не обрабатывает заявки на помощь/)).toBeVisible();
-    expect(screen.queryByRole("form")).toBeNull();
+    expect(screen.getByRole("link", { name: "sorovoi@mail.ru" })).toHaveAttribute("href", "mailto:sorovoi@mail.ru");
+    expect(screen.getByText(/Для обращений по деятельности фонда, поддержке и документам/)).toBeVisible();
+    expect(screen.queryByText(/Заявку на получение помощи сайт не принимает/)).not.toBeInTheDocument();
+    expect(screen.getByRole("form")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Отправить письмо" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /заявк/i })).not.toBeInTheDocument();
   });
 
   it("shows validated published legal and bank details with an email link", async () => {
@@ -90,6 +99,7 @@ describe("information pages", () => {
       "href",
       `mailto:${publishedRequisites.email}`,
     );
+    expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
   });
 
@@ -107,11 +117,12 @@ describe("information pages", () => {
       expect(screen.getByText(siteConfig.legal.inn)).toBeVisible();
       expect(screen.getByText(siteConfig.legal.kpp)).toBeVisible();
       expect(screen.getByText(siteConfig.legal.address)).toBeVisible();
-      expect(screen.getByRole("link", { name: siteConfig.legal.email })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: siteConfig.legal.emailLabel })).toHaveAttribute(
         "href",
-        `mailto:${siteConfig.legal.email}`,
+        `mailto:${siteConfig.legal.emailLabel}`,
       );
-      expect(screen.getByText(/Банковские реквизиты готовятся/)).toBeVisible();
+      expect(screen.getByText(/Банковские реквизиты/)).toBeVisible();
+      expect(screen.queryByRole("button", { name: "Скопировать реквизиты" })).not.toBeInTheDocument();
       expect(screen.queryByText(publishedRequisites.fullName)).not.toBeInTheDocument();
       expect(screen.queryByText(publishedRequisites.bankName)).not.toBeInTheDocument();
       expect(screen.queryByText(/БИК/)).toBeNull();
@@ -125,7 +136,7 @@ describe("information pages", () => {
 
     expect(screen.getByText(siteConfig.legal.ogrn)).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Банковские реквизиты временно недоступны. Попробуйте обновить страницу позже.",
+      "Банковские данные сейчас не открываются. Попробуйте позже.",
     );
     expect(screen.queryByText(publishedRequisites.bankName)).not.toBeInTheDocument();
     expect(screen.queryByText(/БИК/)).toBeNull();

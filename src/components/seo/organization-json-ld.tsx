@@ -8,7 +8,7 @@ export function OrganizationJsonLd() {
     legalName: siteConfig.name,
     url: siteConfig.siteUrl.toString(),
     foundingDate: siteConfig.foundedAt,
-    email: siteConfig.legal.email,
+    email: siteConfig.legal.emailLabel,
     taxID: siteConfig.legal.inn,
     identifier: [
       { "@type": "PropertyValue", propertyID: "ОГРН", value: siteConfig.legal.ogrn },

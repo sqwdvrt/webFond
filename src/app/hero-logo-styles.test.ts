@@ -23,12 +23,13 @@ function readDeclarations(selector: string) {
 describe("hero logo styles", () => {
   it("uses the approved adaptive surface contract", () => {
     expect(readDeclarations(".hero-logo")).toMatchObject({
-      width: "clamp(260px, 28vw, 390px)",
+      width: "clamp(240px, 26vw, 360px)",
       "max-width": "100%",
       "justify-self": "center",
-      padding: "8px",
-      border: "0",
-      "border-radius": "8px",
+      "aspect-ratio": "1",
+      padding: "28px",
+      border: "2px solid var(--brand)",
+      "border-radius": "50%",
       overflow: "hidden",
       "box-shadow": "0 18px 48px rgba(31, 91, 37, 0.12)",
     });

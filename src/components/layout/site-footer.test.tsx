@@ -8,9 +8,9 @@ describe("SiteFooter", () => {
     render(<SiteFooter />);
 
     expect(screen.getByRole("link", { name: "Фонд «Быть Добру»" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "SOROVOI@MAIL.RU" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "sorovoi@mail.ru" })).toHaveAttribute(
       "href",
-      "mailto:SOROVOI@MAIL.RU",
+      "mailto:sorovoi@mail.ru",
     );
     expect(screen.getByText(`© ${new Date().getFullYear()} Фонд «Быть Добру»`)).toBeVisible();
     expect(screen.queryByText(/ОГРН/)).not.toBeInTheDocument();

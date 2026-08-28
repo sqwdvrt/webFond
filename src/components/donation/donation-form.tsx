@@ -271,7 +271,7 @@ export function DonationForm({
           </button>
         ) : null}
       </form>
-      <p className="preview-note">Только разовый платеж. Без подписки и автосписаний.</p>
+      <p className="preview-note">Принимаются разовые пожертвования.</p>
     </section>
   );
 }

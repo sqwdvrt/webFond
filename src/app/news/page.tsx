@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { EmptyState } from "@/components/content/empty-state";
+import { CollectionEmpty } from "@/components/content/empty-state";
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedCard } from "@/components/content/published-content";
 import { listPublishedNewsForRequest } from "@/features/content-admin/public-loaders";
@@ -63,13 +63,13 @@ export async function renderNewsPage(
       <PageHero
         eyebrow="Новости"
         title="Новости фонда"
-        description="Здесь появляются проверенные материалы о работе фонда."
+        description="Сообщения о работе фонда."
       />
       <section className="page-section">
         <div className="container">
           {publishedNews === null ? (
             <p className="status-note" role="status">
-              Новости временно недоступны. Попробуйте обновить страницу позже.
+              Новости сейчас не открываются. Попробуйте позже.
             </p>
           ) : publishedNews.length > 0 ? (
             <div className="published-grid">
@@ -85,9 +85,13 @@ export async function renderNewsPage(
               ))}
             </div>
           ) : (
-            <EmptyState
-              title="Материалы готовятся к публикации"
-              description="Новости появятся после проверки и утверждения."
+            <CollectionEmpty
+              title="Раздел будет дополнен"
+              description="В этом разделе публикуются новости фонда."
+              links={[
+                { href: "/about", label: "О фонде" },
+                { href: "/help", label: "Помочь" },
+              ]}
             />
           )}
         </div>

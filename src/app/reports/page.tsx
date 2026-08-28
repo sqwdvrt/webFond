@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { EmptyState } from "@/components/content/empty-state";
+import { CollectionEmpty } from "@/components/content/empty-state";
 import { PageHero } from "@/components/content/page-hero";
 import {
   listPublishedDocuments,
@@ -86,18 +86,22 @@ export async function renderReportsPage(
       <PageHero
         eyebrow="Отчеты"
         title="Отчеты фонда"
-        description="Здесь публикуются проверенные документы фонда."
+        description="Документы и отчетность фонда."
       />
       <section className="page-section">
         <div className="container">
           {groups === null ? (
             <p className="status-note" role="status">
-              Отчеты временно недоступны. Попробуйте обновить страницу позже.
+              Отчеты сейчас не открываются. Попробуйте позже.
             </p>
           ) : groups.size === 0 ? (
-            <EmptyState
-              title="Проверенные отчеты появятся здесь"
-              description="Документы появятся после проверки и утверждения."
+            <CollectionEmpty
+              title="Раздел будет дополнен"
+              description="В этом разделе публикуются документы и отчетность фонда."
+              links={[
+                { href: "/about", label: "О фонде" },
+                { href: "/help", label: "Помочь" },
+              ]}
             />
           ) : (
             <div className="published-body">

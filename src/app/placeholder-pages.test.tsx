@@ -43,24 +43,25 @@ describe("news page", () => {
       `/news/${publishedNews.slug}`,
     );
     expect(screen.getByText(publishedNews.summary!)).toBeVisible();
-    expect(screen.queryByText("Материалы готовятся к публикации")).not.toBeInTheDocument();
+    expect(screen.queryByText("Раздел будет дополнен")).not.toBeInTheDocument();
     expect(deps.listNews).toHaveBeenCalledOnce();
   });
 
   it("shows the honest empty state for an empty published list", async () => {
     render(await renderNewsPage(newsDependencies([])));
 
-    expect(screen.getByText("Материалы готовятся к публикации")).toBeVisible();
-    expect(screen.getByText("Новости появятся после проверки и утверждения.")).toBeVisible();
+    expect(screen.getByText("Раздел будет дополнен")).toBeVisible();
+    expect(screen.getByText(/В этом разделе публикуются новости фонда/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "О фонде" })).toHaveAttribute("href", "/about");
   });
 
   it("distinguishes a temporary read failure from an empty list", async () => {
     render(await renderNewsPage(newsDependencies(new Error("database unavailable"))));
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Новости временно недоступны. Попробуйте обновить страницу позже.",
+      "Новости сейчас не открываются. Попробуйте позже.",
     );
-    expect(screen.queryByText("Материалы готовятся к публикации")).not.toBeInTheDocument();
+    expect(screen.queryByText("Раздел будет дополнен")).not.toBeInTheDocument();
     expect(screen.queryByText("database unavailable")).not.toBeInTheDocument();
   });
 
