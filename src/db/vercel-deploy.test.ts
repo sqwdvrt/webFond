@@ -9,7 +9,7 @@ function read(relativePath: string) {
 }
 
 describe("Vercel release files", () => {
-  it("generates Prisma Client on install and migrates during the Vercel build", () => {
+  it("generates Prisma Client and migrates during the Vercel build, not on npm install", () => {
     const packageJson = JSON.parse(read("package.json")) as {
       engines?: { node?: string };
       scripts?: Record<string, string>;
@@ -20,7 +20,9 @@ describe("Vercel release files", () => {
     };
 
     expect(packageJson.engines?.node).toBe(">=20.9.0");
-    expect(packageJson.scripts?.postinstall).toBe("prisma generate");
+    expect(packageJson.scripts?.postinstall).toBeUndefined();
+    expect(packageJson.scripts?.prebuild).toBe("prisma generate");
+    expect(existsSync(resolve(root, "prisma/schema.prisma"))).toBe(true);
     expect(packageJson.scripts?.build).toBe("next build");
     expect(packageJson.scripts?.["vercel-build"]).toBe(
       "prisma generate && prisma migrate deploy && next build",
