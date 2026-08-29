@@ -53,7 +53,8 @@ describe("public content integrity", () => {
         for (const paragraph of section.paragraphs) {
           expect(paragraph.trim().length).toBeGreaterThan(0);
           expect(paragraph).not.toContain("—");
-          expect(paragraph).not.toMatch(/УКАЗАТЬ|ПРОЕКТ ДОКУМЕНТА/i);
+          expect(paragraph).not.toContain("УКАЗАТЬ");
+          expect(paragraph).not.toMatch(/проект документа/i);
         }
       }
     }

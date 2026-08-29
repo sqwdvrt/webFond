@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
-import { LegalPlaceholder, legalPlaceholderMetadata } from "@/components/legal/legal-placeholder";
+import {
+  LegalPlaceholder,
+  legalPlaceholderMetadata,
+} from "@/components/legal/legal-placeholder";
 import { PublishedLegalDocumentView } from "@/components/legal/published-legal-document";
 import {
   donationOfferPublication,
@@ -10,7 +13,7 @@ import {
 export const metadata: Metadata =
   donationOfferPublication.status === "published"
     ? {
-        title: donationOfferPublication.title,
+        title: "Публичная оферта о заключении договора пожертвования",
         description:
           "Публичная оферта о заключении договора пожертвования Фонду «Быть Добру».",
         alternates: { canonical: "/donation-offer" },
@@ -31,6 +34,8 @@ export function renderDonationOfferPage(offer: DonationOfferPublication) {
         description:
           "Публичная оферта о заключении договора пожертвования Фонду «Быть Добру».",
         canonical: "/donation-offer",
+        fileHref: offer.fileHref,
+        fileLabel: offer.fileLabel,
         sections: offer.sections,
       }}
     />

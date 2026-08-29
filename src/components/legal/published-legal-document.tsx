@@ -21,6 +21,13 @@ export function PublishedLegalDocumentView({
     <section className="page-section">
       <div className="container published-body">
         <h1>{document.title}</h1>
+        {document.fileHref ? (
+          <p className="quiet-row">
+            <a download href={document.fileHref}>
+              {document.fileLabel ?? "Скачать документ Word"}
+            </a>
+          </p>
+        ) : null}
         {document.sections.map((section, sectionIndex) => (
           <section key={sectionIndex}>
             <h2>{section.heading}</h2>

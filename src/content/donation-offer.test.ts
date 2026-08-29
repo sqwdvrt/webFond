@@ -9,7 +9,7 @@ describe("donation offer publication", () => {
       return;
     }
 
-    expect(donationOfferPublication.version).toBe("2026-08-23");
+    expect(donationOfferPublication.version).toBe("2026-08-29");
     expect(donationOfferPublication.title.length).toBeGreaterThan(0);
     expect(donationOfferPublication.sections.length).toBeGreaterThan(0);
 

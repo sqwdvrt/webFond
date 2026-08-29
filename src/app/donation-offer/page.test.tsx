@@ -42,6 +42,9 @@ describe("donation offer page", () => {
     expect(
       screen.queryByText("Текст требует утверждения юристом"),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Скачать документ Word" }),
+    ).toHaveAttribute("href", "/documents/oferta-pozherstvovaniya.docx");
 
     for (const section of donationOfferPublication.sections) {
       expect(

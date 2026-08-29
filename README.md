@@ -125,7 +125,7 @@ YOOKASSA_RETURN_URL="http://localhost:3000/donation/result"
 
 `PAYMENTS_ENABLED=true` включает `/help` и `POST /api/payments/create` только если
 оферта опубликована и `PAYMENTS_OFFER_VERSION` совпадает с её версией. Текущая
-версия оферты: `2026-08-23`. Production требует HTTPS и `PAYMENTS_TRUST_PROXY=true`
+версия оферты: `2026-08-29`. Production требует HTTPS и `PAYMENTS_TRUST_PROXY=true`
 за reverse proxy, который сам формирует forwarding-заголовки.
 
 Маршруты:

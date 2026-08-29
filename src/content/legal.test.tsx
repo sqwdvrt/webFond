@@ -19,7 +19,12 @@ describe("published legal pages", () => {
         level: 1,
       }),
     ).toBeVisible();
-    expect(screen.getAllByText(/Neon, LLC/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Таймвэб\.Облако/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Neon, LLC/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Vercel Inc/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Скачать документ Word" }),
+    ).toHaveAttribute("href", "/documents/politika-personalnyh-dannyh.docx");
     expect(
       screen.queryByText("Текст требует утверждения юристом"),
     ).not.toBeInTheDocument();
@@ -34,6 +39,11 @@ describe("published legal pages", () => {
       }),
     ).toBeVisible();
     expect(screen.getByText(/ЮKassa/)).toBeVisible();
+    expect(screen.getByText(/Таймвэб\.Облако/)).toBeVisible();
+    expect(screen.queryByText(/Vercel Inc/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Скачать документ Word" }),
+    ).toHaveAttribute("href", "/documents/soglasie-na-obrabotku-dannyh.docx");
   });
 
   it("renders the cookie notice aligned with the privacy policy", () => {
