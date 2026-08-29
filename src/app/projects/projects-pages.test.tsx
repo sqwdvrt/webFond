@@ -28,10 +28,10 @@ function dependencies(result: PublicEditorialListRow[] | Error) {
 function expectCharterList(container: HTMLElement) {
   expect(screen.getByRole("heading", {
     level: 1,
-    name: "Цели, предмет и виды деятельности фонда",
+    name: "Чем занимается фонд",
   })).toBeVisible();
   expect(screen.getByText(
-    "По уставу фонд вправе поддерживать людей, сохранять значимые места и объединять тех, кто хочет помочь. Ниже перечень видов деятельности.",
+    "Помогаем людям, сохраняем значимые места и собираем поддержку тех, кто хочет участвовать. Ниже направления работы фонда.",
   )).toBeVisible();
   expect(screen.getByRole("heading", { name: "Люди" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Места и территории" })).toBeVisible();

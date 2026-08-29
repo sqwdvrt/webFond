@@ -46,9 +46,14 @@ describe("hero logo styles", () => {
     expect(mobileStyles).not.toContain("justify-self: start");
   });
 
-  it("keeps the header mark square like the hero photo", () => {
+  it("keeps the header mark unframed on the navbar", () => {
     expect(readDeclarations(".brand-mark")).toMatchObject({
-      "border-radius": "8px",
+      background: "transparent",
+      border: "0",
+    });
+    expect(readDeclarations(".brand-mark img")).toMatchObject({
+      padding: "0",
+      "mix-blend-mode": "multiply",
     });
   });
 });

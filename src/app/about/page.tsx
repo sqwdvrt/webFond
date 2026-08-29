@@ -24,13 +24,13 @@ export default function AboutPage() {
       <section className="page-section">
         <div className="container text-grid">
           <div>
-            <span className="section-number">01 Кто мы</span>
+            <span className="section-number">01</span>
           </div>
           <div className="prose">
             <h2>Фонд зарегистрирован 17 июля 2025 года в Москве</h2>
             <p>
-              Благотворительный фонд «Быть Добру» действует по уставу: поддержка
-              людей в трудной ситуации и тех, кто хочет помочь.
+              Благотворительный фонд «Быть Добру» помогает людям в трудной ситуации
+              и тем, кто хочет поддержать добрые дела.
             </p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function AboutPage() {
             ))}
           </div>
           <p className="quiet-row">
-            <Link href="/projects">Полный перечень по уставу</Link>
+            <Link href="/projects">Все направления</Link>
           </p>
         </div>
       </section>

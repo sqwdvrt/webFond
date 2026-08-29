@@ -45,12 +45,18 @@ describe("charter activities", () => {
   });
 
   it("groups charter activities into three public clusters", async () => {
-    const { charterGroups } = await import("@/content/projects");
+    const { charterGroups, homepageHelpGroups } = await import("@/content/projects");
     expect(charterGroups.map((group) => group.title)).toEqual([
       "Люди",
       "Места и территории",
       "Как собираем помощь",
     ]);
     expect(charterGroups.flatMap((group) => [...group.items])).toEqual(projects);
+    expect(homepageHelpGroups.map((group) => group.title)).toEqual([
+      "Людям в трудной ситуации",
+      "Пожилым и детям",
+      "Значимым местам",
+    ]);
+    expect(JSON.stringify(homepageHelpGroups)).not.toMatch(/по уставу фонд вправе/i);
   });
 });

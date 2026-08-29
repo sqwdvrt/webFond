@@ -15,15 +15,16 @@ describe("siteConfig", () => {
     expect(siteConfig.navigation.map((item) => item.href)).toEqual([
       "/about",
       "/projects",
-      "/reports",
-      "/news",
+      "/need-help",
+      "/requisites",
       "/contacts",
     ]);
     expect(siteConfig.navigation.find((item) => item.href === "/projects")?.label).toBe("Деятельность");
     expect(siteConfig.helpHref).toBe("/help");
-    expect(siteConfig.routes.contactsForHelp).toBe("/contacts");
+    expect(siteConfig.routes.contactsForHelp).toBe("/need-help");
     expect(siteConfig.legal.emailLabel).toBe("sorovoi@mail.ru");
     expect(siteConfig.routes.public).toContain("/requisites");
+    expect(siteConfig.routes.public).toContain("/need-help");
     expect(siteConfig.routes.public).toEqual(
       expect.arrayContaining([
         "/privacy",
@@ -36,7 +37,7 @@ describe("siteConfig", () => {
 
   it("uses a valid local site origin fallback", () => {
     expect(siteConfig.siteUrl).toBeInstanceOf(URL);
-    expect(siteConfig.siteUrl.origin).toMatch(/^https?:\/\//);
+    expect(siteConfig.siteUrl.origin).toBe("https://fond-bit-dobru.ru");
     expect(siteConfig.foundedAt).toBe("2025-07-17");
   });
 });

@@ -8,6 +8,7 @@ import { metadata as homeMetadata } from "@/app/page";
 import { metadata as aboutMetadata } from "@/app/about/page";
 import { metadata as contactsMetadata } from "@/app/contacts/page";
 import { metadata as helpMetadata } from "@/app/help/page";
+import { metadata as needHelpMetadata } from "@/app/need-help/page";
 import { metadata as projectsMetadata } from "@/app/projects/page";
 import { metadata as requisitesMetadata } from "@/app/requisites/page";
 import { generateNewsMetadata } from "@/app/news/page";
@@ -54,6 +55,7 @@ describe("SEO routes", () => {
       "/",
       "/about",
       "/help",
+      "/need-help",
       "/projects",
       "/requisites",
       "/contacts",
@@ -90,6 +92,7 @@ describe("SEO routes", () => {
       "/",
       "/about",
       "/help",
+      "/need-help",
       "/projects",
       "/requisites",
       "/contacts",
@@ -117,7 +120,15 @@ describe("SEO routes", () => {
   });
 
   it("gives every indexable page unique metadata and a canonical URL", () => {
-    const pages = [homeMetadata, aboutMetadata, helpMetadata, projectsMetadata, requisitesMetadata, contactsMetadata];
+    const pages = [
+      homeMetadata,
+      aboutMetadata,
+      helpMetadata,
+      needHelpMetadata,
+      projectsMetadata,
+      requisitesMetadata,
+      contactsMetadata,
+    ];
     expect(new Set(pages.map((page) => page.title)).size).toBe(pages.length);
     for (const page of pages) {
       expect(page.title).toBeTruthy();
@@ -126,9 +137,11 @@ describe("SEO routes", () => {
     }
   });
 
-  it("uses charter wording for the activities page metadata", () => {
-    expect(projectsMetadata.title).toBe("Цели, предмет и виды деятельности фонда");
-    expect(projectsMetadata.description).toBe("Виды деятельности фонда «Быть Добру» по уставу.");
+  it("uses public wording for the activities page metadata", () => {
+    expect(projectsMetadata.title).toBe("Чем занимается фонд");
+    expect(projectsMetadata.description).toBe(
+      "Направления работы фонда «Быть Добру»: помощь людям, сохранение значимых мест и сбор поддержки.",
+    );
     expect(projectsMetadata.alternates?.canonical).toBe("/projects");
   });
 

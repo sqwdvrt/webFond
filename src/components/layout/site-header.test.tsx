@@ -15,6 +15,16 @@ describe("SiteHeader", () => {
       screen.getByRole("img", { name: "Знак фонда «Быть Добру»: руки, росток и птица" }),
     ).toBeVisible();
     expect(screen.getByRole("navigation", { name: "Основная" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Нужна помощь" })).toHaveAttribute(
+      "href",
+      "/need-help",
+    );
+    expect(screen.getByRole("link", { name: "Документы" })).toHaveAttribute(
+      "href",
+      "/requisites",
+    );
+    expect(screen.queryByRole("link", { name: "Новости" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Отчеты" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Помочь" })[0]).toHaveAttribute(
       "href",
       "/help",

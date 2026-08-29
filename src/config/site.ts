@@ -10,15 +10,16 @@ export const siteConfig = {
   headline: "Фонд «Быть Добру»",
   description:
     "Помогаем людям, оказавшимся в трудной жизненной ситуации, и объединяем тех, кто готов поддержать добрые дела.",
-  siteUrl: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  siteUrl: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fond-bit-dobru.ru"),
   foundedAt: "2025-07-17",
   helpHref: "/help",
   routes: {
-    contactsForHelp: "/contacts",
+    contactsForHelp: "/need-help",
     public: [
       "/",
       "/about",
       "/help",
+      "/need-help",
       "/projects",
       "/requisites",
       "/contacts",
@@ -31,8 +32,8 @@ export const siteConfig = {
   navigation: [
     { label: "О фонде", href: "/about" },
     { label: "Деятельность", href: "/projects" },
-    { label: "Отчеты", href: "/reports" },
-    { label: "Новости", href: "/news" },
+    { label: "Нужна помощь", href: "/need-help" },
+    { label: "Документы", href: "/requisites" },
     { label: "Контакты", href: "/contacts" },
   ] satisfies NavigationItem[],
   legal: {

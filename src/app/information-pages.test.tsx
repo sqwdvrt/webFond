@@ -55,8 +55,14 @@ describe("information pages", () => {
 
   it("keeps help payments disabled", () => {
     render(<HelpPage />);
-    expect(screen.getByRole("group")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeDisabled();
+    expect(
+      screen.getByRole("heading", { name: "Онлайн-пожертвования скоро будут доступны" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Посмотреть реквизиты" })).toHaveAttribute(
+      "href",
+      "/requisites",
+    );
   });
 
   it("renders the live donation form when payments are enabled", () => {
@@ -73,7 +79,9 @@ describe("information pages", () => {
         },
       }),
     );
-    expect(screen.getByRole("group")).toBeDisabled();
+    expect(
+      screen.getByRole("heading", { name: "Онлайн-пожертвования скоро будут доступны" }),
+    ).toBeVisible();
   });
 
   it("shows confirmed contacts and a message form that is not a help application", () => {

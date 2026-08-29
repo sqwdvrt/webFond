@@ -11,8 +11,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Цели, предмет и виды деятельности фонда",
-  description: "Виды деятельности фонда «Быть Добру» по уставу.",
+  title: "Чем занимается фонд",
+  description:
+    "Направления работы фонда «Быть Добру»: помощь людям, сохранение значимых мест и сбор поддержки.",
   alternates: { canonical: "/projects" },
 };
 
@@ -38,9 +39,9 @@ export async function renderProjectsPage(
   return (
     <>
       <PageHero
-        eyebrow="Устав фонда"
-        title="Цели, предмет и виды деятельности фонда"
-        description="По уставу фонд вправе поддерживать людей, сохранять значимые места и объединять тех, кто хочет помочь. Ниже перечень видов деятельности."
+        eyebrow="Деятельность"
+        title="Чем занимается фонд"
+        description="Помогаем людям, сохраняем значимые места и собираем поддержку тех, кто хочет участвовать. Ниже направления работы фонда."
       />
       <section className="page-section">
         <div className="container">

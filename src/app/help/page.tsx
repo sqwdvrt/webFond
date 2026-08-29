@@ -61,7 +61,7 @@ export function renderHelpPage(
         description={
           enabled
             ? "Разовое пожертвование через СБП."
-            : "Онлайн-оплата через СБП находится в подключении."
+            : "Онлайн-пожертвования скоро будут доступны. Пока можно помочь по реквизитам или написать фонду."
         }
       />
       <section className="page-section">
@@ -72,8 +72,8 @@ export function renderHelpPage(
               <h2>Пожертвование</h2>
               <p>
                 {enabled
-                  ? "Выберите сумму и перейдите к оплате через СБП."
-                  : "Выберите сумму пожертвования."}
+                  ? "Выберите сумму и перейдите к оплате через СБП. Платеж разовый, без подписки."
+                  : "Когда оплата будет подключена, здесь появится форма: сумма, согласие, оферта и кнопка оплаты."}
               </p>
             </div>
           </div>
@@ -94,13 +94,16 @@ export function renderHelpPage(
       <section className="page-section surface-band">
         <div className="container text-grid">
           <div>
-            <span className="section-number">02 Другие способы</span>
+            <span className="section-number">02</span>
           </div>
           <div className="prose">
             <h2>Другие формы участия</h2>
             <p>
-              Если хотите помочь как волонтер, партнер или рассказать о фонде,
-              напишите нам.
+              Поддержать фонд можно по реквизитам, письмом или как волонтер и партнер.
+            </p>
+            <p className="quiet-row">
+              <Link href="/requisites">Банковские реквизиты</Link>
+              <Link href="/need-help">Частые вопросы</Link>
             </p>
             <Link className="button button-secondary" href="/contacts">
               Написать фонду
