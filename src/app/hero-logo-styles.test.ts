@@ -29,7 +29,7 @@ describe("hero logo styles", () => {
       "aspect-ratio": "1",
       padding: "28px",
       border: "2px solid var(--brand)",
-      "border-radius": "50%",
+      "border-radius": "8px",
       overflow: "hidden",
       "box-shadow": "0 18px 48px rgba(31, 91, 37, 0.12)",
     });
@@ -44,5 +44,11 @@ describe("hero logo styles", () => {
     expect(mobileStyles).not.toMatch(/\.hero-logo\s*\{/);
     expect(mobileStyles).not.toContain("width: min(100%, 330px)");
     expect(mobileStyles).not.toContain("justify-self: start");
+  });
+
+  it("keeps the header mark square like the hero photo", () => {
+    expect(readDeclarations(".brand-mark")).toMatchObject({
+      "border-radius": "8px",
+    });
   });
 });

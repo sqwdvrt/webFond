@@ -10,12 +10,15 @@ describe("HomePage", () => {
   it("renders the mission, actions, and charter activities", () => {
     const { container } = render(<HomePage />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1, name: "Помогаем быть рядом" })).toBeVisible();
-    expect(screen.getByText(/поддерживает людей в трудной ситуации/)).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Фонд «Быть Добру»" })).toBeVisible();
+    expect(
+      screen.getByText(
+        /Помогаем людям, оказавшимся в трудной жизненной ситуации, и объединяем тех, кто готов поддержать добрые дела/,
+      ),
+    ).toBeVisible();
     expect(screen.getByRole("link", { name: "Помочь фонду" })).toHaveAttribute("href", "/help");
-    expect(screen.getByRole("link", { name: "О фонде" })).toHaveAttribute("href", "/about");
-    expect(screen.queryByRole("link", { name: "Нужна помощь?" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Чем занимается фонд" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Нужна помощь?" })).toHaveAttribute("href", "/contacts");
+    expect(screen.getByRole("heading", { level: 2, name: "Цели, предмет и виды деятельности фонда" })).toBeVisible();
     expect(container.querySelector("ul.activity-list")).not.toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
       ...charterGroups.map((group) => group.title),
@@ -35,7 +38,7 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      "Чем занимается фонд",
+      "Цели, предмет и виды деятельности фонда",
       "Как помочь",
       "Новости и отчеты",
       "Напишите нам",

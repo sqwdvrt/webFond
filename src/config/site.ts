@@ -7,9 +7,9 @@ export const siteConfig = {
   name: "Фонд «Быть Добру»",
   shortName: "ФБД",
   tagline: "Делая мир лучше",
-  headline: "Помогаем быть рядом",
+  headline: "Фонд «Быть Добру»",
   description:
-    "Фонд «Быть Добру». Поддержка людей в трудной ситуации и тех, кто хочет помочь.",
+    "Помогаем людям, оказавшимся в трудной жизненной ситуации, и объединяем тех, кто готов поддержать добрые дела.",
   siteUrl: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   foundedAt: "2025-07-17",
   helpHref: "/help",

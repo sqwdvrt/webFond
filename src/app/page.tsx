@@ -20,16 +20,13 @@ export default function HomePage() {
           <div>
             <span className="eyebrow">Благотворительный фонд</span>
             <h1>{siteConfig.headline}</h1>
-            <p className="hero-lead">
-              Фонд «Быть Добру» поддерживает людей в трудной ситуации и тех,
-              кто хочет помочь.
-            </p>
+            <p className="hero-lead">{siteConfig.description}</p>
             <div className="hero-actions">
               <Link className="button button-primary" href="/help">
                 Помочь фонду
               </Link>
-              <Link className="button button-secondary" href="/about">
-                О фонде
+              <Link className="button button-secondary" href={siteConfig.routes.contactsForHelp}>
+                Нужна помощь?
               </Link>
             </div>
           </div>
@@ -50,7 +47,7 @@ export default function HomePage() {
         <div className="container">
           <SectionHeading
             number="01"
-            title="Чем занимается фонд"
+            title="Цели, предмет и виды деятельности фонда"
             intro="По уставу фонд вправе поддерживать людей, сохранять значимые места и объединять тех, кто хочет помочь."
           />
           <div className="info-grid">
