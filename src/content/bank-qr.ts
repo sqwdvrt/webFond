@@ -1,4 +1,4 @@
-export type BankQrId = "tbank" | "alfa" | "vtb";
+export type BankQrId = "alfa" | "vtb";
 
 export type BankQrOption = {
   id: BankQrId;
@@ -31,21 +31,23 @@ const FUND_INN = "9721254417";
 const FUND_KPP = "772101001";
 const PAYMENT_PURPOSE = "Пожертвование на уставную деятельность";
 
+// Temporarily unpublished. Restore by putting this object first in bankQrOptions.
+export const unpublishedTbankQr = {
+  id: "tbank",
+  label: "Т-Банк",
+  src: "/qr/tbank.png",
+  alt: "QR-код для перевода в приложении Т-Банка",
+  recipientName: FUND_RECIPIENT,
+  inn: FUND_INN,
+  kpp: FUND_KPP,
+  bankName: "АО «ТБанк»",
+  bik: "044525974",
+  checkingAccount: "40703810700000000011",
+  correspondentAccount: "30101810145250000974",
+  paymentPurpose: PAYMENT_PURPOSE,
+} as const;
+
 export const bankQrOptions = [
-  {
-    id: "tbank",
-    label: "Т-Банк",
-    src: "/qr/tbank.png",
-    alt: "QR-код для перевода в приложении Т-Банка",
-    recipientName: FUND_RECIPIENT,
-    inn: FUND_INN,
-    kpp: FUND_KPP,
-    bankName: "АО «ТБанк»",
-    bik: "044525974",
-    checkingAccount: "40703810700000000011",
-    correspondentAccount: "30101810145250000974",
-    paymentPurpose: PAYMENT_PURPOSE,
-  },
   {
     id: "alfa",
     label: "Альфа-Банк",

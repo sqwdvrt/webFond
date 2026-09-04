@@ -7,7 +7,7 @@ import { bankQrOptions } from "@/content/bank-qr";
 
 import { BankQrTransfer } from "./bank-qr-transfer";
 
-function optionById(id: "tbank" | "alfa" | "vtb") {
+function optionById(id: "alfa" | "vtb") {
   const option = bankQrOptions.find((item) => item.id === id);
   if (!option) {
     throw new Error(`Missing bank QR option ${id}`);
@@ -16,11 +16,11 @@ function optionById(id: "tbank" | "alfa" | "vtb") {
 }
 
 describe("BankQrTransfer", () => {
-  it("shows three bank choices and no QR or account until a bank is selected", () => {
+  it("shows Alfa-Bank and VTB choices and no QR or account until a bank is selected", () => {
     render(<BankQrTransfer />);
 
     expect(screen.getByRole("group", { name: "Банк" })).toBeVisible();
-    expect(screen.getByRole("radio", { name: "Т-Банк" })).not.toBeChecked();
+    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "ВТБ" })).not.toBeChecked();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();

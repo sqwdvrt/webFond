@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { bankQrOptions, formatBankQrCopy } from "./bank-qr";
+import { bankQrOptions, formatBankQrCopy, unpublishedTbankQr } from "./bank-qr";
 
-function optionById(id: "tbank" | "alfa" | "vtb") {
+function optionById(id: "alfa" | "vtb") {
   const option = bankQrOptions.find((item) => item.id === id);
   if (!option) {
     throw new Error(`Missing bank QR option ${id}`);
@@ -11,13 +11,15 @@ function optionById(id: "tbank" | "alfa" | "vtb") {
 }
 
 describe("bank QR catalog", () => {
-  it("lists T-Bank, Alfa-Bank and VTB in that order", () => {
-    expect(bankQrOptions.map((item) => item.id)).toEqual(["tbank", "alfa", "vtb"]);
+  it("lists Alfa-Bank and VTB while T-Bank stays unpublished", () => {
+    expect(bankQrOptions.map((item) => item.id)).toEqual(["alfa", "vtb"]);
+    expect(unpublishedTbankQr.id).toBe("tbank");
+    expect(unpublishedTbankQr.src).toBe("/qr/tbank.png");
   });
 
-  it("formats Alfa copy with its account and BIK, without the T-Bank account", () => {
+  it("formats Alfa copy with its account and BIK, without the VTB account", () => {
     const alfa = optionById("alfa");
-    const tbank = optionById("tbank");
+    const vtb = optionById("vtb");
     const text = formatBankQrCopy(alfa);
 
     expect(text).toContain(`Получатель: ${alfa.recipientName}`);
@@ -27,8 +29,8 @@ describe("bank QR catalog", () => {
     expect(text).toContain(`Расчетный счет: ${alfa.checkingAccount}`);
     expect(text).toContain(`Корреспондентский счет: ${alfa.correspondentAccount}`);
     expect(text).toContain(`Назначение платежа: ${alfa.paymentPurpose}`);
-    expect(text).not.toContain(tbank.checkingAccount);
-    expect(alfa.checkingAccount).not.toBe(tbank.checkingAccount);
+    expect(text).not.toContain(vtb.checkingAccount);
+    expect(alfa.checkingAccount).not.toBe(vtb.checkingAccount);
   });
 
   it("publishes the confirmed VTB account, not a placeholder", () => {

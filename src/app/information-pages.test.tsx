@@ -65,7 +65,7 @@ describe("information pages", () => {
       "/requisites",
     );
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
-    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
+    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
     expect(
@@ -98,7 +98,8 @@ describe("information pages", () => {
     expect(screen.queryByText("Онлайн-оплата через СБП находится в подключении.")).not.toBeInTheDocument();
     expect(screen.queryByText("Онлайн-пожертвования скоро будут доступны")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
-    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
+    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
   });
 
   it("fails closed to the preview when availability throws", () => {
@@ -139,7 +140,7 @@ describe("information pages", () => {
     );
     expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
+    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
     expect(

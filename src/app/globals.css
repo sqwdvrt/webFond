@@ -516,7 +516,7 @@ a {
 .bank-qr-transfer { display: grid; gap: 18px; max-width: 760px; }
 .bank-qr-transfer fieldset { margin: 0; padding: 0; border: 0; }
 .bank-qr-transfer legend { margin-bottom: 14px; font-weight: 700; }
-.bank-qr-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bank-qr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
 .bank-qr-grid label { position: relative; }
 .bank-qr-grid input { position: absolute; opacity: 0; }
 .bank-qr-grid span {
