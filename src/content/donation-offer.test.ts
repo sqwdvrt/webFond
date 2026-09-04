@@ -17,13 +17,13 @@ describe("donation offer publication", () => {
       (section) => section.heading === "7. Персональные данные",
     );
     expect(personalData?.paragraphs.join("\n")).toMatch(
-      /адрес электронной почты[\s\S]*кассового чека[\s\S]*ЮKassa/s,
+      /адрес электронной почты[\s\S]*кассового чека[\s\S]*ЮKassa/,
     );
     expect(personalData?.paragraphs.join("\n")).toMatch(
-      /Имя[\s\S]*не запрашивается/s,
+      /Имя[\s\S]*не запрашивается/,
     );
     expect(personalData?.paragraphs.join("\n")).not.toMatch(
-      /не запрашивает[\s\S]*адрес электронной почты/s,
+      /не запрашивает[\s\S]*адрес электронной почты/,
     );
 
     for (const section of donationOfferPublication.sections) {
