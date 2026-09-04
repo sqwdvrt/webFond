@@ -71,14 +71,24 @@ function isJsonContentType(value: string | null): boolean {
   return value?.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
 
-function sameOrigin(request: Request): boolean {
+function sameOrigin(
+  request: Request,
+  siteUrl: string | undefined = process.env.SITE_URL,
+): boolean {
   const origin = request.headers.get("Origin");
   if (!origin) {
     return false;
   }
 
   try {
-    return new URL(origin).origin === new URL(request.url).origin;
+    const requestOrigin = new URL(origin).origin;
+    if (requestOrigin === new URL(request.url).origin) {
+      return true;
+    }
+    if (!siteUrl) {
+      return false;
+    }
+    return requestOrigin === new URL(siteUrl).origin;
   } catch {
     return false;
   }

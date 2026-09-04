@@ -60,6 +60,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
 
 function request(init: {
   origin?: string | null;
+  url?: string;
   contentType?: string;
   contentLength?: string;
   body?: BodyInit | null;
@@ -74,7 +75,7 @@ function request(init: {
     headers.set("Content-Length", init.contentLength);
   }
 
-  return new Request(`${SITE_ORIGIN}/api/payments/create`, {
+  return new Request(init.url ?? `${SITE_ORIGIN}/api/payments/create`, {
     method: "POST",
     headers,
     body: init.body ?? JSON.stringify(validBody),
@@ -165,6 +166,31 @@ describe("payment create HTTP guards", () => {
       expect(deps.readConfig).not.toHaveBeenCalled();
     },
   );
+
+  it("accepts Origin that matches SITE_URL when the request is bound to an internal host", async () => {
+    const previousSiteUrl = process.env.SITE_URL;
+    process.env.SITE_URL = SITE_ORIGIN;
+    const deps = dependencies();
+
+    try {
+      const response = await handlePaymentCreate(
+        request({
+          origin: SITE_ORIGIN,
+          url: "http://0.0.0.0:3000/api/payments/create",
+        }),
+        deps,
+      );
+
+      expect(response.status).toBe(200);
+      expect(deps.createPayment).toHaveBeenCalledOnce();
+    } finally {
+      if (previousSiteUrl === undefined) {
+        delete process.env.SITE_URL;
+      } else {
+        process.env.SITE_URL = previousSiteUrl;
+      }
+    }
+  });
 
   it("returns 400 for malformed JSON without calling create", async () => {
     const deps = dependencies();
