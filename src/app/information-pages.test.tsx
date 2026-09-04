@@ -60,6 +60,7 @@ describe("information pages", () => {
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "ЮKassa" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Как устроена оплата" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Посмотреть реквизиты" })).toHaveAttribute(
       "href",
       "/requisites",
@@ -82,7 +83,8 @@ describe("information pages", () => {
     expect(
       screen.getByText(/Выберите сумму и перейдите к оплате на стороне ЮKassa/),
     ).toBeVisible();
-    expect(screen.getByRole("heading", { name: "ЮKassa" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Как устроена оплата" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "ЮKassa" })).not.toBeInTheDocument();
     expect(
       screen.getByText(
         "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице. Email нужен для кассового чека и передаётся в ЮKassa.",

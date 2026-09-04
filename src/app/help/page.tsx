@@ -23,38 +23,13 @@ const defaultDependencies: HelpPageDependencies = {
   paymentsEnabled: () => readPaymentsAvailability().enabled,
 };
 
-function trustItems(paymentsEnabled: boolean) {
-  if (!paymentsEnabled) {
-    return [
-      {
-        title: "Статус оплаты",
-        text: "Форма онлайн-оплаты появится после подключения платежного сервиса.",
-      },
-      {
-        title: "Платежные данные",
-        text: "Реквизиты карты будет обрабатывать платежный сервис. Фонд их не хранит.",
-      },
-      {
-        title: "Разовый перевод",
-        text: "Пожертвование не предполагает подписку и автоматические списания.",
-      },
-      {
-        title: "Оферта",
-        text: "Перед оплатой необходимо принять опубликованную оферту пожертвования.",
-        href: "/donation-offer",
-        linkLabel: "Читать оферту",
-      },
-    ] as const;
-  }
-
-  return [
-    {
-      title: "ЮKassa",
-      text: "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице. Email нужен для кассового чека и передаётся в ЮKassa.",
-    },
+function trustNote(paymentsEnabled: boolean) {
+  const facts = [
     {
       title: "Платежные данные",
-      text: "Реквизиты карты обрабатывает платежный сервис. Фонд их не хранит.",
+      text: paymentsEnabled
+        ? "Реквизиты карты обрабатывает платежный сервис. Фонд их не хранит."
+        : "Реквизиты карты будет обрабатывать платежный сервис. Фонд их не хранит.",
     },
     {
       title: "Разовый перевод",
@@ -67,6 +42,14 @@ function trustItems(paymentsEnabled: boolean) {
       linkLabel: "Читать оферту",
     },
   ] as const;
+
+  return {
+    heading: "Как устроена оплата",
+    lead: paymentsEnabled
+      ? "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице. Email нужен для кассового чека и передаётся в ЮKassa."
+      : "Форма онлайн-оплаты появится после подключения платежного сервиса.",
+    facts,
+  };
 }
 
 export function renderHelpPage(
@@ -78,6 +61,8 @@ export function renderHelpPage(
   } catch {
     enabled = false;
   }
+
+  const note = trustNote(enabled);
 
   return (
     <>
@@ -105,15 +90,26 @@ export function renderHelpPage(
           </div>
           <div className="help-layout">
             {enabled ? <DonationForm /> : <DonationPreview />}
-            <div className="trust-grid">
-              {trustItems(enabled).map((item) => (
-                <article key={item.title}>
-                  <h3>{item.title}</h3>
-                  <p>{item.text}</p>
-                  {"href" in item ? <Link href={item.href}>{item.linkLabel}</Link> : null}
-                </article>
-              ))}
-            </div>
+            <aside className="trust-note">
+              <h3>{note.heading}</h3>
+              <p>{note.lead}</p>
+              <ul>
+                {note.facts.map((item) => (
+                  <li key={item.title}>
+                    <strong>{item.title}</strong>
+                    <span>
+                      {item.text}
+                      {"href" in item ? (
+                        <>
+                          {" "}
+                          <Link href={item.href}>{item.linkLabel}</Link>
+                        </>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </aside>
           </div>
         </div>
       </section>

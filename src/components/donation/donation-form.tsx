@@ -178,25 +178,6 @@ export function DonationForm({
         }}
         noValidate
       >
-        <label className="donation-offer donation-offer-first">
-          <input
-            type="checkbox"
-            checked={acceptedPersonalData}
-            onChange={(event) => setAcceptedPersonalData(event.target.checked)}
-          />
-          <span>
-            Я даю{" "}
-            <a href="/personal-data-consent">
-              согласие на обработку персональных данных
-            </a>{" "}
-            и ознакомился с{" "}
-            <a href="/privacy">
-              Политикой Фонда в отношении обработки персональных данных
-            </a>
-            .
-          </span>
-        </label>
-
         <fieldset>
           <legend>Сумма разового пожертвования</legend>
           <div className="amount-grid">
@@ -246,6 +227,25 @@ export function DonationForm({
         <p className="preview-note">
           ЮKassa отправит кассовый чек на этот адрес.
         </p>
+
+        <label className="donation-offer">
+          <input
+            type="checkbox"
+            checked={acceptedPersonalData}
+            onChange={(event) => setAcceptedPersonalData(event.target.checked)}
+          />
+          <span>
+            Я даю{" "}
+            <a href="/personal-data-consent">
+              согласие на обработку персональных данных
+            </a>{" "}
+            и ознакомился с{" "}
+            <a href="/privacy">
+              Политикой Фонда в отношении обработки персональных данных
+            </a>
+            .
+          </span>
+        </label>
 
         <label className="donation-offer">
           <input

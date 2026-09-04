@@ -67,15 +67,17 @@ function renderForm(
 }
 
 describe("DonationForm", () => {
-  it("places personal data consent before the amount and requires both consents", async () => {
+  it("places personal data consent after the amount and requires both consents", async () => {
     const user = userEvent.setup();
     const { fetchImpl } = renderForm();
     const consent = screen.getByRole("checkbox", {
       name: /согласие на обработку персональных данных/i,
     });
     const amountLegend = screen.getByText("Сумма разового пожертвования");
+    const offer = screen.getByRole("checkbox", { name: /оферту пожертвования/i });
 
-    expect(consent.compareDocumentPosition(amountLegend) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(amountLegend.compareDocumentPosition(consent) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(consent.compareDocumentPosition(offer) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(
       screen.getByRole("link", {
         name: "согласие на обработку персональных данных",
