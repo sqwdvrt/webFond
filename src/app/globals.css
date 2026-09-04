@@ -403,6 +403,7 @@ a {
 .page-hero h1, .hero h1 { overflow-wrap: anywhere; }
 .page-hero p { max-width: 740px; margin: 0; color: var(--muted); font-size: 19px; }
 .donation-preview { position: relative; max-width: 700px; padding: 30px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.donation-form { max-width: none; border-color: color-mix(in srgb, var(--brand) 35%, var(--line)); box-shadow: 0 10px 28px rgba(17, 17, 17, 0.05); }
 .status-note { padding: 15px 17px; color: var(--brand-dark); background: var(--brand-soft); border-left: 4px solid var(--brand); }
 .donation-preview fieldset { margin: 28px 0 0; padding: 0; border: 0; }
 .donation-preview legend { margin-bottom: 14px; font-weight: 700; }
@@ -501,6 +502,9 @@ a {
 .contact-form-error { margin: 8px 0 0; color: #8a1f11; font-size: 14px; font-weight: 400; }
 .contact-form-success { margin: 16px 0 0; color: var(--brand-dark); font-weight: 700; }
 .requisites-copy { display: grid; gap: 12px; justify-items: start; }
+.requisites-aside { display: grid; gap: 24px; align-content: start; }
+.requisites-aside .bank-qr-transfer { max-width: none; }
+.requisites-aside .bank-qr-details { grid-template-columns: 1fr; }
 .contact-details p { margin-top: 28px; color: var(--muted); font-size: 14px; }
 .requisites-layout { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 18px; align-items: start; }
 .requisites-list { margin: 0; background: var(--surface); border: 1px solid var(--line); }
@@ -509,6 +513,51 @@ a {
 .requisites-list dt, .requisites-list dd { margin: 0; padding: 18px; }
 .requisites-list dt { color: var(--muted); border-right: 1px solid var(--line); font-size: 13px; }
 .requisites-list dd { overflow-wrap: anywhere; font-weight: 700; }
+.bank-qr-transfer { display: grid; gap: 18px; max-width: 760px; }
+.bank-qr-transfer fieldset { margin: 0; padding: 0; border: 0; }
+.bank-qr-transfer legend { margin-bottom: 14px; font-weight: 700; }
+.bank-qr-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bank-qr-grid label { position: relative; }
+.bank-qr-grid input { position: absolute; opacity: 0; }
+.bank-qr-grid span {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0 8px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-align: center;
+}
+.bank-qr-grid input:checked + span { color: var(--brand-dark); border-color: var(--brand); background: var(--brand-soft); }
+.bank-qr-grid input:focus-visible + span { outline: 3px solid var(--surface); outline-offset: 3px; box-shadow: 0 0 0 6px #111111; }
+.bank-qr-placeholder { margin: 0; color: var(--muted); }
+.bank-qr-details { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 18px; align-items: start; }
+.bank-qr-code {
+  margin: 0;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.bank-qr-code img {
+  display: block;
+  width: 240px;
+  height: 240px;
+  min-width: 220px;
+  min-height: 220px;
+  background: #fff;
+  image-rendering: pixelated;
+}
+.bank-qr-code figcaption { margin-top: 12px; }
+.bank-qr-code a { color: var(--brand-dark); font-weight: 700; }
+.bank-qr-account { display: grid; gap: 12px; justify-items: start; }
+.bank-qr-requisites { margin: 0; width: 100%; background: var(--surface); border: 1px solid var(--line); }
+.bank-qr-requisites div { display: grid; grid-template-columns: 160px minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+.bank-qr-requisites div:last-child { border-bottom: 0; }
+.bank-qr-requisites dt, .bank-qr-requisites dd { margin: 0; padding: 12px 14px; }
+.bank-qr-requisites dt { color: var(--muted); border-right: 1px solid var(--line); font-size: 13px; }
+.bank-qr-requisites dd { overflow-wrap: anywhere; font-weight: 700; }
 .legal-notice { max-width: 760px; padding: 28px; background: var(--surface); border-left: 4px solid var(--accent); }
 
 .site-footer {
@@ -720,9 +769,12 @@ a {
   .contact-band h2 { font-size: 38px; }
   .amount-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .text-grid, .contact-details, .requisites-layout, .info-grid, .fact-strip, .trust-grid { grid-template-columns: 1fr; gap: 28px; }
-  .requisites-list div { grid-template-columns: 1fr; }
+  .requisites-list div, .bank-qr-requisites div { grid-template-columns: 1fr; }
   .requisites-list dt { padding-bottom: 4px; border-right: 0; }
   .requisites-list dd { padding-top: 4px; }
+  .bank-qr-details { grid-template-columns: 1fr; }
+  .bank-qr-requisites dt { padding-bottom: 4px; border-right: 0; }
+  .bank-qr-requisites dd { padding-top: 4px; }
 
   .footer-bottom {
     display: grid;

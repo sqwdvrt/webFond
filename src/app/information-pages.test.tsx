@@ -59,16 +59,46 @@ describe("information pages", () => {
       screen.getByRole("heading", { name: "Онлайн-пожертвования скоро будут доступны" }),
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "ЮKassa" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Посмотреть реквизиты" })).toHaveAttribute(
       "href",
       "/requisites",
     );
+    expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
+    expect(
+      screen.getByText(
+        "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
+      ),
+    ).toBeVisible();
   });
 
   it("renders the live donation form when payments are enabled", () => {
     render(renderHelpPage({ paymentsEnabled: () => true }));
+    expect(screen.getByRole("heading", { level: 1, name: "Поддержать фонд" })).toBeVisible();
+    expect(screen.getByText(/Пожертвование через ЮKassa/)).toBeVisible();
+    expect(
+      screen.getByText(/Выберите сумму и перейдите к оплате на стороне ЮKassa/),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "ЮKassa" })).toBeVisible();
+    expect(
+      screen.getByText(
+        "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText(/если они включены в магазине/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeEnabled();
+    expect(
+      screen.getByText(
+        "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
+      ),
+    ).toBeVisible();
     expect(screen.queryByText("Онлайн-оплата через СБП находится в подключении.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Онлайн-пожертвования скоро будут доступны")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
   });
 
   it("fails closed to the preview when availability throws", () => {
@@ -109,6 +139,14 @@ describe("information pages", () => {
     );
     expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
+    expect(
+      screen.getByText(
+        "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
+      ),
+    ).toBeVisible();
   });
 
   it.each(["draft", "archived", "malformed"])(
@@ -134,6 +172,13 @@ describe("information pages", () => {
       expect(screen.queryByText(publishedRequisites.fullName)).not.toBeInTheDocument();
       expect(screen.queryByText(publishedRequisites.bankName)).not.toBeInTheDocument();
       expect(screen.queryByText(/БИК/)).toBeNull();
+      expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: /QR-код/ })).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(
+          "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
+        ),
+      ).not.toBeInTheDocument();
     },
   );
 
@@ -149,6 +194,13 @@ describe("information pages", () => {
     expect(screen.queryByText(publishedRequisites.bankName)).not.toBeInTheDocument();
     expect(screen.queryByText(/БИК/)).toBeNull();
     expect(screen.queryByText("private database detail")).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /QR-код/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("forces dynamic rendering so a caught database failure is not route-cached", () => {

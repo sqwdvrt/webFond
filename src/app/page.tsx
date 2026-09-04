@@ -5,11 +5,22 @@ import Link from "next/link";
 import { SectionHeading } from "@/components/content/section-heading";
 import { siteConfig } from "@/config/site";
 import { homepageHelpGroups } from "@/content/projects";
+import { readPaymentsAvailability } from "@/features/payments/config";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: siteConfig.headline,
   description: siteConfig.description,
   alternates: { canonical: "/" },
+};
+
+type HomePageDependencies = {
+  paymentsEnabled: () => boolean;
+};
+
+const defaultDependencies: HomePageDependencies = {
+  paymentsEnabled: () => readPaymentsAvailability().enabled,
 };
 
 const helpSteps = [
@@ -27,20 +38,27 @@ const helpSteps = [
   },
 ] as const;
 
-const trustItems = [
-  {
-    title: "Проверяемые сведения",
-    text: `Фонд зарегистрирован ${siteConfig.legal.registeredAt}. ОГРН ${siteConfig.legal.ogrn}, ИНН ${siteConfig.legal.inn}.`,
-  },
-  {
-    title: "Открытые документы",
-    text: "На сайте можно прочитать оферту, политику персональных данных и согласие на обработку.",
-  },
-  {
-    title: "Честный статус платежей",
-    text: "Онлайн-оплата еще подключается. Пока фонд принимает поддержку по реквизитам и через обращение.",
-  },
-] as const;
+function trustItems(paymentsEnabled: boolean) {
+  return [
+    {
+      title: "Проверяемые сведения",
+      text: `Фонд зарегистрирован ${siteConfig.legal.registeredAt}. ОГРН ${siteConfig.legal.ogrn}, ИНН ${siteConfig.legal.inn}.`,
+    },
+    {
+      title: "Открытые документы",
+      text: "На сайте можно прочитать оферту, политику персональных данных и согласие на обработку.",
+    },
+    paymentsEnabled
+      ? {
+          title: "Онлайн-оплата",
+          text: "Перевод доступен на странице помощи. Реквизиты карты обрабатывает платежный сервис, фонд их не хранит.",
+        }
+      : {
+          title: "Честный статус платежей",
+          text: "Онлайн-оплата еще подключается. Пока фонд принимает поддержку по реквизитам и через обращение.",
+        },
+  ] as const;
+}
 
 const documentLinks = [
   { href: "/requisites", label: "Реквизиты и ОГРН" },
@@ -49,7 +67,16 @@ const documentLinks = [
   { href: "/personal-data-consent", label: "Согласие на обработку данных" },
 ] as const;
 
-export default function HomePage() {
+export function renderHomePage(
+  dependencies: HomePageDependencies = defaultDependencies,
+) {
+  let paymentsEnabled = false;
+  try {
+    paymentsEnabled = dependencies.paymentsEnabled();
+  } catch {
+    paymentsEnabled = false;
+  }
+
   return (
     <>
       <section className="hero">
@@ -127,7 +154,7 @@ export default function HomePage() {
             intro="Доверие начинается с проверяемых данных, а не с красивых обещаний."
           />
           <div className="info-grid">
-            {trustItems.map((item) => (
+            {trustItems(paymentsEnabled).map((item) => (
               <article className="info-card" key={item.title}>
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
@@ -148,9 +175,13 @@ export default function HomePage() {
             <article className="help-card">
               <h3>Поддержать фонд</h3>
               <p>
-                Онлайн-оплата еще подключается. Реквизиты уже на сайте, туда же можно написать.
+                {paymentsEnabled
+                  ? "Можно поддержать фонд онлайн или по банковским реквизитам."
+                  : "Онлайн-оплата еще подключается. Реквизиты уже на сайте, туда же можно написать."}
               </p>
-              <Link href="/help">Перейти к помощи</Link>
+              <Link href="/help">
+                {paymentsEnabled ? "Перейти к оплате" : "Перейти к помощи"}
+              </Link>
             </article>
             <div className="help-note">
               <h3>Другие формы участия</h3>
@@ -194,4 +225,8 @@ export default function HomePage() {
       </section>
     </>
   );
+}
+
+export default function HomePage() {
+  return renderHomePage();
 }

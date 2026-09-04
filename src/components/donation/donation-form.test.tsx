@@ -90,6 +90,12 @@ describe("DonationForm", () => {
     await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
     expect(screen.getByRole("alert")).toHaveTextContent(/согласи|оферт|сумм/i);
     expect(fetchImpl).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(
+        "Оплата проходит на стороне ЮKassa. Можно выбрать Систему быстрых платежей (СБП) или банковскую карту. При СБП подтвердите платёж в приложении банка. Пожертвование разовое, без подписки и автоматических списаний.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeVisible();
   });
 
   it("submits a valid payment payload without name or email", async () => {

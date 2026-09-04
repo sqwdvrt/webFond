@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import HomePage from "@/app/page";
+import HomePage, { renderHomePage } from "@/app/page";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { homepageHelpGroups } from "@/content/projects";
@@ -70,6 +70,23 @@ describe("HomePage", () => {
 
   it("describes help without emphasizing payment periodicity", () => {
     const { container } = render(<><SiteHeader /><main><HomePage /></main><SiteFooter /></>);
+    expect(container.textContent?.toLowerCase()).not.toMatch(/разов|единоврем|подпис|автоспис/);
+  });
+
+  it("shows the live payment path when payments are enabled", () => {
+    const { container } = render(renderHomePage({ paymentsEnabled: () => true }));
+
+    expect(screen.queryByText(/еще подключается/)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Онлайн-оплата" })).toBeVisible();
+    expect(
+      screen.getByText(
+        "Перевод доступен на странице помощи. Реквизиты карты обрабатывает платежный сервис, фонд их не хранит.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Можно поддержать фонд онлайн или по банковским реквизитам."),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "Перейти к оплате" })).toHaveAttribute("href", "/help");
     expect(container.textContent?.toLowerCase()).not.toMatch(/разов|единоврем|подпис|автоспис/);
   });
 });

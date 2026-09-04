@@ -161,7 +161,7 @@ export function DonationForm({
   }
 
   return (
-    <section className="donation-preview" aria-labelledby={headingId}>
+    <section className="donation-preview donation-form" aria-labelledby={headingId}>
       <h2 id={headingId}>Разовое пожертвование</h2>
       <form
         onSubmit={(event) => {
@@ -271,7 +271,11 @@ export function DonationForm({
           </button>
         ) : null}
       </form>
-      <p className="preview-note">Принимаются разовые пожертвования.</p>
+      <p className="preview-note">
+        Оплата проходит на стороне ЮKassa. Можно выбрать Систему быстрых платежей
+        (СБП) или банковскую карту. При СБП подтвердите платёж в приложении банка.
+        Пожертвование разовое, без подписки и автоматических списаний.
+      </p>
     </section>
   );
 }

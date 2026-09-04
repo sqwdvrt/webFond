@@ -18,6 +18,12 @@ describe("SiteFooter", () => {
     expect(screen.queryByText(/КПП/)).not.toBeInTheDocument();
   });
 
+  it("does not show payment method logos", () => {
+    const { container } = render(<SiteFooter />);
+    expect(container.querySelectorAll("img")).toHaveLength(0);
+    expect(container.textContent).not.toMatch(/СБП|Visa|Mastercard/);
+  });
+
   it("links to the required legal pages", () => {
     render(<SiteFooter />);
 

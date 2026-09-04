@@ -16,7 +16,9 @@ describe("DonationPreview", () => {
       "href",
       "mailto:sorovoi@mail.ru",
     );
-    expect(screen.getByText(/QR-код будет опубликован после подтверждения банковских реквизитов/i)).toBeVisible();
+    expect(
+      screen.queryByText(/QR-код будет опубликован после подтверждения банковских реквизитов/i),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();

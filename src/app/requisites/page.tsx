@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/content/empty-state";
 import { PageHero } from "@/components/content/page-hero";
+import { BankQrTransfer } from "@/components/donation/bank-qr-transfer";
 import { CopyRequisitesButton } from "@/components/requisites/copy-button";
 import { siteConfig } from "@/config/site";
 import { formatPublishedRequisitesCopy } from "@/features/content-admin/requisites-copy";
@@ -95,7 +96,10 @@ export async function renderRequisitesPage(
             ))}
           </dl>
           {published ? (
-            <CopyRequisitesButton text={formatPublishedRequisitesCopy(published)} />
+            <div className="requisites-aside">
+              <CopyRequisitesButton text={formatPublishedRequisitesCopy(published)} />
+              <BankQrTransfer />
+            </div>
           ) : result === null ? (
             <p className="status-note" role="status">
               Банковские данные сейчас не открываются. Попробуйте позже.
