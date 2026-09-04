@@ -88,7 +88,7 @@ describe("DonationForm", () => {
     ).toHaveAttribute("href", "/privacy");
 
     await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/согласи|оферт|сумм/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/согласи|оферт|сумм|email|почт/i);
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(
       screen.getByText(
@@ -98,11 +98,12 @@ describe("DonationForm", () => {
     expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeVisible();
   });
 
-  it("submits a valid payment payload without name or email", async () => {
+  it("submits a valid payment payload with email and without name or phone", async () => {
     const user = userEvent.setup();
     const { assign, fetchImpl, storage } = renderForm();
 
     await user.click(screen.getByLabelText("1 000 ₽"));
+    await user.type(screen.getByLabelText(/email/i), "  Anna@Example.ORG ");
     await user.click(
       screen.getByRole("checkbox", {
         name: /согласие на обработку персональных данных/i,
@@ -121,14 +122,14 @@ describe("DonationForm", () => {
       acceptedOffer: true,
       acceptedPersonalData: true,
       attemptId: ATTEMPT_ID,
+      email: "anna@example.org",
       website: "",
     });
     expect(payload).not.toHaveProperty("name");
-    expect(payload).not.toHaveProperty("email");
     expect(payload).not.toHaveProperty("phone");
     expect(payload).not.toHaveProperty("receipt");
     expect(screen.queryByLabelText(/имя/i)).toBeNull();
-    expect(screen.queryByLabelText(/email/i)).toBeNull();
+    expect(screen.getByText(/кассовый чек/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /оферту пожертвования/i })).toHaveAttribute(
       "href",
       "/donation-offer",
@@ -174,6 +175,7 @@ describe("DonationForm", () => {
     renderForm({ fetchImpl });
 
     await user.click(screen.getByLabelText("500 ₽"));
+    await user.type(screen.getByLabelText(/email/i), "anna@example.org");
     await user.click(
       screen.getByRole("checkbox", {
         name: /согласие на обработку персональных данных/i,

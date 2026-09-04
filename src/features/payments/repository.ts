@@ -15,6 +15,7 @@ type PaymentClient = Pick<
 type BeginAttemptInput = {
   attemptId: string;
   amountKopecks: number;
+  customerEmail: string;
   clientKey: string;
   now: Date;
 };
@@ -74,6 +75,7 @@ export function createPaymentRepository(
     async beginAttempt({
       attemptId,
       amountKopecks,
+      customerEmail,
       clientKey,
       now,
     }: BeginAttemptInput): Promise<BeginAttemptResult> {
@@ -102,7 +104,8 @@ export function createPaymentRepository(
           if (existing) {
             if (
               existing.amountKopecks !== amountKopecks ||
-              existing.currency !== "RUB"
+              existing.currency !== "RUB" ||
+              existing.donorEmail !== customerEmail
             ) {
               return { kind: "conflict" as const };
             }
@@ -130,6 +133,7 @@ export function createPaymentRepository(
               amountKopecks,
               currency: "RUB",
               status: "PENDING",
+              donorEmail: customerEmail,
             },
           });
           return { kind: "created" as const, donation: created };

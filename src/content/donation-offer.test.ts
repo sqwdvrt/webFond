@@ -9,9 +9,22 @@ describe("donation offer publication", () => {
       return;
     }
 
-    expect(donationOfferPublication.version).toBe("2026-08-29");
+    expect(donationOfferPublication.version).toBe("2026-09-04");
     expect(donationOfferPublication.title.length).toBeGreaterThan(0);
     expect(donationOfferPublication.sections.length).toBeGreaterThan(0);
+
+    const personalData = donationOfferPublication.sections.find(
+      (section) => section.heading === "7. Персональные данные",
+    );
+    expect(personalData?.paragraphs.join("\n")).toMatch(
+      /адрес электронной почты[\s\S]*кассового чека[\s\S]*ЮKassa/s,
+    );
+    expect(personalData?.paragraphs.join("\n")).toMatch(
+      /Имя[\s\S]*не запрашивается/s,
+    );
+    expect(personalData?.paragraphs.join("\n")).not.toMatch(
+      /не запрашивает[\s\S]*адрес электронной почты/s,
+    );
 
     for (const section of donationOfferPublication.sections) {
       expect(section.heading.trim().length).toBeGreaterThan(0);

@@ -46,6 +46,7 @@ export type YooKassaCreatePaymentInput = {
   amountKopecks: number;
   donationId: string;
   returnUrl: string;
+  customerEmail: string;
 };
 
 export type YooKassaClient = {
@@ -254,6 +255,40 @@ async function cancelResponseBody(response: Response): Promise<void> {
   }
 }
 
+async function logProviderError(response: Response): Promise<void> {
+  const contentType = response.headers.get("Content-Type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json")) {
+    await cancelResponseBody(response);
+    return;
+  }
+
+  try {
+    const payload: unknown = await response.json();
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      !Array.isArray(payload)
+    ) {
+      const record = payload as Record<string, unknown>;
+      console.error("yookassa_http_error", {
+        status: response.status,
+        code: typeof record.code === "string" ? record.code : undefined,
+        description:
+          typeof record.description === "string"
+            ? record.description
+            : undefined,
+        parameter:
+          typeof record.parameter === "string" ? record.parameter : undefined,
+      });
+      return;
+    }
+  } catch {
+    // Fall through to cancel leftover bytes if JSON is unavailable.
+  }
+
+  await cancelResponseBody(response);
+}
+
 export function createYooKassaClient(
   config: YooKassaConfig,
   dependencies: YooKassaClientDependencies = {},
@@ -284,7 +319,7 @@ export function createYooKassaClient(
     }
 
     if (!response.ok) {
-      await cancelResponseBody(response);
+      await logProviderError(response);
       throw new YooKassaHttpError(response.status);
     }
 
@@ -315,6 +350,20 @@ export function createYooKassaClient(
           capture: true,
           description: DESCRIPTION,
           metadata: { donationId: input.donationId },
+          receipt: {
+            customer: { email: input.customerEmail },
+            items: [
+              {
+                description: DESCRIPTION,
+                quantity: "1.00",
+                amount: { value: amountValue, currency: "RUB" },
+                vat_code: 1,
+                payment_subject: "payment",
+                payment_mode: "full_payment",
+              },
+            ],
+            internet: "true",
+          },
         }),
       });
       const payment = parsePayment(response);

@@ -174,6 +174,7 @@ export async function handlePaymentCreate(
       {
         amountKopecks: input.amountKopecks,
         attemptId: input.input.attemptId,
+        customerEmail: input.input.email,
         clientKey,
       },
       { config, now: dependencies.now() },

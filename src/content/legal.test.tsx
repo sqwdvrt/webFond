@@ -11,6 +11,25 @@ import {
 } from "@/content/legal";
 
 describe("published legal pages", () => {
+  it("publishes privacy and consent versions aligned with donation receipts", () => {
+    expect(privacyPolicyPublication.version).toBe("2026-09-04");
+    expect(personalDataConsentPublication.version).toBe("2026-09-04");
+
+    const donorData = privacyPolicyPublication.sections
+      .find((section) => section.heading === "5. Состав обрабатываемых персональных данных")
+      ?.paragraphs.find((paragraph) => paragraph.startsWith("5.3."));
+    expect(donorData).toMatch(/адрес электронной почты/);
+    expect(donorData).toMatch(/кассового чека/);
+    expect(donorData).toMatch(/ЮKassa/);
+    expect(donorData).not.toMatch(/не запрашиваются/);
+
+    const consentData = personalDataConsentPublication.sections
+      .find((section) => section.heading === "2. Перечень персональных данных")
+      ?.paragraphs.join("\n");
+    expect(consentData).toMatch(/форме пожертвования/);
+    expect(consentData).toMatch(/кассового чека/);
+  });
+
   it("renders the approved privacy policy", () => {
     render(<PrivacyPage />);
     expect(

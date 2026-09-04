@@ -11,9 +11,17 @@ import {
 } from "./yookassa-client";
 
 const DONATION_ID = "f04d0001-0000-4000-8000-000000000001";
+const CUSTOMER_EMAIL = "anna@example.org";
 const RETURN_URL =
   "https://example.org/donation/result?donation=f04d0001-0000-4000-8000-000000000001";
 const BASIC_AUTH = "Basic c2hvcC1pZDpzZWNyZXQta2V5";
+
+const createInput = {
+  amountKopecks: 30_000,
+  donationId: DONATION_ID,
+  returnUrl: RETURN_URL,
+  customerEmail: CUSTOMER_EMAIL,
+} as const;
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -66,13 +74,7 @@ describe("createPayment", () => {
     const { client, fetch, signal, timeoutSignal } = clientFixture();
     fetch.mockResolvedValue(jsonResponse(pendingFixture));
 
-    await expect(
-      client.createPayment({
-        amountKopecks: 30_000,
-        donationId: DONATION_ID,
-        returnUrl: RETURN_URL,
-      }),
-    ).resolves.toEqual({
+    await expect(client.createPayment(createInput)).resolves.toEqual({
       id: "provider-payment-1",
       status: "pending",
       paid: false,
@@ -112,6 +114,20 @@ describe("createPayment", () => {
       capture: true,
       description: "Пожертвование Фонду «Быть Добру»",
       metadata: { donationId: DONATION_ID },
+      receipt: {
+        customer: { email: CUSTOMER_EMAIL },
+        items: [
+          {
+            description: "Пожертвование Фонду «Быть Добру»",
+            quantity: "1.00",
+            amount: { value: "300.00", currency: "RUB" },
+            vat_code: 1,
+            payment_subject: "payment",
+            payment_mode: "full_payment",
+          },
+        ],
+        internet: "true",
+      },
     });
   });
 
@@ -122,11 +138,7 @@ describe("createPayment", () => {
     fetch.mockResolvedValue(jsonResponse(body));
 
     await expect(
-      client.createPayment({
-        amountKopecks: 30_000,
-        donationId: DONATION_ID,
-        returnUrl: RETURN_URL,
-      }),
+      client.createPayment(createInput),
     ).resolves.toMatchObject({
       paymentMethod: undefined,
     });
@@ -143,13 +155,7 @@ describe("createPayment", () => {
         }),
       );
 
-      await expect(
-        client.createPayment({
-          amountKopecks: 30_000,
-          donationId: DONATION_ID,
-          returnUrl: RETURN_URL,
-        }),
-      ).resolves.toMatchObject({
+      await expect(client.createPayment(createInput)).resolves.toMatchObject({
         paymentMethod: { type },
       });
     },
@@ -163,11 +169,7 @@ describe("createPayment", () => {
     fetch.mockResolvedValue(jsonResponse(body));
 
     await expect(
-      client.createPayment({
-        amountKopecks: 30_000,
-        donationId: DONATION_ID,
-        returnUrl: RETURN_URL,
-      }),
+      client.createPayment(createInput),
     ).resolves.toMatchObject({
       id: "provider-payment-1",
       status: body.status,
@@ -191,11 +193,7 @@ describe("createPayment", () => {
     );
 
     await expect(
-      client.createPayment({
-        amountKopecks: 30_000,
-        donationId: DONATION_ID,
-        returnUrl: RETURN_URL,
-      }),
+      client.createPayment(createInput),
     ).rejects.toBeInstanceOf(YooKassaProtocolError);
   });
 
@@ -213,9 +211,8 @@ describe("createPayment", () => {
     );
 
     await client.createPayment({
+      ...createInput,
       amountKopecks: amount,
-      donationId: DONATION_ID,
-      returnUrl: RETURN_URL,
     });
 
     const [, init] = fetch.mock.calls[0]!;
@@ -229,9 +226,8 @@ describe("createPayment", () => {
 
       await expect(
         client.createPayment({
+          ...createInput,
           amountKopecks,
-          donationId: DONATION_ID,
-          returnUrl: RETURN_URL,
         }),
       ).rejects.toBeInstanceOf(YooKassaProtocolError);
       expect(fetch).not.toHaveBeenCalled();
@@ -484,6 +480,35 @@ describe("failure classification and sanitization", () => {
       expect(Object.keys(error as object)).toEqual(["status"]);
     },
   );
+
+  it("logs YooKassa error code fields without the donor email", async () => {
+    const { client, fetch } = clientFixture();
+    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    fetch.mockResolvedValue(
+      jsonResponse(
+        {
+          type: "error",
+          code: "invalid_request",
+          description: "Receipt is missing or illegal",
+          parameter: "receipt",
+          email: CUSTOMER_EMAIL,
+        },
+        400,
+      ),
+    );
+
+    await expect(client.createPayment(createInput)).rejects.toBeInstanceOf(
+      YooKassaHttpError,
+    );
+    expect(logged).toHaveBeenCalledWith("yookassa_http_error", {
+      status: 400,
+      code: "invalid_request",
+      description: "Receipt is missing or illegal",
+      parameter: "receipt",
+    });
+    expect(JSON.stringify(logged.mock.calls)).not.toContain(CUSTOMER_EMAIL);
+    logged.mockRestore();
+  });
 
   it.each([
     [302, YooKassaProtocolError],

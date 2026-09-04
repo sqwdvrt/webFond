@@ -10,6 +10,7 @@ const validInput = {
   acceptedOffer: true,
   acceptedPersonalData: true,
   attemptId: "123e4567-e89b-42d3-a456-426614174000",
+  email: "anna@example.org",
   website: "",
 } as const;
 
@@ -51,6 +52,34 @@ describe("parsePaymentCreateInput", () => {
     ).toEqual({ kind: "invalid" });
   });
 
+  it("normalizes donor email and rejects missing or malformed values", () => {
+    expect(
+      parsePaymentCreateInput({ ...validInput, email: "  Anna@Example.ORG " }),
+    ).toEqual({
+      kind: "valid",
+      input: { ...validInput, email: "anna@example.org" },
+      amountKopecks: 30_000,
+    });
+    expect(
+      parsePaymentCreateInput({ ...validInput, email: "not-mail" }),
+    ).toEqual({ kind: "invalid" });
+    expect(
+      parsePaymentCreateInput({ ...validInput, email: "anna@example.org " }),
+    ).toEqual({
+      kind: "valid",
+      input: { ...validInput, email: "anna@example.org" },
+      amountKopecks: 30_000,
+    });
+    const withoutEmail = {
+      amountRoubles: validInput.amountRoubles,
+      acceptedOffer: validInput.acceptedOffer,
+      acceptedPersonalData: validInput.acceptedPersonalData,
+      attemptId: validInput.attemptId,
+      website: "",
+    };
+    expect(parsePaymentCreateInput(withoutEmail)).toEqual({ kind: "invalid" });
+  });
+
   it("requires literal offer and personal data acceptance", async () => {
     expect(
       parsePaymentCreateInput({ ...validInput, acceptedOffer: false }),
@@ -85,6 +114,7 @@ describe("parsePaymentCreateInput", () => {
       acceptedOffer: validInput.acceptedOffer,
       acceptedPersonalData: validInput.acceptedPersonalData,
       attemptId: validInput.attemptId,
+      email: validInput.email,
     };
 
     expect(parsePaymentCreateInput(withoutWebsite)).toEqual({

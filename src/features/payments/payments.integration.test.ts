@@ -145,12 +145,14 @@ describe("payment repository against PostgreSQL", () => {
         repository.beginAttempt({
           attemptId: id,
           amountKopecks: 50_000,
+          customerEmail: "anna@example.org",
           clientKey,
           now: NOW,
         }),
         repository.beginAttempt({
           attemptId: id,
           amountKopecks: 50_000,
+          customerEmail: "anna@example.org",
           clientKey,
           now: NOW,
         }),
@@ -191,6 +193,7 @@ describe("payment repository against PostgreSQL", () => {
       await repository.beginAttempt({
         attemptId: id,
         amountKopecks: 50_000,
+        customerEmail: "anna@example.org",
         clientKey,
         now: NOW,
       });
@@ -198,6 +201,7 @@ describe("payment repository against PostgreSQL", () => {
         repository.beginAttempt({
           attemptId: id,
           amountKopecks: 50_001,
+          customerEmail: "anna@example.org",
           clientKey,
           now: NOW,
         }),
@@ -280,6 +284,7 @@ describe("payment repository against PostgreSQL", () => {
         .beginAttempt({
           attemptId: id,
           amountKopecks: 30_000,
+          customerEmail: "anna@example.org",
           clientKey,
           now: NOW,
         })
@@ -463,6 +468,7 @@ describe("payment repository against PostgreSQL", () => {
       await repository.beginAttempt({
         attemptId: attemptId(16),
         amountKopecks: 100_000,
+        customerEmail: "anna@example.org",
         clientKey: FIXTURE_CLIENT_KEYS.expiry,
         now: NOW,
       });

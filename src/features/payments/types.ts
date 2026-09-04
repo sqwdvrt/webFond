@@ -30,6 +30,7 @@ export type PaymentCreateInput = {
   acceptedOffer: true;
   acceptedPersonalData: true;
   attemptId: string;
+  email: string;
   website: "";
 };
 

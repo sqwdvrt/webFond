@@ -21,6 +21,7 @@ const STALE_ATTEMPT_MS = 23 * 60 * 60 * 1_000;
 export type CreatePaymentCommand = {
   amountKopecks: number;
   attemptId: string;
+  customerEmail: string;
   clientKey: string;
 };
 
@@ -147,6 +148,7 @@ export async function createPayment(
     attempt = await repository.beginAttempt({
       attemptId: command.attemptId,
       amountKopecks: command.amountKopecks,
+      customerEmail: command.customerEmail,
       clientKey: command.clientKey,
       now,
     });
@@ -184,6 +186,7 @@ export async function createPayment(
       amountKopecks: command.amountKopecks,
       donationId: donation.id,
       returnUrl: withDonationParam(config.returnUrl, donation.id),
+      customerEmail: command.customerEmail,
     });
   } catch (error) {
     return mapCreateError(error, repository, donation.id);

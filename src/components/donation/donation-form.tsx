@@ -8,6 +8,7 @@ import {
   resolvePaymentAttempt,
   type PaymentAttemptStorageDependencies,
 } from "@/features/payments/attempt-storage";
+import { normalizeDonorEmail } from "@/features/payments/validation";
 
 const PRESET_AMOUNTS = [
   { value: 300, label: "300 ₽" },
@@ -71,6 +72,7 @@ export function DonationForm({
   const errorId = useId();
   const [selectedPreset, setSelectedPreset] = useState<number | "other">(300);
   const [otherAmount, setOtherAmount] = useState("");
+  const [email, setEmail] = useState("");
   const [acceptedOffer, setAcceptedOffer] = useState(false);
   const [acceptedPersonalData, setAcceptedPersonalData] = useState(false);
   const [website, setWebsite] = useState("");
@@ -94,6 +96,11 @@ export function DonationForm({
       setError(
         "Чтобы продолжить, дайте согласие на обработку персональных данных.",
       );
+      return;
+    }
+    const donorEmail = normalizeDonorEmail(email);
+    if (!donorEmail) {
+      setError("Укажите email для кассового чека.");
       return;
     }
     if (!acceptedOffer) {
@@ -132,6 +139,7 @@ export function DonationForm({
           acceptedOffer: true,
           acceptedPersonalData: true,
           attemptId: resolved.attempt.id,
+          email: donorEmail,
           website,
         }),
       });
@@ -222,6 +230,22 @@ export function DonationForm({
             />
           </label>
         </fieldset>
+
+        <label className="other-amount">
+          <span>Email для кассового чека</span>
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            inputMode="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </label>
+        <p className="preview-note">
+          ЮKassa отправит кассовый чек на этот адрес.
+        </p>
 
         <label className="donation-offer">
           <input

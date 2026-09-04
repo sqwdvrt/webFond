@@ -14,6 +14,7 @@ const validBody = {
   acceptedOffer: true,
   acceptedPersonalData: true,
   attemptId: ATTEMPT_ID,
+  email: "anna@example.org",
   website: "",
 };
 
@@ -271,6 +272,7 @@ describe("payment create HTTP guards", () => {
       {
         amountKopecks: 30_000,
         attemptId: ATTEMPT_ID,
+        customerEmail: "anna@example.org",
         clientKey: "client-key",
       },
       expect.objectContaining({ config }),

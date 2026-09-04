@@ -26,6 +26,7 @@ import {
 const NOW = new Date("2026-08-24T20:40:00.000Z");
 const PAID_AT = new Date("2026-08-24T20:41:05.000Z");
 const ATTEMPT_ID = "f04d0001-0000-4000-8000-000000000001";
+const CUSTOMER_EMAIL = "anna@example.org";
 
 function donation(
   overrides: Partial<{
@@ -46,7 +47,7 @@ function donation(
     currency: "RUB",
     status: "PENDING" as const,
     donorName: null,
-    donorEmail: null,
+    donorEmail: CUSTOMER_EMAIL,
     paidAt: null,
     createdAt: NOW,
     updatedAt: NOW,
@@ -116,6 +117,7 @@ describe("beginAttempt", () => {
       repository.beginAttempt({
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
+        customerEmail: CUSTOMER_EMAIL,
         clientKey: "client-17",
         now: NOW,
       }),
@@ -133,6 +135,24 @@ describe("beginAttempt", () => {
     ]);
   });
 
+  it("rejects a reused attempt ID with a different donor email using a typed conflict", async () => {
+    const { client, repository, tx } = repositoryFixture(donation());
+
+    await expect(
+      repository.beginAttempt({
+        attemptId: ATTEMPT_ID,
+        amountKopecks: 50_000,
+        customerEmail: "other@example.org",
+        clientKey: "client-17",
+        now: NOW,
+      }),
+    ).rejects.toBeInstanceOf(PaymentAttemptConflictError);
+    expect(tx.donation.create).not.toHaveBeenCalled();
+    expect(client.paymentRateLimitBucket.deleteMany).toHaveBeenCalledWith({
+      where: { expiresAt: { lte: NOW } },
+    });
+  });
+
   it("rejects a reused attempt ID with a different amount using a typed conflict", async () => {
     const { client, repository, tx } = repositoryFixture(donation());
 
@@ -140,6 +160,7 @@ describe("beginAttempt", () => {
       repository.beginAttempt({
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_001,
+        customerEmail: CUSTOMER_EMAIL,
         clientKey: "client-17",
         now: NOW,
       }),
@@ -159,6 +180,7 @@ describe("beginAttempt", () => {
       repository.beginAttempt({
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
+        customerEmail: CUSTOMER_EMAIL,
         clientKey: "client-17",
         now: NOW,
       }),
@@ -181,6 +203,7 @@ describe("beginAttempt", () => {
         amountKopecks: 50_000,
         currency: "RUB",
         status: "PENDING",
+        donorEmail: CUSTOMER_EMAIL,
       },
     });
   });
@@ -197,6 +220,7 @@ describe("beginAttempt", () => {
       repository.beginAttempt({
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
+        customerEmail: CUSTOMER_EMAIL,
         clientKey: "client-17",
         now: NOW,
       }),

@@ -12,6 +12,7 @@ import {
 } from "./yookassa-client";
 
 const ATTEMPT_ID = "f04d0001-0000-4000-8000-000000000001";
+const CUSTOMER_EMAIL = "anna@example.org";
 const PROVIDER_ID = "provider-payment-1";
 const CONFIRMATION_URL =
   "https://yoomoney.ru/checkout/payments/v2/contract?orderId=provider-payment-1";
@@ -36,7 +37,7 @@ function donation(overrides: Partial<Donation> = {}): Donation {
     currency: "RUB",
     status: "PENDING",
     donorName: null,
-    donorEmail: null,
+    donorEmail: CUSTOMER_EMAIL,
     paidAt: null,
     createdAt: NOW,
     updatedAt: NOW,
@@ -156,6 +157,7 @@ async function create(input: {
     {
       amountKopecks: 30_000,
       attemptId: ATTEMPT_ID,
+      customerEmail: CUSTOMER_EMAIL,
       clientKey: "client-key",
     },
     {
@@ -182,6 +184,7 @@ describe("createPayment happy path", () => {
     expect(fixture.repository.beginAttempt).toHaveBeenCalledExactlyOnceWith({
       attemptId: ATTEMPT_ID,
       amountKopecks: 30_000,
+      customerEmail: CUSTOMER_EMAIL,
       clientKey: "client-key",
       now: NOW,
     });
@@ -189,6 +192,7 @@ describe("createPayment happy path", () => {
       amountKopecks: 30_000,
       donationId: ATTEMPT_ID,
       returnUrl: `https://example.org/donation/result?donation=${ATTEMPT_ID}`,
+      customerEmail: CUSTOMER_EMAIL,
     });
     expect(client.getPayment).not.toHaveBeenCalled();
     expect(fixture.stored).toMatchObject({ providerPaymentId: PROVIDER_ID });
