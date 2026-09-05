@@ -10,6 +10,8 @@
     "dev": "next dev",
     "prebuild": "prisma generate",
     "build": "next build",
+    "timeweb-build": "prisma generate && prisma migrate deploy && next build",
+    "timeweb-start": "next start --hostname 0.0.0.0 --port ${PORT:-3000}",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint .",

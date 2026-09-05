@@ -159,48 +159,76 @@ PAYMENTS_TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/founda
 проверяются детерминированными тестами с подменённым HTTP. Живой тестовый платёж
 остаётся в этапе 5.
 
-## Vercel
+## Timeweb
 
-Сайт рассчитан на Next.js на Vercel и PostgreSQL в Neon. Сборка на Vercel
-выполняет `prisma generate`, затем `prisma migrate deploy`, затем `next build`.
-Локальная команда `npm run build` миграции не применяет.
+Боевой сайт работает в Timeweb Cloud App Platform в Москве (`fond-bit-dobru.ru`).
+Политика персональных данных не допускает иностранный хостинг, поэтому Vercel
+и Neon не являются production.
 
-1. Импортируйте репозиторий в [Vercel](https://vercel.com/new) (Framework Preset:
-   Next.js). Файл `vercel.json` уже задаёт команду сборки.
-2. База Postgres уже подготовлена в Neon: проект `byt-dobru-foundation`.
-   В Vercel Environment Variables добавьте значения из `.env.vercel.local`.
-   Production — ветка Neon `main`, Preview — ветка `preview`, чтобы миграции
-   превью не меняли боевую схему.
-3. После первого деплоя подставьте фактический HTTPS-домен в `NEXT_PUBLIC_SITE_URL`,
-   `SITE_URL` и `YOOKASSA_RETURN_URL` и задеплойте ещё раз.
-4. Платежи в первом выпуске выключены: `PAYMENTS_ENABLED=false`.
-   На Vercel задайте `ADMIN_TRUST_PROXY=true` и `PAYMENTS_TRUST_PROXY=true`:
-   платформа сама подставляет forwarding-заголовки.
+В панели приложения:
 
-| Переменная | Production |
+- framework: Next.js (не Nest);
+- Build: `npm run timeweb-build` — `prisma generate`, `prisma migrate deploy`,
+  затем `next build`. `DATABASE_URL` должен быть доступен на сборке;
+- Run: `npm run timeweb-start` — только `next start` на `0.0.0.0` и `$PORT`.
+  Миграции не должны выполняться при каждом рестарте процесса;
+- Health check: `GET /api/health` (ответ `{ "ok": true }`, без авторизации);
+- `NEXT_PUBLIC_SITE_URL=https://fond-bit-dobru.ru` задаётся **до сборки**:
+  Next.js вшивает `NEXT_PUBLIC_*` на build. `SITE_URL` — тот же origin на
+  рантайме.
+
+`next/image` на этом хосте идёт без серверного оптимизатора: рантайм не может
+писать в `/app/.next/cache/images`.
+
+Загрузки в production идут в объектное хранилище Timeweb S3, не в `public/` и
+не в Vercel Blob. Локальный диск контейнера недолговечен и часто только для
+чтения.
+
+PostgreSQL — кластер Timeweb в той же зоне. Включите автобэкапы в панели базы.
+
+| Переменная | Production (Timeweb) |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | `https://<домен>` без пути, query и фрагмента |
+| `NEXT_PUBLIC_SITE_URL` | `https://fond-bit-dobru.ru` без пути, query и фрагмента |
 | `SITE_URL` | тот же origin, что и `NEXT_PUBLIC_SITE_URL` |
-| `DATABASE_URL` | Neon pooled URL (`-pooler`) с `sslmode=require`, `pgbouncer=true` и `connect_timeout=15` |
-| `DATABASE_URL_UNPOOLED` | Neon direct URL без `-pooler`, для `prisma migrate deploy` |
+| `DATABASE_URL` | URL кластера Timeweb Postgres |
+| `DATABASE_URL_UNPOOLED` | тот же URL, если пулер не используется |
 | `AUTH_SECRET` | случайная строка не короче 32 символов |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | рабочие логин и пароль админки |
 | `ADMIN_TRUST_PROXY` | `true` |
-| `PAYMENTS_ENABLED` | `false` |
+| `PAYMENTS_ENABLED` | `false`, пока оферта не утверждена |
 | `PAYMENTS_OFFER_VERSION` | пусто, пока оферта не утверждена |
 | `PAYMENTS_RATE_LIMIT_SECRET` | случайная строка не короче 32 символов |
 | `PAYMENTS_TRUST_PROXY` | `true` |
 | `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` | пусто, пока платежи выключены |
-| `YOOKASSA_RETURN_URL` | `https://<домен>/donation/result` |
+| `YOOKASSA_RETURN_URL` | `https://fond-bit-dobru.ru/donation/result` |
+| `S3_ENDPOINT` | endpoint бакета Timeweb S3 |
+| `S3_REGION` | регион бакета |
+| `S3_BUCKET` | имя публичного бакета |
+| `S3_ACCESS_KEY` / `S3_SECRET_KEY` | ключи бакета |
+| `S3_PUBLIC_BASE_URL` | публичный origin объектов, без завершающего `/` |
 
 Webhook ЮKassa, когда платежи включат:
 
 ```text
-https://<домен>/api/payments/webhook
+https://fond-bit-dobru.ru/api/payments/webhook
 ```
 
-Секреты и строки подключения в git не коммитятся. Локальная копия для панели
-Vercel может лежать в gitignored-файле `.env.vercel.local`.
+Секреты в git не коммитятся.
+
+## Vercel
+
+Vercel — только превью без боевого домена и без персональных данных.
+Сборка выполняет `prisma generate`, затем `prisma migrate deploy`, затем
+`next build` (`npm run vercel-build`). Не направляйте `fond-bit-dobru.ru` на
+Vercel и не подключайте preview к боевой базе Timeweb.
+
+Если превью всё же поднимают, задайте `ADMIN_TRUST_PROXY=true`,
+`PAYMENTS_TRUST_PROXY=true` и `PAYMENTS_ENABLED=false`. `DATABASE_URL` для
+такого превью — отдельная база, не кластер production. `DATABASE_URL_UNPOOLED`
+нужен `prisma migrate deploy` на этой отдельной базе.
+
+Локальная копия переменных панели может лежать в gitignored-файле
+`.env.vercel.local`.
 
 ## Ограничения контента
 
