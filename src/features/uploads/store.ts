@@ -4,6 +4,12 @@ import { dirname, join } from "node:path";
 
 import { put } from "@vercel/blob";
 
+import {
+  putS3Object,
+  readObjectStoreConfig,
+  type ObjectStoreConfig,
+  type PutObjectInput,
+} from "./object-store";
 import type { DetectedUpload, UploadKind } from "./validate";
 
 export class UploadStorageUnavailableError extends Error {
@@ -26,6 +32,9 @@ export type StoreUploadInput = {
 export type StoreUploadDependencies = {
   blobToken?: string;
   onVercel?: boolean;
+  isProduction?: boolean;
+  objectStore?: ObjectStoreConfig;
+  putObject?: (input: PutObjectInput) => Promise<StoredUpload>;
   putBlob?: typeof put;
   writeLocal?: (path: string, bytes: Uint8Array) => Promise<void>;
   cwd?: string;
@@ -43,9 +52,31 @@ export async function storeUpload(
   const filename = `${randomUUID()}.${detected.extension}`;
   const pathname = `uploads/${kind}/${filename}`;
   const blobToken = dependencies.blobToken ?? process.env.BLOB_READ_WRITE_TOKEN;
-  const onVercel =
-    dependencies.onVercel ?? process.env.VERCEL === "1";
+  const onVercel = dependencies.onVercel ?? process.env.VERCEL === "1";
+  const isProduction =
+    dependencies.isProduction ?? process.env.NODE_ENV === "production";
+  const objectStore = dependencies.objectStore ?? readObjectStoreConfig();
   const putBlob = dependencies.putBlob ?? put;
+  const putObject =
+    dependencies.putObject ??
+    ((input: PutObjectInput) => {
+      if (!objectStore) {
+        return Promise.reject(new UploadStorageUnavailableError());
+      }
+      return putS3Object(objectStore, input);
+    });
+
+  if (objectStore) {
+    try {
+      return await putObject({
+        pathname,
+        bytes,
+        contentType: detected.contentType,
+      });
+    } catch {
+      throw new UploadStorageUnavailableError();
+    }
+  }
 
   if (blobToken) {
     const blob = await putBlob(pathname, Buffer.from(bytes), {
@@ -58,7 +89,7 @@ export async function storeUpload(
     return { url: blob.url };
   }
 
-  if (onVercel) {
+  if (onVercel || isProduction) {
     throw new UploadStorageUnavailableError();
   }
 

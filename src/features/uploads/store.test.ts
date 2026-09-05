@@ -43,4 +43,42 @@ describe("storeUpload", () => {
       ),
     ).rejects.toBeInstanceOf(UploadStorageUnavailableError);
   });
+
+  it("writes to the object store when it is configured", async () => {
+    const putObject = vi.fn(async () => ({
+      url: "https://files.timeweb.example/uploads/image/a.jpg",
+    }));
+
+    const stored = await storeUpload(
+      { bytes: new Uint8Array([0xff, 0xd8, 0xff]), detected: jpeg, kind: "image" },
+      {
+        isProduction: true,
+        objectStore: {
+          endpoint: "https://s3.example",
+          region: "ru-1",
+          bucket: "fond-uploads",
+          accessKey: "key",
+          secretKey: "secret",
+          publicBaseUrl: "https://files.timeweb.example",
+        },
+        putObject,
+      },
+    );
+
+    expect(putObject).toHaveBeenCalledOnce();
+    expect(putObject.mock.calls[0]?.[0]).toMatchObject({
+      pathname: expect.stringMatching(/^uploads\/image\/.+\.jpg$/),
+      contentType: "image/jpeg",
+    });
+    expect(stored.url).toBe("https://files.timeweb.example/uploads/image/a.jpg");
+  });
+
+  it("fails closed in production without object or blob storage", async () => {
+    await expect(
+      storeUpload(
+        { bytes: new Uint8Array([0xff, 0xd8, 0xff]), detected: jpeg, kind: "image" },
+        { isProduction: true, onVercel: false },
+      ),
+    ).rejects.toBeInstanceOf(UploadStorageUnavailableError);
+  });
 });
