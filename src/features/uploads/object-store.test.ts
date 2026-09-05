@@ -56,11 +56,14 @@ describe("putS3Object", () => {
 
     expect(stored.url).toBe("https://files.example/uploads/image/a.jpg");
     expect(fetchImpl).toHaveBeenCalledOnce();
-    const [url, init] = fetchImpl.mock.calls[0] ?? [];
+    const calls = fetchImpl.mock.calls as unknown as Array<[URL, RequestInit]>;
+    const [url, init] = calls[0] ?? [];
     expect(String(url)).toBe("https://s3.example/fond-uploads/uploads/image/a.jpg");
     expect(init?.method).toBe("PUT");
     const headers = new Headers(init?.headers);
-    expect(headers.get("Authorization")).toMatch(/^AWS4-HMAC-SHA256 Credential=AKIA\/20260905\/ru-1\/s3\/aws4_request,/);
+    expect(headers.get("Authorization")).toMatch(
+      /^AWS4-HMAC-SHA256 Credential=AKIA\/20260905\/ru-1\/s3\/aws4_request,/,
+    );
     expect(headers.get("x-amz-date")).toBe("20260905T200000Z");
   });
 });
