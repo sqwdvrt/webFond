@@ -66,7 +66,8 @@ describe("storeUpload", () => {
     );
 
     expect(putObject).toHaveBeenCalledOnce();
-    expect(putObject.mock.calls[0]?.[0]).toMatchObject({
+    const uploaded = putObject.mock.calls.at(0)?.at(0);
+    expect(uploaded).toMatchObject({
       pathname: expect.stringMatching(/^uploads\/image\/.+\.jpg$/),
       contentType: "image/jpeg",
     });
