@@ -23,6 +23,7 @@ export type CreatePaymentCommand = {
   attemptId: string;
   customerEmail: string;
   clientKey: string;
+  projectId?: string | null;
 };
 
 export type CreatePaymentOutcome =
@@ -150,6 +151,7 @@ export async function createPayment(
       amountKopecks: command.amountKopecks,
       customerEmail: command.customerEmail,
       clientKey: command.clientKey,
+      projectId: command.projectId ?? null,
       now,
     });
   } catch (error) {

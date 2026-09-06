@@ -7,7 +7,7 @@ import {
   type ContentFormState,
 } from "@/features/content-admin/mutations";
 import type { CreateEditorialResult } from "@/features/content-admin/repository";
-import { parseEditorialForm } from "@/features/content-admin/validation";
+import { parseProjectForm } from "@/features/content-admin/validation";
 
 import { ProjectForm } from "./project-form";
 
@@ -32,7 +32,7 @@ describe("ProjectForm React action integration", () => {
     ): Promise<ContentFormState> => {
       const result = await createProjectMutation(formData, {
         requireSession: async () => undefined,
-        parse: parseEditorialForm,
+        parse: parseProjectForm,
         create,
       });
       if (result.ok) throw new Error("Expected a duplicate error");

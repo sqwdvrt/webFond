@@ -18,6 +18,7 @@ type BeginAttemptInput = {
   customerEmail: string;
   clientKey: string;
   now: Date;
+  projectId?: string | null;
 };
 
 type BeginAttemptResult =
@@ -78,6 +79,7 @@ export function createPaymentRepository(
       customerEmail,
       clientKey,
       now,
+      projectId = null,
     }: BeginAttemptInput): Promise<BeginAttemptResult> {
       const keys = paymentLimitKeys(clientKey);
       const result: BeginAttemptTransactionResult = await client.$transaction(
@@ -105,7 +107,8 @@ export function createPaymentRepository(
             if (
               existing.amountKopecks !== amountKopecks ||
               existing.currency !== "RUB" ||
-              existing.donorEmail !== customerEmail
+              existing.donorEmail !== customerEmail ||
+              existing.projectId !== projectId
             ) {
               return { kind: "conflict" as const };
             }
@@ -134,6 +137,7 @@ export function createPaymentRepository(
               currency: "RUB",
               status: "PENDING",
               donorEmail: customerEmail,
+              projectId,
             },
           });
           return { kind: "created" as const, donation: created };

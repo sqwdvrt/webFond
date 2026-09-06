@@ -54,6 +54,7 @@ function donation(overrides: Partial<Donation> = {}): Donation {
     paidAt: null,
     createdAt: NOW,
     updatedAt: NOW,
+    projectId: null,
     ...overrides,
   };
 }

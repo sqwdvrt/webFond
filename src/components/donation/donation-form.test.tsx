@@ -126,6 +126,7 @@ describe("DonationForm", () => {
       attemptId: ATTEMPT_ID,
       email: "anna@example.org",
       website: "",
+      projectSlug: "",
     });
     expect(payload).not.toHaveProperty("name");
     expect(payload).not.toHaveProperty("phone");
@@ -142,6 +143,62 @@ describe("DonationForm", () => {
     expect(JSON.parse(storage.getItem(PAYMENT_ATTEMPT_STORAGE_KEY) ?? "{}")).toMatchObject({
       donationId: "donation-local",
     });
+  });
+
+  it("sends a selected published project slug", async () => {
+    const user = userEvent.setup();
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          redirectUrl: "https://yoomoney.ru/checkout/payment",
+          donationId: "donation-local",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    render(
+      <DonationForm
+        assign={vi.fn()}
+        fetchImpl={fetchImpl}
+        initialProjectSlug="published-project"
+        now={() => new Date("2026-08-24T18:00:00.000Z")}
+        projects={[{ slug: "published-project", title: "Опубликованный проект" }]}
+        randomUUID={() => ATTEMPT_ID}
+        storage={memoryStorage()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Назначение пожертвования")).toHaveValue(
+      "published-project",
+    );
+    await user.type(screen.getByLabelText(/email/i), "anna@example.org");
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: /согласие на обработку персональных данных/i,
+      }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: /оферту пожертвования/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Оплатить онлайн" }));
+
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledOnce());
+    const [, init] = (fetchImpl as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    const payload = JSON.parse(String(init.body));
+    expect(payload.projectSlug).toBe("published-project");
+  });
+
+  it("falls back to the statutory fund when the initial project slug is unknown", () => {
+    render(
+      <DonationForm
+        initialProjectSlug="missing-project"
+        projects={[{ slug: "published-project", title: "Опубликованный проект" }]}
+        storage={memoryStorage()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Назначение пожертвования")).toHaveValue("");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("requires the offer and a valid custom amount", async () => {

@@ -32,6 +32,7 @@ export type PaymentCreateInput = {
   attemptId: string;
   email: string;
   website: "";
+  projectSlug: string;
 };
 
 export type PaymentCreateInputResult =

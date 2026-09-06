@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 
-import type { DocumentInput, EditorialInput, RequisitesInput } from "./types";
+import type { DocumentInput, EditorialInput, ProjectInput, RequisitesInput } from "./types";
 import {
   defaultRequisitesDraft,
   parseRequisitesSetting,
@@ -30,6 +30,12 @@ const adminEditorialDetailSelect = {
   status: true,
   publishedAt: true,
   updatedAt: true,
+} satisfies Prisma.ProjectSelect;
+
+const projectAdminDetailSelect = {
+  ...adminEditorialDetailSelect,
+  goalAmountKopecks: true,
+  manualRaisedKopecks: true,
 } satisfies Prisma.ProjectSelect;
 
 const publicEditorialListSelect = {
@@ -115,6 +121,9 @@ export type AdminEditorialListRow = Prisma.ProjectGetPayload<{
 export type AdminEditorialRow = Prisma.ProjectGetPayload<{
   select: typeof adminEditorialDetailSelect;
 }>;
+export type AdminProjectRow = Prisma.ProjectGetPayload<{
+  select: typeof projectAdminDetailSelect;
+}>;
 export type PublicEditorialListRow = Prisma.ProjectGetPayload<{
   select: typeof publicEditorialListSelect;
 }>;
@@ -189,9 +198,23 @@ type DocumentCurrentRow = Prisma.DocumentGetPayload<{
   select: typeof documentCurrentSelect;
 }>;
 
+type AdminProjectDelegate = {
+  findUnique(args: {
+    where: { id: string };
+    select: typeof projectAdminDetailSelect;
+  }): Promise<AdminProjectRow | null>;
+};
+
 type EditorialCreateDelegate = {
   create(args: {
     data: EditorialInput & { publishedAt: Date | null };
+    select: typeof editorialMutationSelect;
+  }): Promise<EditorialMutationRow>;
+};
+
+type ProjectCreateDelegate = {
+  create(args: {
+    data: ProjectInput & { publishedAt: Date | null };
     select: typeof editorialMutationSelect;
   }): Promise<EditorialMutationRow>;
 };
@@ -201,6 +224,17 @@ type DocumentCreateDelegate = {
     data: DocumentInput & { publishedAt: Date | null };
     select: typeof documentMutationSelect;
   }): Promise<DocumentMutationRow>;
+};
+
+type ProjectUpdateDelegate = {
+  findUnique(args: {
+    where: { id: string };
+    select: typeof editorialCurrentSelect;
+  }): Promise<EditorialCurrentRow | null>;
+  updateMany(args: {
+    where: { id: string; updatedAt: Date };
+    data: ProjectInput & { publishedAt: Date | null };
+  }): Promise<{ count: number }>;
 };
 
 type EditorialUpdateDelegate = {
@@ -386,11 +420,11 @@ export function listAdminProjects(
 
 export function getAdminProject(
   id: string,
-  client: { project: Pick<AdminEditorialDelegate, "findUnique"> } = prisma,
+  client: { project: AdminProjectDelegate } = prisma,
 ) {
   return client.project.findUnique({
     where: { id },
-    select: adminEditorialDetailSelect,
+    select: projectAdminDetailSelect,
   });
 }
 
@@ -521,8 +555,8 @@ export async function getPublishedRequisites(
 }
 
 export async function createProject(
-  input: EditorialInput,
-  client: { project: EditorialCreateDelegate } = prisma,
+  input: ProjectInput,
+  client: { project: ProjectCreateDelegate } = prisma,
 ): Promise<CreateEditorialResult> {
   try {
     const row = await client.project.create({
@@ -575,8 +609,8 @@ export async function createDocument(
 export async function updateProject(
   id: string,
   updatedAt: Date,
-  input: EditorialInput,
-  client: { project: EditorialUpdateDelegate } = prisma,
+  input: ProjectInput,
+  client: { project: ProjectUpdateDelegate } = prisma,
 ): Promise<UpdateEditorialResult> {
   const current = await client.project.findUnique({
     where: { id },

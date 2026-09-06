@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedDetail } from "@/components/content/published-content";
+import { FundraisingMeter } from "@/components/fundraising/fundraising-meter";
 import { getPublishedProjectForRequest } from "@/features/content-admin/public-loaders";
 
 type ProjectDetailProps = {
@@ -37,6 +38,16 @@ export default async function ProjectPage({ params }: ProjectDetailProps) {
         publishedAt={project.publishedAt}
         title={project.title}
       />
+      {project.fundraising ? (
+        <section className="page-section">
+          <div className="container published-detail">
+            <FundraisingMeter
+              helpHref={`/help?project=${project.slug}`}
+              progress={project.fundraising}
+            />
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

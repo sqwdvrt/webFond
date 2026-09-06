@@ -1,6 +1,6 @@
+import { getPublishedProjectForDisplay } from "@/features/fundraising/public-projects";
 import {
   getPublishedNewsPost,
-  getPublishedProject,
   listPublishedNews,
 } from "./repository";
 import { createRequestCachedLoader } from "./request-cache";
@@ -8,6 +8,6 @@ import { createRequestCachedLoader } from "./request-cache";
 export const listPublishedNewsForRequest =
   createRequestCachedLoader(listPublishedNews);
 export const getPublishedProjectForRequest =
-  createRequestCachedLoader(getPublishedProject);
+  createRequestCachedLoader(getPublishedProjectForDisplay);
 export const getPublishedNewsPostForRequest =
   createRequestCachedLoader(getPublishedNewsPost);

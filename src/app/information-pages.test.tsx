@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import AboutPage from "@/app/about/page";
 import ContactsPage from "@/app/contacts/page";
-import HelpPage, { renderHelpPage } from "@/app/help/page";
+import { renderHelpPage } from "@/app/help/page";
 import RequisitesError from "@/app/requisites/error";
 import { renderRequisitesPage } from "@/app/requisites/page";
 import { siteConfig } from "@/config/site";
@@ -54,7 +54,7 @@ describe("information pages", () => {
   });
 
   it("keeps help payments disabled", () => {
-    render(<HelpPage />);
+    render(renderHelpPage());
     expect(
       screen.getByRole("heading", { name: "Онлайн-пожертвования скоро будут доступны" }),
     ).toBeVisible();
@@ -102,6 +102,34 @@ describe("information pages", () => {
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
     expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
+  });
+
+  it("preselects a published project on the help form without a payment error", () => {
+    render(
+      renderHelpPage({
+        paymentsEnabled: () => true,
+        projects: [{ slug: "published-project", title: "Опубликованный проект" }],
+        initialProjectSlug: "published-project",
+      }),
+    );
+
+    expect(screen.getByLabelText("Назначение пожертвования")).toHaveValue(
+      "published-project",
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("keeps the statutory fund when the help project query is unknown", () => {
+    render(
+      renderHelpPage({
+        paymentsEnabled: () => true,
+        projects: [{ slug: "published-project", title: "Опубликованный проект" }],
+        initialProjectSlug: "missing-project",
+      }),
+    );
+
+    expect(screen.getByLabelText("Назначение пожертвования")).toHaveValue("");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("fails closed to the preview when availability throws", () => {

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 
 import { PageHero } from "@/components/content/page-hero";
 import { PublishedCard } from "@/components/content/published-content";
+import { FundraisingMeter } from "@/components/fundraising/fundraising-meter";
 import { charterGroups, projects } from "@/content/projects";
 import {
-  listPublishedProjects,
-  type PublicEditorialListRow,
-} from "@/features/content-admin/repository";
+  listPublishedProjectsForDisplay,
+  type PublicProjectCard,
+} from "@/features/fundraising/public-projects";
 
 export const dynamic = "force-dynamic";
 
@@ -18,17 +19,17 @@ export const metadata: Metadata = {
 };
 
 type ProjectPageDependencies = {
-  listProjects: () => Promise<PublicEditorialListRow[]>;
+  listProjects: () => Promise<PublicProjectCard[]>;
 };
 
 const defaultDependencies: ProjectPageDependencies = {
-  listProjects: listPublishedProjects,
+  listProjects: listPublishedProjectsForDisplay,
 };
 
 export async function renderProjectsPage(
   dependencies: ProjectPageDependencies = defaultDependencies,
 ) {
-  let publishedProjects: PublicEditorialListRow[] | null;
+  let publishedProjects: PublicProjectCard[] | null;
 
   try {
     publishedProjects = await dependencies.listProjects();
@@ -82,7 +83,14 @@ export async function renderProjectsPage(
                   publishedAt={project.publishedAt}
                   summary={project.summary}
                   title={project.title}
-                />
+                >
+                  {project.fundraising ? (
+                    <FundraisingMeter
+                      helpHref={`/help?project=${project.slug}`}
+                      progress={project.fundraising}
+                    />
+                  ) : null}
+                </PublishedCard>
               ))}
             </div>
           </div>

@@ -364,6 +364,16 @@ a {
 .published-card h2, .published-card h3 { margin: 10px 0 12px; font-family: var(--font-display); font-size: 28px; font-weight: 560; line-height: 1.2; overflow-wrap: anywhere; }
 .published-card h2 a, .published-card h3 a { color: var(--brand-dark); }
 .published-card p { margin: 0; color: var(--muted); }
+.fundraising-meter { display: grid; gap: 16px; margin-top: 22px; }
+.fundraising-meter-amounts { display: flex; justify-content: space-between; gap: 16px; }
+.fundraising-meter-amounts strong { display: block; margin-top: 4px; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.fundraising-meter-label { color: var(--muted); font-size: 13px; }
+.fundraising-meter-goal { text-align: right; }
+.fundraising-meter-goal strong { color: var(--brand); }
+.fundraising-meter-track { height: 10px; overflow: hidden; background: #e6ebe4; border-radius: 999px; }
+.fundraising-meter-fill { height: 100%; background: var(--brand); border-radius: inherit; transition: width 400ms ease; }
+.fundraising-meter .button { width: 100%; }
+.published-detail .fundraising-meter { max-width: 560px; }
 .published-body { max-width: 760px; }
 .published-body p { margin: 0 0 18px; color: var(--muted); font-size: 17px; white-space: pre-line; overflow-wrap: anywhere; }
 .published-detail { display: grid; gap: 24px; }
@@ -414,7 +424,7 @@ a {
 .amount-grid input:checked + span { color: var(--brand-dark); border-color: var(--brand); background: var(--brand-soft); }
 .amount-grid input:focus-visible + span { outline: 3px solid var(--surface); outline-offset: 3px; box-shadow: 0 0 0 6px #111111; }
 .other-amount { display: grid; gap: 8px; margin-top: 18px; color: var(--muted); font-size: 14px; }
-.other-amount input { min-height: 48px; padding: 0 12px; background: var(--warm-white); border: 1px solid var(--line); border-radius: 6px; }
+.other-amount input, .other-amount select { min-height: 48px; padding: 0 12px; background: var(--warm-white); border: 1px solid var(--line); border-radius: 6px; }
 .donation-preview h2 { margin: 0 0 18px; font-size: 24px; font-weight: 700; }
 .donation-offer { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; }
 .donation-offer a { color: var(--brand-dark); font-weight: 700; text-decoration: underline; }

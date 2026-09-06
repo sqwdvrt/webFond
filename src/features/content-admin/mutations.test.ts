@@ -11,6 +11,7 @@ import type {
 import type {
   DocumentInput,
   EditorialInput,
+  ProjectInput,
   RequisitesInput,
   ValidationResult,
 } from "./types";
@@ -40,6 +41,19 @@ const editorialInput: EditorialInput = {
   imageUrl: null,
   status: "DRAFT",
 };
+
+const projectInput: ProjectInput = {
+  ...editorialInput,
+  goalAmountKopecks: null,
+  manualRaisedKopecks: 0,
+};
+
+function parsedEditorial(
+  overrides: Partial<ProjectInput> = {},
+): ValidationResult<EditorialInput> & ValidationResult<ProjectInput> {
+  return ok({ ...projectInput, ...overrides }) as ValidationResult<EditorialInput> &
+    ValidationResult<ProjectInput>;
+}
 
 const documentInput: DocumentInput = {
   title: "Устав фонда",
@@ -141,7 +155,7 @@ describe("content mutation authorization order", () => {
   it.each([
     ["project create", () => createProjectMutation(new FormData(), {
       requireSession,
-      parse: vi.fn(() => { events.push("parse"); return ok(editorialInput); }),
+      parse: vi.fn(() => { events.push("parse"); return ok(projectInput); }),
       create: vi.fn(async () => { events.push("repository"); return editorialSuccess(); }),
     })],
     ["news create", () => createNewsMutation(new FormData(), {
@@ -156,7 +170,7 @@ describe("content mutation authorization order", () => {
     })],
     ["project update", () => updateProjectMutation("entry-1", formWithToken(), {
       requireSession,
-      parse: vi.fn(() => { events.push("parse"); return ok(editorialInput); }),
+      parse: vi.fn(() => { events.push("parse"); return ok(projectInput); }),
       update: vi.fn(async () => { events.push("repository"); return editorialSuccess({ previousSlug: editorialInput.slug }); }),
       now: clock,
     })],
@@ -210,7 +224,7 @@ describe("content mutation authorization order", () => {
 
   it("does not parse, read the clock or access the repository when auth rejects", async () => {
     const denied = new Error("redirected");
-    const parse = vi.fn(() => ok(editorialInput));
+    const parse = vi.fn(() => ok(projectInput));
     const update = vi.fn<() => Promise<UpdateEditorialResult>>();
     requireSession = vi.fn(async () => {
       throw denied;
@@ -236,7 +250,7 @@ describe("neutral mutation failures", () => {
 
     const result = await createProjectMutation(new FormData(), {
       requireSession,
-      parse: () => invalid<EditorialInput>(),
+      parse: () => invalid<ProjectInput>(),
       create,
     });
 
@@ -260,14 +274,14 @@ describe("neutral mutation failures", () => {
     const repositoryResult = { status } as UpdateEditorialResult;
     const result = await updateProjectMutation("entry-1", formWithToken(), {
       requireSession,
-      parse: () => ok(editorialInput),
+      parse: () => ok(projectInput),
       update: vi.fn(async () => repositoryResult),
       now: () => now,
     });
 
     expect(result).toEqual({
       ok: false,
-      state: { status: "error", message, values: editorialInput },
+      state: { status: "error", message, values: projectInput },
     });
     expect(result).not.toHaveProperty("effect");
   });
@@ -275,7 +289,7 @@ describe("neutral mutation failures", () => {
   it("returns parsed values when editorial creation finds a duplicate slug", async () => {
     const result = await createProjectMutation(new FormData(), {
       requireSession,
-      parse: () => ok(editorialInput),
+      parse: () => ok(projectInput),
       create: vi.fn(async (): Promise<CreateEditorialResult> => ({
         status: "duplicate",
       })),
@@ -286,7 +300,7 @@ describe("neutral mutation failures", () => {
       state: {
         status: "error",
         message: "Такой адрес уже используется",
-        values: editorialInput,
+        values: projectInput,
       },
     });
   });
@@ -300,7 +314,7 @@ describe("neutral mutation failures", () => {
         formWithToken(token),
         {
           requireSession,
-          parse: () => ok(editorialInput),
+          parse: () => ok(projectInput),
           update,
           now: () => now,
         },
@@ -311,7 +325,7 @@ describe("neutral mutation failures", () => {
         state: {
           status: "error",
           message: "Данные изменились. Обновите страницу и повторите действие",
-          values: editorialInput,
+          values: projectInput,
         },
       });
       expect(update).not.toHaveBeenCalled();
@@ -423,7 +437,7 @@ describe.each([
   it("revalidates the first published detail and sitemap", async () => {
     const result = await create(new FormData(), {
       requireSession,
-      parse: () => ok({ ...editorialInput, status: "PUBLISHED" }),
+      parse: () => parsedEditorial({ status: "PUBLISHED" }),
       create: vi.fn(async () => editorialSuccess({ isPublished: true, publishedAt: now })),
     });
 
@@ -437,7 +451,7 @@ describe.each([
   it("revalidates the old detail and sitemap when archiving", async () => {
     const result = await update("entry-1", formWithToken(), {
       requireSession,
-      parse: () => ok({ ...editorialInput, status: "ARCHIVED" }),
+      parse: () => parsedEditorial({ status: "ARCHIVED" }),
       update: vi.fn(async () => editorialSuccess({
         previousSlug: "old-slug",
         slug: "old-slug",
@@ -457,7 +471,7 @@ describe.each([
   it("revalidates the new detail and sitemap on first publication", async () => {
     const result = await update("entry-1", formWithToken(), {
       requireSession,
-      parse: () => ok({ ...editorialInput, status: "PUBLISHED" }),
+      parse: () => parsedEditorial({ status: "PUBLISHED" }),
       update: vi.fn(async () => editorialSuccess({
         previousSlug: editorialInput.slug,
         isPublished: true,
@@ -476,7 +490,7 @@ describe.each([
   it("revalidates old and new detail paths plus sitemap for a published slug rename", async () => {
     const result = await update("entry-1", formWithToken(), {
       requireSession,
-      parse: () => ok({ ...editorialInput, slug: "new-slug", status: "PUBLISHED" }),
+      parse: () => parsedEditorial({ slug: "new-slug", status: "PUBLISHED" }),
       update: vi.fn(async () => editorialSuccess({
         previousSlug: "old-slug",
         slug: "new-slug",
@@ -497,7 +511,7 @@ describe.each([
   it("revalidates old and new detail paths without sitemap for a draft slug rename", async () => {
     const result = await update("entry-1", formWithToken(), {
       requireSession,
-      parse: () => ok({ ...editorialInput, slug: "new-slug" }),
+      parse: () => parsedEditorial({ slug: "new-slug" }),
       update: vi.fn(async () => editorialSuccess({
         previousSlug: "old-slug",
         slug: "new-slug",
@@ -515,7 +529,7 @@ describe.each([
   it("deduplicates an unchanged published detail path", async () => {
     const result = await update("entry-1", formWithToken(), {
       requireSession,
-      parse: () => ok({ ...editorialInput, status: "PUBLISHED" }),
+      parse: () => parsedEditorial({ status: "PUBLISHED" }),
       update: vi.fn(async () => editorialSuccess({
         previousSlug: editorialInput.slug,
         wasPublished: true,

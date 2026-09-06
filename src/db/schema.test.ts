@@ -19,6 +19,10 @@ const paymentRateLimitMigrationPath = resolve(
   process.cwd(),
   "prisma/migrations/20260824195000_payment_rate_limit_bucket/migration.sql",
 );
+const projectFundraisingMigrationPath = resolve(
+  process.cwd(),
+  "prisma/migrations/20260905100000_project_fundraising/migration.sql",
+);
 
 const schema = readFileSync(schemaPath, "utf8");
 const migration = existsSync(migrationPath)
@@ -32,6 +36,9 @@ const contentPublicationMigration = existsSync(contentPublicationMigrationPath)
   : "";
 const paymentRateLimitMigration = existsSync(paymentRateLimitMigrationPath)
   ? readFileSync(paymentRateLimitMigrationPath, "utf8")
+  : "";
+const projectFundraisingMigration = existsSync(projectFundraisingMigrationPath)
+  ? readFileSync(projectFundraisingMigrationPath, "utf8")
   : "";
 
 const requiredModels = [
@@ -119,5 +126,38 @@ describe("Prisma schema", () => {
       'CREATE INDEX "PaymentRateLimitBucket_expiresAt_idx" ON "PaymentRateLimitBucket"("expiresAt")',
     );
     expect(paymentRateLimitMigration).not.toMatch(/\b(?:ALTER|DROP)\b/);
+  });
+
+  it("stores an optional project goal, a manual raised amount, and donation attribution", () => {
+    const project = schema.match(/model Project \{[\s\S]*?\n\}/)?.[0] ?? "";
+    const donation = schema.match(/model Donation \{[\s\S]*?\n\}/)?.[0] ?? "";
+
+    expect(project).toContain("goalAmountKopecks   Int?");
+    expect(project).toContain("manualRaisedKopecks Int            @default(0)");
+    expect(project).toContain("donations           Donation[]");
+    expect(donation).toContain("projectId         String?");
+    expect(donation).toContain(
+      "project           Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)",
+    );
+    expect(donation).toContain("@@index([status, projectId])");
+  });
+
+  it("adds fundraising columns in a forward-only migration", () => {
+    expect(projectFundraisingMigration).toContain(
+      'ALTER TABLE "Project" ADD COLUMN "goalAmountKopecks" INTEGER',
+    );
+    expect(projectFundraisingMigration).toContain(
+      'ALTER TABLE "Project" ADD COLUMN "manualRaisedKopecks" INTEGER NOT NULL DEFAULT 0',
+    );
+    expect(projectFundraisingMigration).toContain(
+      'ALTER TABLE "Donation" ADD COLUMN "projectId" TEXT',
+    );
+    expect(projectFundraisingMigration).toContain(
+      'CREATE INDEX "Donation_status_projectId_idx" ON "Donation"("status", "projectId")',
+    );
+    expect(projectFundraisingMigration).toContain(
+      'ALTER TABLE "Donation" ADD CONSTRAINT "Donation_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE',
+    );
+    expect(projectFundraisingMigration).not.toMatch(/\bDROP\b/);
   });
 });

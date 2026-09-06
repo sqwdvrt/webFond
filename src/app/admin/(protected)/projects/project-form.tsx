@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 
 import type { ContentFormState } from "@/features/content-admin/mutations";
-import type { AdminEditorialRow } from "@/features/content-admin/repository";
+import type { AdminProjectRow } from "@/features/content-admin/repository";
 
 import styles from "../../admin.module.css";
 import {
@@ -23,7 +23,7 @@ type ProjectFormProps = {
   mode: "create" | "edit";
   saveAction: FormAction;
   deleteAction?: FormAction;
-  initialValues?: AdminEditorialRow;
+  initialValues?: AdminProjectRow;
   successMessage?: string;
 };
 
@@ -63,8 +63,39 @@ export function ProjectForm({
     return initialValues?.[name] ?? (name === "status" ? "DRAFT" : "");
   }
 
+  function roubleValue(name: "goalAmountRoubles" | "manualRaisedRoubles") {
+    if (state.values && Object.hasOwn(state.values, name)) {
+      return String(state.values[name] ?? "");
+    }
+
+    const kopecks =
+      name === "goalAmountRoubles"
+        ? state.values && Object.hasOwn(state.values, "goalAmountKopecks")
+          ? state.values.goalAmountKopecks
+          : initialValues?.goalAmountKopecks
+        : state.values && Object.hasOwn(state.values, "manualRaisedKopecks")
+          ? state.values.manualRaisedKopecks
+          : initialValues?.manualRaisedKopecks;
+
+    if (kopecks == null || kopecks === "") return "";
+    const amount = typeof kopecks === "number" ? kopecks : Number(kopecks);
+    if (!Number.isFinite(amount) || amount === 0 && name === "manualRaisedRoubles") {
+      return name === "goalAmountRoubles" && amount === 0 ? "0" : "";
+    }
+    if (!Number.isFinite(amount)) return "";
+    return String(amount / 100);
+  }
+
   const field = (
-    name: "title" | "slug" | "summary" | "content" | "imageUrl" | "status",
+    name:
+      | "title"
+      | "slug"
+      | "summary"
+      | "content"
+      | "imageUrl"
+      | "status"
+      | "goalAmountRoubles"
+      | "manualRaisedRoubles",
   ) => ({
     "aria-describedby": `${name}-error`,
     "aria-invalid": Boolean(state.errors?.[name]),
@@ -135,6 +166,38 @@ export function ProjectForm({
           uploadLabel="Загрузить изображение"
           value={String(value("imageUrl"))}
         />
+
+        <div className={styles.field}>
+          <label htmlFor="goalAmountRoubles">Цель сбора, ₽</label>
+          <input
+            {...field("goalAmountRoubles")}
+            defaultValue={roubleValue("goalAmountRoubles")}
+            id="goalAmountRoubles"
+            inputMode="numeric"
+            maxLength={8}
+            name="goalAmountRoubles"
+          />
+          <p className={styles.fieldHint}>
+            Необязательно. Если цель не задана, шкала на сайте не показывается.
+          </p>
+          <FieldError id="goalAmountRoubles-error">{state.errors?.goalAmountRoubles}</FieldError>
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor="manualRaisedRoubles">Уже собрано вне сайта, ₽</label>
+          <input
+            {...field("manualRaisedRoubles")}
+            defaultValue={roubleValue("manualRaisedRoubles")}
+            id="manualRaisedRoubles"
+            inputMode="numeric"
+            maxLength={8}
+            name="manualRaisedRoubles"
+          />
+          <p className={styles.fieldHint}>
+            Банковский перевод, наличные и другие суммы вне ЮKassa.
+          </p>
+          <FieldError id="manualRaisedRoubles-error">{state.errors?.manualRaisedRoubles}</FieldError>
+        </div>
 
         <div className={styles.field}>
           <label htmlFor="status">Статус</label>

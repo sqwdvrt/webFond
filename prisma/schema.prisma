@@ -39,22 +39,28 @@ model Donation {
   paidAt            DateTime?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  projectId         String?
+  project           Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([createdAt, id])
+  @@index([status, projectId])
 }
 
 model Project {
-  id          String            @id @default(cuid())
-  title       String
-  slug        String            @unique
-  summary     String?
-  content     String?
-  imageUrl    String?
-  status      PublicationStatus @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id                  String            @id @default(cuid())
+  title               String
+  slug                String            @unique
+  summary             String?
+  content             String?
+  imageUrl            String?
+  status              PublicationStatus @default(DRAFT)
+  publishedAt         DateTime?
+  goalAmountKopecks   Int?
+  manualRaisedKopecks Int            @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  donations           Donation[]
 
   @@index([status, publishedAt, id])
 }

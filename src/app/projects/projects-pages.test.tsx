@@ -5,18 +5,19 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderProjectsPage } from "@/app/projects/page";
 import { projects } from "@/content/projects";
-import type { PublicEditorialListRow } from "@/features/content-admin/repository";
+import type { PublicProjectCard } from "@/features/fundraising/public-projects";
 
-const publishedProject: PublicEditorialListRow = {
+const publishedProject: PublicProjectCard = {
   id: "project-1",
   title: "Опубликованный проект",
   slug: "published-project",
   summary: "Проверенное описание опубликованного проекта.",
   imageUrl: "/media/project.jpg",
   publishedAt: new Date("2026-08-22T10:00:00.000Z"),
+  fundraising: null,
 };
 
-function dependencies(result: PublicEditorialListRow[] | Error) {
+function dependencies(result: PublicProjectCard[] | Error) {
   return {
     listProjects: vi.fn(async () => {
       if (result instanceof Error) throw result;
@@ -69,6 +70,26 @@ describe("projects page", () => {
     );
     expect(screen.getByText(publishedProject.summary!)).toBeVisible();
     expect(deps.listProjects).toHaveBeenCalledOnce();
+  });
+
+  it("shows the fundraising meter only for projects with a goal", async () => {
+    const withGoal: PublicProjectCard = {
+      ...publishedProject,
+      fundraising: {
+        collectedKopecks: 125_887_500,
+        goalKopecks: 600_000_000,
+        fillPercent: 20.98,
+      },
+    };
+    render(await renderProjectsPage(dependencies([withGoal, publishedProject])));
+
+    expect(screen.getByRole("link", { name: "Помочь" })).toHaveAttribute(
+      "href",
+      "/help?project=published-project",
+    );
+    expect(screen.getByText("собрали")).toBeVisible();
+    expect(screen.getByText("нужно")).toBeVisible();
+    expect(screen.getAllByRole("link", { name: publishedProject.title })).toHaveLength(2);
   });
 
   it("adds no project block when there are no published projects", async () => {

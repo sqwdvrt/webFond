@@ -107,6 +107,18 @@ const draftEditorialInput = {
   status: "DRAFT" as const,
 };
 
+const draftProjectInput = {
+  ...draftEditorialInput,
+  goalAmountKopecks: null,
+  manualRaisedKopecks: 0,
+};
+
+const adminProjectRow = {
+  ...adminEditorialRow,
+  goalAmountKopecks: null,
+  manualRaisedKopecks: 0,
+};
+
 const draftDocumentInput = {
   title: "Новый отчет",
   category: "ANNUAL",
@@ -133,6 +145,12 @@ const adminEditorialDetailSelect = {
   status: true,
   publishedAt: true,
   updatedAt: true,
+};
+
+const projectAdminDetailSelect = {
+  ...adminEditorialDetailSelect,
+  goalAmountKopecks: true,
+  manualRaisedKopecks: true,
 };
 
 const publicEditorialListSelect = {
@@ -197,7 +215,7 @@ describe("content repository admin reads", () => {
   );
 
   it.each([
-    ["project", getAdminProject, "project", adminEditorialRow, adminEditorialDetailSelect],
+    ["project", getAdminProject, "project", adminProjectRow, projectAdminDetailSelect],
     ["news post", getAdminNews, "newsPost", adminEditorialRow, adminEditorialDetailSelect],
     ["document", getAdminDocument, "document", adminDocumentRow, adminDocumentDetailSelect],
   ] as const)(
@@ -406,7 +424,7 @@ describe("content repository requisites reads", () => {
 
 describe("content repository creates", () => {
   it.each([
-    ["project", createProject, "project", draftEditorialInput, "project-1", "new-entry"],
+    ["project", createProject, "project", draftProjectInput, "project-1", "new-entry"],
     ["news post", createNews, "newsPost", draftEditorialInput, "news-1", "new-entry"],
   ] as const)(
     "creates a normalized draft %s and returns cache-relevant state",
@@ -419,7 +437,7 @@ describe("content repository creates", () => {
       }));
       const client = { [model]: { create: createQuery } };
 
-      await expect(create(input, client as never)).resolves.toEqual({
+      await expect(create(input as never, client as never)).resolves.toEqual({
         status: "ok",
         id,
         previousSlug: null,
@@ -453,7 +471,7 @@ describe("content repository creates", () => {
 
     try {
       await createProject(
-        { ...draftEditorialInput, status: "PUBLISHED" },
+        { ...draftProjectInput, status: "PUBLISHED" },
         { project: { create: createQuery } },
       );
     } finally {
@@ -494,7 +512,7 @@ describe("content repository creates", () => {
   });
 
   it.each([
-    ["project", createProject, "project", draftEditorialInput],
+    ["project", createProject, "project", draftProjectInput],
     ["news post", createNews, "newsPost", draftEditorialInput],
   ] as const)("maps a %s P2002 create failure to duplicate", async (_label, create, model, input) => {
     const createQuery = vi.fn(async () => {
@@ -547,10 +565,13 @@ describe("content repository updates", () => {
       }));
       const updateMany = vi.fn(async () => ({ count: 1 }));
       const client = { [model]: { findUnique, updateMany } };
-      const input = { ...draftEditorialInput, slug, status: "ARCHIVED" as const };
+      const input =
+        model === "project"
+          ? { ...draftProjectInput, slug, status: "ARCHIVED" as const }
+          : { ...draftEditorialInput, slug, status: "ARCHIVED" as const };
 
       await expect(
-        update(id, updatedAt, input, client as never),
+        update(id, updatedAt, input as never, client as never),
       ).resolves.toEqual({
         status: "ok",
         id,
@@ -617,7 +638,7 @@ describe("content repository updates", () => {
       await updateProject(
         "project-1",
         updatedAt,
-        { ...draftEditorialInput, status: "PUBLISHED" },
+        { ...draftProjectInput, status: "PUBLISHED" },
         { project: { findUnique, updateMany } },
       );
     } finally {
@@ -634,7 +655,7 @@ describe("content repository updates", () => {
     const updateMany = vi.fn(async () => ({ count: 1 }));
 
     await expect(
-      updateProject("missing", updatedAt, draftEditorialInput, {
+      updateProject("missing", updatedAt, draftProjectInput, {
         project: { findUnique, updateMany },
       }),
     ).resolves.toEqual({ status: "missing" });
@@ -667,7 +688,7 @@ describe("content repository updates", () => {
       throw { code: "P2002", message: "sensitive database detail" };
     });
 
-    const result = await updateProject("project-1", updatedAt, draftEditorialInput, {
+    const result = await updateProject("project-1", updatedAt, draftProjectInput, {
       project: { findUnique, updateMany },
     });
 

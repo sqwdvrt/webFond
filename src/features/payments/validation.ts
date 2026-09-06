@@ -11,11 +11,13 @@ const PAYMENT_INPUT_KEYS = [
   "amountRoubles",
   "attemptId",
   "email",
+  "projectSlug",
   "website",
 ] as const;
 
 const UUID_V4_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const PROJECT_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f-\u009f]/;
 const EMAIL_LOCAL_PART_PATTERN =
   /^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
@@ -90,6 +92,10 @@ export function parsePaymentCreateInput(
     typeof value.attemptId !== "string" ||
     !UUID_V4_PATTERN.test(value.attemptId) ||
     typeof value.email !== "string" ||
+    typeof value.projectSlug !== "string" ||
+    (value.projectSlug !== "" &&
+      (textLength(value.projectSlug) > 120 ||
+        !PROJECT_SLUG_PATTERN.test(value.projectSlug))) ||
     typeof value.amountRoubles !== "number" ||
     !Number.isSafeInteger(value.amountRoubles) ||
     value.amountRoubles < 100 ||
@@ -110,6 +116,7 @@ export function parsePaymentCreateInput(
     attemptId: value.attemptId,
     email,
     website: "",
+    projectSlug: value.projectSlug,
   };
 
   return {

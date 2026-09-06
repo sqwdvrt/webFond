@@ -1,3 +1,4 @@
+import { findPublishedProjectIdBySlug } from "@/features/fundraising/public-projects";
 import { PaymentsConfigurationError, readPaymentCreateConfig } from "@/features/payments/config";
 import { createPaymentClientKey } from "@/features/payments/client-key";
 import {
@@ -30,6 +31,7 @@ type CreatePaymentRouteDependencies = {
   now: () => Date;
   environment: string | undefined;
   reportConfigError: (code: PaymentsConfigurationError["code"]) => void;
+  resolveProjectId: (slug: string) => Promise<string | null>;
 };
 
 const defaultDependencies: CreatePaymentRouteDependencies = {
@@ -46,6 +48,7 @@ const defaultDependencies: CreatePaymentRouteDependencies = {
   reportConfigError: (code) => {
     console.error("payment_create_config", code);
   },
+  resolveProjectId: findPublishedProjectIdBySlug,
 };
 
 function jsonResponse(
@@ -170,12 +173,20 @@ export async function handlePaymentCreate(
       trustProxy: config.trustProxy,
       environment: dependencies.environment,
     });
+    let projectId: string | null = null;
+    if (input.input.projectSlug !== "") {
+      projectId = await dependencies.resolveProjectId(input.input.projectSlug);
+      if (!projectId) {
+        return jsonResponse(400, { error: "invalid_request" });
+      }
+    }
     const outcome = await dependencies.createPayment(
       {
         amountKopecks: input.amountKopecks,
         attemptId: input.input.attemptId,
         customerEmail: input.input.email,
         clientKey,
+        projectId,
       },
       { config, now: dependencies.now() },
     );

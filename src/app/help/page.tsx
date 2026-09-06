@@ -5,6 +5,7 @@ import { PageHero } from "@/components/content/page-hero";
 import { BankQrTransfer } from "@/components/donation/bank-qr-transfer";
 import { DonationForm } from "@/components/donation/donation-form";
 import { DonationPreview } from "@/components/donation/donation-preview";
+import { listPublishedProjectDonationOptions } from "@/features/fundraising/public-projects";
 import { readPaymentsAvailability } from "@/features/payments/config";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
 
 type HelpPageDependencies = {
   paymentsEnabled: () => boolean;
+  projects?: Array<{ slug: string; title: string }>;
+  initialProjectSlug?: string;
 };
 
 const defaultDependencies: HelpPageDependencies = {
@@ -53,11 +56,15 @@ function trustNote(paymentsEnabled: boolean) {
 }
 
 export function renderHelpPage(
-  dependencies: HelpPageDependencies = defaultDependencies,
+  dependencies: Partial<HelpPageDependencies> = {},
 ) {
+  const { paymentsEnabled, projects = [], initialProjectSlug } = {
+    ...defaultDependencies,
+    ...dependencies,
+  };
   let enabled = false;
   try {
-    enabled = dependencies.paymentsEnabled();
+    enabled = paymentsEnabled();
   } catch {
     enabled = false;
   }
@@ -89,7 +96,14 @@ export function renderHelpPage(
             </div>
           </div>
           <div className="help-layout">
-            {enabled ? <DonationForm /> : <DonationPreview />}
+            {enabled ? (
+              <DonationForm
+                initialProjectSlug={initialProjectSlug}
+                projects={projects}
+              />
+            ) : (
+              <DonationPreview />
+            )}
             <aside className="trust-note">
               <h3>{note.heading}</h3>
               <p>{note.lead}</p>
@@ -153,6 +167,23 @@ export function renderHelpPage(
   );
 }
 
-export default function HelpPage() {
-  return renderHelpPage();
+export default async function HelpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ project?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialProjectSlug =
+    typeof params.project === "string" ? params.project : "";
+  let projects: Array<{ slug: string; title: string }> = [];
+  try {
+    projects = await listPublishedProjectDonationOptions();
+  } catch {
+    projects = [];
+  }
+
+  return renderHelpPage({
+    initialProjectSlug,
+    projects,
+  });
 }

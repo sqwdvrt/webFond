@@ -20,6 +20,7 @@ const donation = {
   paidAt: new Date("2026-08-24T18:01:05.000Z"),
   createdAt: new Date("2026-08-24T18:00:00.000Z"),
   updatedAt: new Date("2026-08-24T18:01:05.000Z"),
+  projectId: null,
 } as Donation;
 
 function privacy(response: Response) {

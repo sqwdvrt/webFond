@@ -15,6 +15,11 @@ export type EditorialInput = {
   status: PublicationStatus;
 };
 
+export type ProjectInput = EditorialInput & {
+  goalAmountKopecks: number | null;
+  manualRaisedKopecks: number;
+};
+
 export type DocumentInput = {
   title: string;
   category: string;

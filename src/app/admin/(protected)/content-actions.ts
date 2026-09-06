@@ -34,6 +34,7 @@ import {
 import {
   parseDocumentForm,
   parseEditorialForm,
+  parseProjectForm,
   parseRequisitesForm,
 } from "@/features/content-admin/validation";
 import { requireAdminSession } from "@/lib/admin-auth/session";
@@ -58,7 +59,7 @@ export async function createProjectAction(
 ): Promise<ContentFormState> {
   return applyMutation(createProjectMutation(formData, {
     requireSession: requireAdminSession,
-    parse: parseEditorialForm,
+    parse: parseProjectForm,
     create: createProject,
   }));
 }
@@ -70,7 +71,7 @@ export async function updateProjectAction(
 ): Promise<ContentFormState> {
   return applyMutation(updateProjectMutation(id, formData, {
     requireSession: requireAdminSession,
-    parse: parseEditorialForm,
+    parse: parseProjectForm,
     update: updateProject,
     now,
   }));
