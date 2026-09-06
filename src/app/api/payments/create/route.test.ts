@@ -16,6 +16,7 @@ const validBody = {
   attemptId: ATTEMPT_ID,
   email: "anna@example.org",
   website: "",
+  projectSlug: "",
 };
 
 const config: PaymentCreateConfig = {
@@ -55,6 +56,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
     now: () => new Date("2026-08-24T18:00:00.000Z"),
     environment: "test",
     reportConfigError: vi.fn(),
+    resolveProjectId: vi.fn(async () => "project-1"),
     ...overrides,
   };
 }
@@ -274,9 +276,40 @@ describe("payment create HTTP guards", () => {
         attemptId: ATTEMPT_ID,
         customerEmail: "anna@example.org",
         clientKey: "client-key",
+        projectId: null,
       },
       expect.objectContaining({ config }),
     );
+  });
+
+  it("resolves a published project slug before creating the payment", async () => {
+    const deps = dependencies();
+    const incoming = request({
+      body: JSON.stringify({ ...validBody, projectSlug: "pomoshch-ryadom" }),
+    });
+
+    await handlePaymentCreate(incoming, deps);
+
+    expect(deps.resolveProjectId).toHaveBeenCalledExactlyOnceWith("pomoshch-ryadom");
+    expect(deps.createPayment).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ projectId: "project-1" }),
+      expect.objectContaining({ config }),
+    );
+  });
+
+  it("rejects an unpublished or unknown project slug", async () => {
+    const deps = dependencies({
+      resolveProjectId: vi.fn(async () => null),
+    });
+    const incoming = request({
+      body: JSON.stringify({ ...validBody, projectSlug: "missing-project" }),
+    });
+
+    const response = await handlePaymentCreate(incoming, deps);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "invalid_request" });
+    expect(deps.createPayment).not.toHaveBeenCalled();
   });
 });
 

@@ -41,6 +41,7 @@ function donation(overrides: Partial<Donation> = {}): Donation {
     paidAt: null,
     createdAt: NOW,
     updatedAt: NOW,
+    projectId: null,
     ...overrides,
   };
 }
@@ -152,6 +153,7 @@ async function create(input: {
   repository: ReturnType<typeof repositoryFixture>["repository"];
   client?: ReturnType<typeof clientFixture>;
   now?: Date;
+  projectId?: string | null;
 }) {
   return createPayment(
     {
@@ -159,6 +161,7 @@ async function create(input: {
       attemptId: ATTEMPT_ID,
       customerEmail: CUSTOMER_EMAIL,
       clientKey: "client-key",
+      projectId: input.projectId,
     },
     {
       config,
@@ -186,6 +189,7 @@ describe("createPayment happy path", () => {
       amountKopecks: 30_000,
       customerEmail: CUSTOMER_EMAIL,
       clientKey: "client-key",
+      projectId: null,
       now: NOW,
     });
     expect(client.createPayment).toHaveBeenCalledExactlyOnceWith({
@@ -196,6 +200,22 @@ describe("createPayment happy path", () => {
     });
     expect(client.getPayment).not.toHaveBeenCalled();
     expect(fixture.stored).toMatchObject({ providerPaymentId: PROVIDER_ID });
+  });
+
+  it("attributes a new attempt to the selected project", async () => {
+    const fixture = repositoryFixture();
+
+    await expect(
+      create({ projectId: "project-1", repository: fixture.repository }),
+    ).resolves.toMatchObject({ kind: "redirect" });
+    expect(fixture.repository.beginAttempt).toHaveBeenCalledExactlyOnceWith({
+      attemptId: ATTEMPT_ID,
+      amountKopecks: 30_000,
+      customerEmail: CUSTOMER_EMAIL,
+      clientKey: "client-key",
+      projectId: "project-1",
+      now: NOW,
+    });
   });
 });
 

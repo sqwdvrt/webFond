@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PublicEditorialDetailRow } from "@/features/content-admin/repository";
+import type { PublicProjectDetail } from "@/features/fundraising/public-projects";
 
 const mocks = vi.hoisted(() => ({
   getPublishedProjectForRequest: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 import ProjectError from "@/app/projects/error";
 import ProjectPage, { generateMetadata } from "@/app/projects/[slug]/page";
 
-const project: PublicEditorialDetailRow = {
+const project: PublicProjectDetail = {
   id: "project-1",
   title: "Опубликованный проект",
   slug: "published-project",
@@ -28,6 +28,7 @@ const project: PublicEditorialDetailRow = {
   content: "Первый абзац.\n\nВторой абзац.",
   imageUrl: "/media/project.jpg",
   publishedAt: new Date("2026-08-22T10:00:00.000Z"),
+  fundraising: null,
 };
 
 describe("published project detail", () => {
@@ -47,6 +48,25 @@ describe("published project detail", () => {
     expect(screen.getByText("Первый абзац.")).toBeVisible();
     expect(screen.getByText("Второй абзац.")).toBeVisible();
     expect(mocks.notFound).not.toHaveBeenCalled();
+  });
+
+  it("renders the fundraising meter when the project has a goal", async () => {
+    mocks.getPublishedProjectForRequest.mockResolvedValue({
+      ...project,
+      fundraising: {
+        collectedKopecks: 125_887_500,
+        goalKopecks: 600_000_000,
+        fillPercent: 20.98,
+      },
+    });
+
+    render(await ProjectPage({ params: Promise.resolve({ slug: project.slug }) }));
+
+    expect(screen.getByRole("link", { name: "Помочь" })).toHaveAttribute(
+      "href",
+      "/help?project=published-project",
+    );
+    expect(screen.getByText("собрали")).toBeVisible();
   });
 
   it("calls notFound only when the published repository returns null", async () => {

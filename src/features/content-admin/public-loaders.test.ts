@@ -5,15 +5,17 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   cache: vi.fn(<T extends (...args: never[]) => unknown>(loader: T) => loader),
   getPublishedNewsPost: vi.fn(),
-  getPublishedProject: vi.fn(),
+  getPublishedProjectForDisplay: vi.fn(),
   listPublishedNews: vi.fn(),
 }));
 
 vi.mock("react", () => ({ cache: mocks.cache }));
 vi.mock("./repository", () => ({
   getPublishedNewsPost: mocks.getPublishedNewsPost,
-  getPublishedProject: mocks.getPublishedProject,
   listPublishedNews: mocks.listPublishedNews,
+}));
+vi.mock("@/features/fundraising/public-projects", () => ({
+  getPublishedProjectForDisplay: mocks.getPublishedProjectForDisplay,
 }));
 
 import {
@@ -25,10 +27,10 @@ import {
 describe("public request loaders", () => {
   it("wraps every duplicated production repository read in React.cache", () => {
     expect(mocks.cache).toHaveBeenCalledWith(mocks.listPublishedNews);
-    expect(mocks.cache).toHaveBeenCalledWith(mocks.getPublishedProject);
+    expect(mocks.cache).toHaveBeenCalledWith(mocks.getPublishedProjectForDisplay);
     expect(mocks.cache).toHaveBeenCalledWith(mocks.getPublishedNewsPost);
     expect(listPublishedNewsForRequest).toBe(mocks.listPublishedNews);
-    expect(getPublishedProjectForRequest).toBe(mocks.getPublishedProject);
+    expect(getPublishedProjectForRequest).toBe(mocks.getPublishedProjectForDisplay);
     expect(getPublishedNewsPostForRequest).toBe(mocks.getPublishedNewsPost);
   });
 

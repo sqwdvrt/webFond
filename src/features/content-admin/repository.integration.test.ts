@@ -110,6 +110,8 @@ describeWithDatabase("content repository concurrency against PostgreSQL", () => 
           content: "Newer content",
           imageUrl: null,
           status: "DRAFT",
+          goalAmountKopecks: null,
+          manualRaisedKopecks: 0,
         },
         prisma,
       );
@@ -132,6 +134,8 @@ describeWithDatabase("content repository concurrency against PostgreSQL", () => 
           content: "Stale content",
           imageUrl: null,
           status: "DRAFT",
+          goalAmountKopecks: null,
+          manualRaisedKopecks: 0,
         },
         prisma,
       );

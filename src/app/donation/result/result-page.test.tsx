@@ -37,6 +37,7 @@ function donation(overrides: Partial<Donation> = {}): Donation {
     paidAt: null,
     createdAt: new Date("2026-08-24T18:00:00.000Z"),
     updatedAt: new Date("2026-08-24T18:00:00.000Z"),
+    projectId: null,
     ...overrides,
   };
 }

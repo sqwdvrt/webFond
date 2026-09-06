@@ -5,6 +5,7 @@ import {
   defaultRequisitesDraft,
   parseDocumentForm,
   parseEditorialForm,
+  parseProjectForm,
   parseRequisitesForm,
   parseRequisitesSetting,
   publicationTimestamp,
@@ -184,6 +185,98 @@ describe("parseEditorialForm", () => {
     const result = parseEditorialForm(form({ ...validDraft, imageUrl }));
 
     expect(result).toMatchObject({ ok: false, errors: { imageUrl: expect.any(String) } });
+  });
+});
+
+describe("parseProjectForm", () => {
+  const validDraft = {
+    title: "  Помощь рядом  ",
+    slug: "  pomoshch-ryadom  ",
+    summary: "   ",
+    content: "  Первый абзац.\n\n  Второй абзац.  ",
+    imageUrl: "  /images/project.jpg  ",
+    status: "  DRAFT  ",
+    goalAmountRoubles: "  6000000  ",
+    manualRaisedRoubles: "  1000  ",
+  };
+
+  it("stores optional goal and manual amounts as kopecks", () => {
+    expect(expectValid(parseProjectForm(form(validDraft)))).toEqual({
+      title: "Помощь рядом",
+      slug: "pomoshch-ryadom",
+      summary: null,
+      content: "Первый абзац.\n\n  Второй абзац.",
+      imageUrl: "/images/project.jpg",
+      status: "DRAFT",
+      goalAmountKopecks: 600_000_000,
+      manualRaisedKopecks: 100_000,
+    });
+  });
+
+  it("treats empty fundraising fields as no goal and zero manual raised", () => {
+    expect(
+      expectValid(
+        parseProjectForm(
+          form({ ...validDraft, goalAmountRoubles: " ", manualRaisedRoubles: "" }),
+        ),
+      ),
+    ).toMatchObject({
+      goalAmountKopecks: null,
+      manualRaisedKopecks: 0,
+    });
+  });
+
+  it("keeps submitted rouble strings when fundraising fields are invalid", () => {
+    const result = parseProjectForm(
+      form({
+        ...validDraft,
+        goalAmountRoubles: "0",
+        manualRaisedRoubles: "-1",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      errors: {
+        goalAmountRoubles: expect.any(String),
+        manualRaisedRoubles: expect.any(String),
+      },
+      values: {
+        goalAmountRoubles: "0",
+        manualRaisedRoubles: "-1",
+        status: "DRAFT",
+      },
+    });
+  });
+
+  it.each([
+    ["goalAmountRoubles", "1.5"],
+    ["goalAmountRoubles", "01"],
+    ["goalAmountRoubles", "abc"],
+    ["goalAmountRoubles", "20000001"],
+    ["manualRaisedRoubles", "1e3"],
+    ["manualRaisedRoubles", "20000001"],
+  ])("rejects invalid project %s %j", (field, value) => {
+    const result = parseProjectForm(form({ ...validDraft, [field]: value }));
+
+    expect(result).toMatchObject({ ok: false, errors: { [field]: expect.any(String) } });
+  });
+
+  it("accepts the maximum whole-rouble fundraising amounts", () => {
+    expect(
+      expectValid(
+        parseProjectForm(
+          form({
+            ...validDraft,
+            goalAmountRoubles: "20000000",
+            manualRaisedRoubles: "0",
+          }),
+        ),
+      ),
+    ).toMatchObject({
+      goalAmountKopecks: 2_000_000_000,
+      manualRaisedKopecks: 0,
+    });
   });
 });
 

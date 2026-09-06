@@ -37,6 +37,7 @@ function donation(
     currency: string;
     status: "PENDING" | "SUCCEEDED" | "CANCELED";
     paidAt: Date | null;
+    projectId: string | null;
   }> = {},
 ) {
   return {
@@ -51,6 +52,7 @@ function donation(
     paidAt: null,
     createdAt: NOW,
     updatedAt: NOW,
+    projectId: null,
     ...overrides,
   };
 }
@@ -153,6 +155,25 @@ describe("beginAttempt", () => {
     });
   });
 
+  it("rejects a reused attempt ID with a different project using a typed conflict", async () => {
+    const { client, repository, tx } = repositoryFixture(donation());
+
+    await expect(
+      repository.beginAttempt({
+        attemptId: ATTEMPT_ID,
+        amountKopecks: 50_000,
+        customerEmail: CUSTOMER_EMAIL,
+        clientKey: "client-17",
+        now: NOW,
+        projectId: "project-1",
+      }),
+    ).rejects.toBeInstanceOf(PaymentAttemptConflictError);
+    expect(tx.donation.create).not.toHaveBeenCalled();
+    expect(client.paymentRateLimitBucket.deleteMany).toHaveBeenCalledWith({
+      where: { expiresAt: { lte: NOW } },
+    });
+  });
+
   it("rejects a reused attempt ID with a different amount using a typed conflict", async () => {
     const { client, repository, tx } = repositoryFixture(donation());
 
@@ -204,6 +225,35 @@ describe("beginAttempt", () => {
         currency: "RUB",
         status: "PENDING",
         donorEmail: CUSTOMER_EMAIL,
+        projectId: null,
+      },
+    });
+  });
+
+  it("stores the attributed project on a new attempt", async () => {
+    const created = donation({ projectId: "project-1" });
+    const { repository, tx } = repositoryFixture();
+    tx.donation.create.mockResolvedValue(created);
+
+    await expect(
+      repository.beginAttempt({
+        attemptId: ATTEMPT_ID,
+        amountKopecks: 50_000,
+        customerEmail: CUSTOMER_EMAIL,
+        clientKey: "client-17",
+        now: NOW,
+        projectId: "project-1",
+      }),
+    ).resolves.toEqual({ kind: "created", donation: created });
+    expect(tx.donation.create).toHaveBeenCalledWith({
+      data: {
+        id: ATTEMPT_ID,
+        idempotenceKey: ATTEMPT_ID,
+        amountKopecks: 50_000,
+        currency: "RUB",
+        status: "PENDING",
+        donorEmail: CUSTOMER_EMAIL,
+        projectId: "project-1",
       },
     });
   });

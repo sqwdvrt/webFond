@@ -12,6 +12,7 @@ const validInput = {
   attemptId: "123e4567-e89b-42d3-a456-426614174000",
   email: "anna@example.org",
   website: "",
+  projectSlug: "",
 } as const;
 
 describe("parsePaymentCreateInput", () => {
@@ -115,6 +116,7 @@ describe("parsePaymentCreateInput", () => {
       acceptedPersonalData: validInput.acceptedPersonalData,
       attemptId: validInput.attemptId,
       email: validInput.email,
+      projectSlug: "",
     };
 
     expect(parsePaymentCreateInput(withoutWebsite)).toEqual({
@@ -123,6 +125,16 @@ describe("parsePaymentCreateInput", () => {
     expect(
       parsePaymentCreateInput({ ...validInput, unexpected: "value" }),
     ).toEqual({ kind: "invalid" });
+    expect(
+      parsePaymentCreateInput({
+        amountRoubles: validInput.amountRoubles,
+        acceptedOffer: validInput.acceptedOffer,
+        acceptedPersonalData: validInput.acceptedPersonalData,
+        attemptId: validInput.attemptId,
+        email: validInput.email,
+        website: "",
+      }),
+    ).toEqual({ kind: "invalid" });
   });
 
   it("returns a distinct bot result for a non-empty honeypot", () => {
@@ -130,6 +142,28 @@ describe("parsePaymentCreateInput", () => {
       parsePaymentCreateInput({ ...validInput, website: "spam.example" }),
     ).toEqual({ kind: "bot" });
   });
+
+  it("accepts an empty project slug or a published-style slug", () => {
+    expect(parsePaymentCreateInput(validInput)).toMatchObject({
+      kind: "valid",
+      input: { projectSlug: "" },
+    });
+    expect(
+      parsePaymentCreateInput({ ...validInput, projectSlug: "pomoshch-ryadom" }),
+    ).toMatchObject({
+      kind: "valid",
+      input: { projectSlug: "pomoshch-ryadom" },
+    });
+  });
+
+  it.each(["Pomoshch", "leading-", "two--hyphens", "x".repeat(121), " project"])(
+    "rejects invalid project slug %j",
+    (projectSlug) => {
+      expect(
+        parsePaymentCreateInput({ ...validInput, projectSlug }),
+      ).toEqual({ kind: "invalid" });
+    },
+  );
 
   it.each([null, [], "payload", true])(
     "rejects non-object payload %s",

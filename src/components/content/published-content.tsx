@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 type PublishedImageProps = {
   imageUrl: string;
@@ -13,6 +14,7 @@ type PublishedCardProps = {
   summary: string | null;
   title: string;
   headingLevel?: 2 | 3;
+  children?: ReactNode;
 };
 
 const publicationDate = new Intl.DateTimeFormat("ru-RU", {
@@ -46,6 +48,7 @@ export function PublishedCard({
   summary,
   title,
   headingLevel = 2,
+  children,
 }: PublishedCardProps) {
   const Heading = `h${headingLevel}` as "h2" | "h3";
 
@@ -62,6 +65,7 @@ export function PublishedCard({
           <Link href={href}>{title}</Link>
         </Heading>
         {summary ? <p>{summary}</p> : null}
+        {children}
       </div>
     </article>
   );

@@ -9,6 +9,7 @@ import type {
 import type {
   DocumentInput,
   EditorialInput,
+  ProjectInput,
   RequisitesInput,
   ValidationResult,
 } from "./types";
@@ -77,9 +78,7 @@ const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type FormValue = string | number | null;
 
-function parsedValues<T extends { [K in keyof T]: FormValue }>(
-  input: T,
-): Partial<Record<string, FormValue>> {
+function parsedValues(input: object): Partial<Record<string, FormValue>> {
   return Object.fromEntries(Object.entries(input)) as Partial<
     Record<string, FormValue>
   >;
@@ -175,9 +174,9 @@ function editorialPaths(
   return paths;
 }
 
-async function createEditorialMutation(
+async function createEditorialMutation<TInput extends EditorialInput>(
   formData: FormData,
-  dependencies: CreateDependencies<EditorialInput, CreateEditorialResult>,
+  dependencies: CreateDependencies<TInput, CreateEditorialResult>,
   section: EditorialSection,
 ): Promise<MutationOutcome> {
   await dependencies.requireSession();
@@ -199,10 +198,10 @@ async function createEditorialMutation(
   );
 }
 
-async function updateEditorialMutation(
+async function updateEditorialMutation<TInput extends EditorialInput>(
   id: string,
   formData: FormData,
-  dependencies: UpdateDependencies<EditorialInput, UpdateEditorialResult>,
+  dependencies: UpdateDependencies<TInput, UpdateEditorialResult>,
   section: EditorialSection,
 ): Promise<MutationOutcome> {
   await dependencies.requireSession();
@@ -260,7 +259,7 @@ const newsSection = {
 
 export function createProjectMutation(
   formData: FormData,
-  dependencies: CreateDependencies<EditorialInput, CreateEditorialResult>,
+  dependencies: CreateDependencies<ProjectInput, CreateEditorialResult>,
 ) {
   return createEditorialMutation(formData, dependencies, projectSection);
 }
@@ -289,7 +288,7 @@ export async function createDocumentMutation(
 export function updateProjectMutation(
   id: string,
   formData: FormData,
-  dependencies: UpdateDependencies<EditorialInput, UpdateEditorialResult>,
+  dependencies: UpdateDependencies<ProjectInput, UpdateEditorialResult>,
 ) {
   return updateEditorialMutation(id, formData, dependencies, projectSection);
 }

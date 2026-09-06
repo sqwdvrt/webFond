@@ -57,6 +57,8 @@ export type DonationFormProps = {
   randomUUID?: () => string;
   now?: () => Date;
   assign?: (url: string) => void;
+  projects?: Array<{ slug: string; title: string }>;
+  initialProjectSlug?: string;
 };
 
 export function DonationForm({
@@ -67,6 +69,8 @@ export function DonationForm({
   assign = (url) => {
     window.location.assign(url);
   },
+  projects = [],
+  initialProjectSlug = "",
 }: DonationFormProps) {
   const headingId = useId();
   const errorId = useId();
@@ -79,6 +83,11 @@ export function DonationForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsNewAttempt, setNeedsNewAttempt] = useState(false);
+  const [projectSlug, setProjectSlug] = useState(() =>
+    projects.some((project) => project.slug === initialProjectSlug)
+      ? initialProjectSlug
+      : "",
+  );
 
   const storageDependencies = (): PaymentAttemptStorageDependencies => ({
     storage: storage ?? window.sessionStorage,
@@ -141,6 +150,7 @@ export function DonationForm({
           attemptId: resolved.attempt.id,
           email: donorEmail,
           website,
+          projectSlug,
         }),
       });
       const payload = (await response.json().catch(() => ({}))) as {
@@ -211,6 +221,24 @@ export function DonationForm({
             />
           </label>
         </fieldset>
+
+        {projects.length > 0 ? (
+          <label className="other-amount">
+            <span>Назначение пожертвования</span>
+            <select
+              name="projectSlug"
+              onChange={(event) => setProjectSlug(event.target.value)}
+              value={projectSlug}
+            >
+              <option value="">На уставную деятельность</option>
+              {projects.map((project) => (
+                <option key={project.slug} value={project.slug}>
+                  {project.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         <label className="other-amount">
           <span>Email для кассового чека</span>

@@ -7,6 +7,7 @@ import {
   type DocumentInput,
   type EditorialInput,
   type ParseResult,
+  type ProjectInput,
   type PublicationStatus,
   type RequisitesInput,
   type ValidationResult,
@@ -188,6 +189,107 @@ export function parseEditorialForm(
   }
 
   return { ok: true, value: { ...normalizedValues, status: values.status } };
+}
+
+const MAX_FUNDRAISING_ROUBLES = 20_000_000;
+const WHOLE_ROUBLES_PATTERN = /^(0|[1-9]\d*)$/;
+
+function parseWholeRoubles(
+  value: string,
+  emptyValue: null,
+  allowZero: false,
+): number | null | undefined;
+function parseWholeRoubles(
+  value: string,
+  emptyValue: 0,
+  allowZero: true,
+): number | undefined;
+function parseWholeRoubles(
+  value: string,
+  emptyValue: number | null,
+  allowZero: boolean,
+): number | null | undefined {
+  if (!value) return emptyValue;
+  if (!WHOLE_ROUBLES_PATTERN.test(value)) return undefined;
+
+  const roubles = Number(value);
+  if (
+    !Number.isSafeInteger(roubles) ||
+    roubles > MAX_FUNDRAISING_ROUBLES ||
+    (roubles === 0 && !allowZero)
+  ) {
+    return undefined;
+  }
+
+  return roubles * 100;
+}
+
+export function parseProjectForm(
+  formData: FormData,
+): ValidationResult<ProjectInput> {
+  const editorial = parseEditorialForm(formData);
+  const { values: amountValues, errors: amountErrors } = readFields(formData, [
+    "goalAmountRoubles",
+    "manualRaisedRoubles",
+  ] as const);
+  rejectControlCharacters(amountValues, amountErrors);
+
+  const goalAmountKopecks = parseWholeRoubles(
+    amountValues.goalAmountRoubles,
+    null,
+    false,
+  );
+  const manualRaisedKopecks = parseWholeRoubles(
+    amountValues.manualRaisedRoubles,
+    0,
+    true,
+  );
+
+  if (goalAmountKopecks === undefined) {
+    setError(
+      amountErrors,
+      "goalAmountRoubles",
+      "Введите цель целым числом рублей от 1 до 20000000 или оставьте поле пустым",
+    );
+  }
+  if (manualRaisedKopecks === undefined) {
+    setError(
+      amountErrors,
+      "manualRaisedRoubles",
+      "Введите сумму целым числом рублей от 0 до 20000000 или оставьте поле пустым",
+    );
+  }
+
+  const displayValues = {
+    ...(editorial.ok ? editorial.value : editorial.values),
+    goalAmountRoubles: amountValues.goalAmountRoubles,
+    manualRaisedRoubles: amountValues.manualRaisedRoubles,
+  };
+
+  if (
+    !editorial.ok ||
+    Object.keys(amountErrors).length > 0 ||
+    goalAmountKopecks === undefined ||
+    manualRaisedKopecks === undefined
+  ) {
+    return {
+      ok: false,
+      errors: {
+        ...(editorial.ok ? {} : editorial.errors),
+        ...amountErrors,
+      },
+      values: displayValues,
+    } as Extract<ValidationResult<ProjectInput>, { ok: false }>;
+  }
+
+  return {
+    ok: true,
+    value: {
+      ...editorial.value,
+      goalAmountKopecks,
+      manualRaisedKopecks,
+    },
+  };
 }
 
 export function parseDocumentForm(

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContentFormState } from "@/features/content-admin/mutations";
 import type {
   AdminEditorialListRow,
-  AdminEditorialRow,
+  AdminProjectRow,
 } from "@/features/content-admin/repository";
 
 const actionState = vi.hoisted(() => ({
@@ -39,7 +39,7 @@ import { renderProjectsPage } from "./page";
 
 const updatedAt = new Date("2026-08-23T09:00:00.000Z");
 
-const project: AdminEditorialRow = {
+const project: AdminProjectRow = {
   id: "project-1",
   title: "Помощь семьям",
   slug: "pomoshch-semyam",
@@ -49,6 +49,8 @@ const project: AdminEditorialRow = {
   status: "DRAFT",
   publishedAt: null,
   updatedAt,
+  goalAmountKopecks: null,
+  manualRaisedKopecks: 0,
 };
 
 const listRow: AdminEditorialListRow = {
@@ -215,6 +217,8 @@ describe("ProjectForm", () => {
     expect(screen.getByLabelText("Краткое описание")).toHaveValue(project.summary);
     expect(screen.getByLabelText("Содержание")).toHaveValue(project.content);
     expect(screen.getByLabelText("Изображение")).toHaveValue(project.imageUrl);
+    expect(screen.getByLabelText("Цель сбора, ₽")).toHaveValue("");
+    expect(screen.getByLabelText("Уже собрано вне сайта, ₽")).toHaveValue("");
     expect(screen.getByLabelText("Статус")).toHaveValue("DRAFT");
     expect(screen.getByRole("option", { name: "Черновик" })).toBeVisible();
     expect(screen.getByRole("option", { name: "Опубликован" })).toBeVisible();
@@ -236,6 +240,8 @@ describe("ProjectForm", () => {
         content: "Отправленный текст",
         imageUrl: "/submitted.jpg",
         status: "ARCHIVED",
+        goalAmountRoubles: "6000000",
+        manualRaisedRoubles: "1000",
       },
     };
 
@@ -246,6 +252,8 @@ describe("ProjectForm", () => {
     expect(screen.getByLabelText("Краткое описание")).toHaveValue("Отправленное описание");
     expect(screen.getByLabelText("Содержание")).toHaveValue("Отправленный текст");
     expect(screen.getByLabelText("Изображение")).toHaveValue("/submitted.jpg");
+    expect(screen.getByLabelText("Цель сбора, ₽")).toHaveValue("6000000");
+    expect(screen.getByLabelText("Уже собрано вне сайта, ₽")).toHaveValue("1000");
     expect(screen.getByLabelText("Статус")).toHaveValue("ARCHIVED");
     expect(screen.getByText("Введите название")).toHaveAttribute("role", "alert");
     expect(screen.getByText("Используйте латиницу")).toHaveAttribute("role", "alert");
