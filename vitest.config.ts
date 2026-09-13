@@ -17,6 +17,7 @@ export default defineConfig({
       ...configDefaults.exclude,
       paymentIntegrationPath,
       ".worktrees/**",
+      "mobile/**",
     ],
     setupFiles: ["./vitest.setup.ts"],
   },
