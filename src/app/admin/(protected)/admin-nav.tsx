@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import {
   FileText,
   FolderKanban,
@@ -34,19 +35,32 @@ export function isAdminSectionCurrent(pathname: string, href: string) {
 
 export function AdminNav() {
   const pathname = usePathname();
+  const currentLinkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    currentLinkRef.current?.scrollIntoView?.({
+      block: "nearest",
+      inline: "center",
+    });
+  }, [pathname]);
 
   return (
     <nav className={styles.adminNav} aria-label="Разделы административной части">
-      {adminSections.map(({ href, icon: Icon, label }) => (
-        <Link
-          aria-current={isAdminSectionCurrent(pathname, href) ? "page" : undefined}
-          href={href}
-          key={href}
-        >
-          <Icon aria-hidden="true" size={17} />
-          {label}
-        </Link>
-      ))}
+      {adminSections.map(({ href, icon: Icon, label }) => {
+        const isCurrent = isAdminSectionCurrent(pathname, href);
+
+        return (
+          <Link
+            aria-current={isCurrent ? "page" : undefined}
+            href={href}
+            key={href}
+            ref={isCurrent ? currentLinkRef : undefined}
+          >
+            <Icon aria-hidden="true" size={17} />
+            {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

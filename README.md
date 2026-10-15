@@ -96,13 +96,22 @@ must-revalidate`; проверять итоговый заголовок нуж�
 
 ## Проверки
 
+Перед запуском создайте `.env` и задайте обе переменные подключения:
+`DATABASE_URL` и `DATABASE_URL_UNPOOLED`.
+
 ```bash
-npm test
-npm run lint
-npm run typecheck
-npm run build
-npm run db:validate
+npm run verify
 ```
+
+Команда запускает модульные тесты, линтер, проверку типов и схемы Prisma и сборку.
+Проверка типов сначала генерирует игнорируемые декларации Next.js.
+Это local working-tree pre-commit gate: staged и unstaged слои проверяются отдельно
+на пробельные ошибки. Команда не является clean-checkout CI range gate.
+DB-backed интеграционные проверки остаются отдельными командами, потому что им
+нужна безопасная локальная тестовая база:
+
+- платежи — `npm run test:integration:payments`;
+- миграция контента — `npm test -- src/db/content-migration.integration.test.ts`.
 
 ## Платежи
 
@@ -172,7 +181,9 @@ PAYMENTS_TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/founda
   затем `next build`. `DATABASE_URL` должен быть доступен на сборке;
 - Run: `npm run timeweb-start` — только `next start` на `0.0.0.0` и `$PORT`.
   Миграции не должны выполняться при каждом рестарте процесса;
-- Health check: `GET /api/health` (ответ `{ "ok": true }`, без авторизации);
+- `GET /api/health` — platform liveness (ответ `{ "ok": true }`, без авторизации);
+- Post-deploy configuration readiness: `GET /api/ready` проверяет конфигурацию
+  административного доступа и отвечает `503`, если она некорректна;
 - `NEXT_PUBLIC_SITE_URL=https://fond-bit-dobru.ru` задаётся **до сборки**:
   Next.js вшивает `NEXT_PUBLIC_*` на build. `SITE_URL` — тот же origin на
   рантайме.

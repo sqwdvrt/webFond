@@ -160,6 +160,7 @@ export function ProjectForm({
           error={state.errors?.imageUrl}
           hint="Можно вставить ссылку или загрузить JPEG, PNG, WebP."
           id="imageUrl"
+          key={String(value("imageUrl"))}
           kind="image"
           label="Изображение"
           name="imageUrl"
