@@ -8,23 +8,54 @@ const css = readFileSync(
   "utf8",
 );
 
-const rules = Array.from(css.matchAll(/([^{}]+)\{([^{}]*)\}/g), (match) => ({
-  selectors: match[1].trim().replace(/\s+/g, " "),
-  declarations: Object.fromEntries(
-    match[2]
-      .split(";")
-      .map((declaration) => declaration.trim())
-      .filter(Boolean)
-      .map((declaration) => {
-        const separator = declaration.indexOf(":");
+function parseRules(source: string) {
+  return Array.from(source.matchAll(/([^{}]+)\{([^{}]*)\}/g), (match) => ({
+    selectors: match[1].trim().replace(/\s+/g, " "),
+    declarations: Object.fromEntries(
+      match[2]
+        .split(";")
+        .map((declaration) => declaration.trim())
+        .filter(Boolean)
+        .map((declaration) => {
+          const separator = declaration.indexOf(":");
 
-        return [
-          declaration.slice(0, separator).trim(),
-          declaration.slice(separator + 1).trim(),
-        ];
-      }),
-  ),
-}));
+          return [
+            declaration.slice(0, separator).trim(),
+            declaration.slice(separator + 1).trim(),
+          ];
+        }),
+    ),
+  }));
+}
+
+function mediaContentsFor(query: string) {
+  const marker = `@media ${query}`;
+  const contents: string[] = [];
+  let searchFrom = 0;
+
+  while (searchFrom < css.length) {
+    const start = css.indexOf(marker, searchFrom);
+
+    if (start === -1) break;
+
+    const openingBrace = css.indexOf("{", start + marker.length);
+    let depth = 1;
+    let cursor = openingBrace + 1;
+
+    while (depth > 0 && cursor < css.length) {
+      if (css[cursor] === "{") depth += 1;
+      if (css[cursor] === "}") depth -= 1;
+      cursor += 1;
+    }
+
+    contents.push(css.slice(openingBrace + 1, cursor - 1));
+    searchFrom = cursor;
+  }
+
+  return contents.join("\n");
+}
+
+const rules = parseRules(css);
 
 function declarationsFor(...selectors: string[]) {
   const selectorList = selectors.join(", ");
@@ -71,6 +102,20 @@ describe("admin navigation accessibility styles", () => {
       declarationsFor(".adminNavViewport", ".contentTableViewport"),
     ).toMatchObject({ "overflow-x": "auto" });
     expect(declarationsFor(".adminNavFrame")["overflow-x"]).not.toBe("auto");
+  });
+
+  it("adds mobile flex spacers that let edge navigation items center", () => {
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    const spacerRule = mobileRules.find(
+      ({ selectors }) => selectors === ".adminNav::before, .adminNav::after",
+    );
+
+    expect(spacerRule, "Missing mobile admin navigation spacer rule").toBeDefined();
+    expect(spacerRule!.declarations).toMatchObject({
+      content: '""',
+      flex: "0 0 50vw",
+      "pointer-events": "none",
+    });
   });
 });
 

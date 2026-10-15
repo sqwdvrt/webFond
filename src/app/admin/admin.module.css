@@ -970,6 +970,13 @@
     background: linear-gradient(to left, #24322a, transparent);
   }
 
+  .adminNav::before,
+  .adminNav::after {
+    content: "";
+    flex: 0 0 50vw;
+    pointer-events: none;
+  }
+
   .workspaceHeaderInner,
   .adminNav,
   .workspaceMain {
