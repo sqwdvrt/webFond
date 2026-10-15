@@ -8,24 +8,91 @@ const css = readFileSync(
   "utf8",
 );
 
+const rules = Array.from(css.matchAll(/([^{}]+)\{([^{}]*)\}/g), (match) => ({
+  selectors: match[1].trim().replace(/\s+/g, " "),
+  declarations: Object.fromEntries(
+    match[2]
+      .split(";")
+      .map((declaration) => declaration.trim())
+      .filter(Boolean)
+      .map((declaration) => {
+        const separator = declaration.indexOf(":");
+
+        return [
+          declaration.slice(0, separator).trim(),
+          declaration.slice(separator + 1).trim(),
+        ];
+      }),
+  ),
+}));
+
+function declarationsFor(...selectors: string[]) {
+  const selectorList = selectors.join(", ");
+  const rule = rules.find((candidate) => candidate.selectors === selectorList);
+
+  expect(rule, `Missing CSS rule: ${selectorList}`).toBeDefined();
+
+  return rule!.declarations;
+}
+
 describe("admin form control styles", () => {
-  it("styles text inputs, textareas, and selects consistently", () => {
-    expect(css).toMatch(
-      /\.field input,\s*\.field textarea,\s*\.field select\s*\{[^}]*width:\s*100%[^}]*border:\s*1px solid #aeb7b0[^}]*font:\s*inherit/s,
+  it("shares visible base styles across text inputs, textareas, and selects", () => {
+    const declarations = declarationsFor(
+      ".field input",
+      ".field textarea",
+      ".field select",
     );
-    expect(css).toMatch(
-      /\.field input,\s*\.field textarea,\s*\.field select\s*\{[^}]*background:\s*var\(--surface\)/s,
-    );
-    expect(css).toMatch(
-      /\.field textarea\s*\{[^}]*min-height:[^}]*resize:\s*vertical/s,
-    );
-    expect(css).toMatch(
-      /\.field input\[aria-invalid="true"\],\s*\.field textarea\[aria-invalid="true"\],\s*\.field select\[aria-invalid="true"\]\s*\{[^}]*border-color:\s*#a63f36/s,
-    );
-    expect(css).toMatch(
-      /\.field input:focus-visible,\s*\.field textarea:focus-visible,\s*\.field select:focus-visible\s*\{[^}]*outline:\s*2px solid/s,
-    );
-    expect(css).toContain(':focus-visible');
-    expect(css).toContain('[aria-invalid="true"]');
+
+    expect(declarations).toMatchObject({
+      width: "100%",
+      color: "var(--ink)",
+      background: "var(--surface)",
+      border: "1px solid #aeb7b0",
+      "border-radius": "6px",
+      font: "inherit",
+      "font-weight": "400",
+    });
+  });
+
+  it("keeps single-line controls and textareas appropriately sized", () => {
+    expect(declarationsFor(".field input", ".field select")).toMatchObject({
+      "min-height": "50px",
+      padding: "0 14px",
+    });
+    expect(declarationsFor(".field textarea")).toMatchObject({
+      "min-height": "112px",
+      padding: "12px 14px",
+      "line-height": "1.5",
+      resize: "vertical",
+    });
+  });
+
+  it("applies invalid and focus-visible states to every control type", () => {
+    expect(
+      declarationsFor(
+        '.field input[aria-invalid="true"]',
+        '.field textarea[aria-invalid="true"]',
+        '.field select[aria-invalid="true"]',
+      ),
+    ).toMatchObject({ "border-color": "#a63f36" });
+    expect(
+      declarationsFor(
+        ".field input:focus-visible",
+        ".field textarea:focus-visible",
+        ".field select:focus-visible",
+      ),
+    ).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+  });
+
+  it("preserves the file input override", () => {
+    expect(declarationsFor('.field input[type="file"]')).toMatchObject({
+      "min-height": "0",
+      padding: "8px 0",
+      background: "transparent",
+      border: "0",
+    });
   });
 });
