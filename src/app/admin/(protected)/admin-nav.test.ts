@@ -1,6 +1,7 @@
 import { createElement, type ReactElement } from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { usePathname } from "next/navigation";
 
 import { AdminNav, isAdminSectionCurrent } from "./admin-nav";
 
@@ -26,5 +27,22 @@ describe("AdminNav", () => {
       "href",
       "/admin/donations",
     );
+  });
+
+  it("scrolls the current section link into view", () => {
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    vi.mocked(usePathname).mockReturnValue("/admin/donations");
+
+    render(createElement(AdminNav as () => ReactElement));
+
+    expect(screen.getByRole("link", { name: "Пожертвования" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: "nearest",
+      inline: "center",
+    });
   });
 });

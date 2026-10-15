@@ -17,6 +17,10 @@ export function AdminShell({
 }>) {
   return (
     <div className={styles.workspace}>
+      <a className={styles.skipLink} href="#admin-main">
+        К содержанию
+      </a>
+
       <header className={styles.workspaceHeader}>
         <div className={styles.workspaceHeaderInner}>
           <Link className={styles.workspaceBrand} href="/admin">
@@ -38,12 +42,16 @@ export function AdminShell({
           </div>
         </div>
 
-        <div className={styles.adminNavViewport}>
-          <AdminNav />
+        <div className={styles.adminNavFrame}>
+          <div className={styles.adminNavViewport}>
+            <AdminNav />
+          </div>
         </div>
       </header>
 
-      <div className={styles.workspaceMain}>{children}</div>
+      <main className={styles.workspaceMain} id="admin-main" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 }

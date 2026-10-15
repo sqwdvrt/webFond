@@ -17,6 +17,10 @@ import ProtectedAdminLayout from "./layout";
 import { usePathname } from "next/navigation";
 
 describe("AdminShell", () => {
+  beforeEach(() => {
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+  });
+
   it("defines the shared workspace, content controls and narrow viewport scrolling", () => {
     const css = readFileSync(
       resolve(process.cwd(), "src/app/admin/admin.module.css"),
@@ -80,7 +84,13 @@ describe("AdminShell", () => {
     }
 
     expect(screen.getByRole("heading", { name: "Содержимое раздела" })).toBeVisible();
-    expect(screen.queryByRole("main")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "К содержанию" })).toHaveAttribute(
+      "href",
+      "#admin-main",
+    );
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(screen.getByRole("main")).toHaveAttribute("id", "admin-main");
+    expect(screen.getByRole("main")).toHaveAttribute("tabindex", "-1");
 
     const results = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } },

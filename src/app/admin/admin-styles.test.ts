@@ -35,6 +35,42 @@ function declarationsFor(...selectors: string[]) {
   return rule!.declarations;
 }
 
+describe("admin navigation accessibility styles", () => {
+  it("reveals the skip link above the sticky header when focused", () => {
+    expect(declarationsFor(".skipLink")).toMatchObject({
+      position: "fixed",
+      top: "-100px",
+      "z-index": "100",
+    });
+    expect(declarationsFor(".skipLink:focus")).toMatchObject({
+      top: "12px",
+    });
+  });
+
+  it("keeps mobile scroll affordances pinned to a non-scrolling frame", () => {
+    expect(declarationsFor(".adminNavFrame")).toMatchObject({
+      position: "relative",
+    });
+    expect(declarationsFor(".adminNavFrame::before", ".adminNavFrame::after")).toMatchObject({
+      position: "absolute",
+      width: "24px",
+      "pointer-events": "none",
+    });
+    expect(declarationsFor(".adminNavFrame::before")).toMatchObject({
+      left: "0",
+      background: "linear-gradient(to right, #24322a, transparent)",
+    });
+    expect(declarationsFor(".adminNavFrame::after")).toMatchObject({
+      right: "0",
+      background: "linear-gradient(to left, #24322a, transparent)",
+    });
+    expect(
+      declarationsFor(".adminNavViewport", ".contentTableViewport"),
+    ).toMatchObject({ "overflow-x": "auto" });
+    expect(declarationsFor(".adminNavFrame")["overflow-x"]).not.toBe("auto");
+  });
+});
+
 describe("admin form control styles", () => {
   it("shares visible base styles across text inputs, textareas, and selects", () => {
     const declarations = declarationsFor(
