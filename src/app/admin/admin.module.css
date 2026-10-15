@@ -149,7 +149,7 @@
 .dashboard {
   width: min(100% - 40px, 1040px);
   margin-inline: auto;
-  padding: 64px 0 88px;
+  padding: 0 0 88px;
 }
 
 .dashboardHeader {
@@ -239,7 +239,7 @@
 .donationsPage {
   width: min(100% - 40px, 1240px);
   margin-inline: auto;
-  padding: 52px 0 88px;
+  padding: 0 0 88px;
 }
 
 .donationsHeading {
@@ -473,7 +473,7 @@
 
   .dashboard {
     width: min(100% - 32px, 1040px);
-    padding: 44px 0 64px;
+    padding: 0 0 64px;
   }
 
   .dashboardHeader {
@@ -492,7 +492,7 @@
 
   .donationsPage {
     width: min(100% - 32px, 1240px);
-    padding: 36px 0 64px;
+    padding: 0 0 64px;
   }
 
   .donationsHeading {
@@ -533,7 +533,7 @@
 
 .workspaceHeader {
   position: sticky;
-  top: var(--header-height);
+  top: 0;
   z-index: 10;
   color: var(--surface);
   background: #24322a;

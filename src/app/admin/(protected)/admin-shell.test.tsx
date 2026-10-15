@@ -50,9 +50,11 @@ describe("AdminShell", () => {
       ...css.matchAll(/\.workspaceHeader\s*\{[^}]*top:\s*([^;]+);/g),
     ].map((match) => match[1].trim());
     expect(stickyOffsets).not.toHaveLength(0);
-    expect(stickyOffsets.every((offset) => offset === "var(--header-height)")).toBe(
+    expect(stickyOffsets.every((offset) => offset === "0")).toBe(
       true,
     );
+    expect(css).toMatch(/\.dashboard\s*\{[^}]*padding:\s*0 0 88px/);
+    expect(css).toMatch(/\.donationsPage\s*\{[^}]*padding:\s*0 0 88px/);
   });
 
   it("shows one account header and all protected sections", async () => {
