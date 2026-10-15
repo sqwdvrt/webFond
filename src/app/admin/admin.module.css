@@ -63,10 +63,10 @@
   font-weight: 400;
 }
 
-.field input {
+.field input,
+.field textarea,
+.field select {
   width: 100%;
-  min-height: 50px;
-  padding: 0 14px;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid #aeb7b0;
@@ -75,8 +75,30 @@
   font-weight: 400;
 }
 
-.field input[aria-invalid="true"] {
+.field input,
+.field select {
+  min-height: 50px;
+  padding: 0 14px;
+}
+
+.field textarea {
+  min-height: 112px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"],
+.field select[aria-invalid="true"] {
   border-color: #a63f36;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 .field input[type="file"] {
