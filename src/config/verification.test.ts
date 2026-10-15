@@ -14,11 +14,11 @@ const checksSection = readme.match(/## Проверки([\s\S]*?)## Платеж
 describe("release verification", () => {
   it("runs the complete release gate in order", () => {
     expect(packageJson.scripts.verify).toBe(
-      "npm test && npm run lint && npm run typecheck && npm run db:validate && npm run build && git diff --check HEAD",
+      "npm test && npm run lint && npm run typecheck && npm run db:validate && npm run build && git diff --cached --check && git diff --check",
     );
   });
 
-  it("rejects staged whitespace errors through the configured diff check", () => {
+  it("rejects staged whitespace errors even when the worktree masks them", () => {
     const repository = mkdtempSync(join(tmpdir(), "release-verification-"));
 
     try {
@@ -37,15 +37,29 @@ describe("release verification", () => {
       writeFileSync(join(repository, "tracked.txt"), "trailing whitespace \n");
       expect(runGit("add", "tracked.txt").status).toBe(0);
 
-      const diffCheck = packageJson.scripts.verify.split(" && ").at(-1);
-      const result = spawnSync(diffCheck ?? "", {
+      const diffChecks = packageJson.scripts.verify.match(/git diff.*$/)?.[0] ?? "";
+      const stagedResult = spawnSync(diffChecks, {
         cwd: repository,
         encoding: "utf8",
         shell: true,
       });
 
-      expect(result.status).not.toBe(0);
-      expect(`${result.stdout}${result.stderr}`).toContain("trailing whitespace");
+      expect(stagedResult.status).not.toBe(0);
+      expect(`${stagedResult.stdout}${stagedResult.stderr}`).toContain(
+        "trailing whitespace",
+      );
+
+      writeFileSync(join(repository, "tracked.txt"), "clean worktree\n");
+      const maskedIndexResult = spawnSync(diffChecks, {
+        cwd: repository,
+        encoding: "utf8",
+        shell: true,
+      });
+
+      expect(maskedIndexResult.status).not.toBe(0);
+      expect(`${maskedIndexResult.stdout}${maskedIndexResult.stderr}`).toContain(
+        "trailing whitespace",
+      );
     } finally {
       rmSync(repository, { recursive: true, force: true });
     }
@@ -56,6 +70,8 @@ describe("release verification", () => {
     expect(checksSection).toContain("DATABASE_URL");
     expect(checksSection).toContain("DATABASE_URL_UNPOOLED");
     expect(checksSection).toContain("npm run verify");
+    expect(checksSection).toMatch(/local working-tree pre-commit gate/i);
+    expect(checksSection).toMatch(/staged[^\n]*unstaged[^\n]*отдельн/i);
     expect(checksSection).toMatch(/платеж/i);
     expect(checksSection).toMatch(/миграц/i);
     expect(readme).toContain("npm run test:integration:payments");
