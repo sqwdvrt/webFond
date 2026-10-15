@@ -21,6 +21,7 @@
 Add expectations to the existing contacts-page test for the two visible phone numbers and their exact links:
 
 ```tsx
+expect(screen.getByText("Позвоните нам:")).toBeVisible();
 expect(screen.getByRole("link", { name: "8 928 714 77 83" })).toHaveAttribute(
   "href",
   "tel:+79287147783",
@@ -39,7 +40,7 @@ Expected: FAIL because the phone-number links do not yet exist.
 
 - [ ] **Step 3: Implement the minimal page change**
 
-In the existing «Как написать» card, place the two phone links between the heading and its explanatory paragraph. Render the visible values as `8 928 714 77 83` and `8 928 715 77 83`, targeting `tel:+79287147783` and `tel:+79287157783` respectively. Use no new component, configuration, or styling unless existing styles cannot accommodate the anchors.
+In the existing «Как написать» card, place the line «Позвоните нам:» and the two phone links between the heading and its explanatory paragraph. Render the visible values as `8 928 714 77 83` and `8 928 715 77 83`, targeting `tel:+79287147783` and `tel:+79287157783` respectively. Use no new component, configuration, or styling unless existing styles cannot accommodate the anchors.
 
 - [ ] **Step 4: Run the test to verify it passes**
 
