@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import styles from "../admin.module.css";
 import { FieldError } from "./content-ui";
@@ -35,10 +35,6 @@ export function MediaUrlField({
   const [url, setUrl] = useState(value);
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState("");
-
-  useEffect(() => {
-    setUrl(value);
-  }, [value]);
 
   async function onFileChange(file: File | undefined) {
     if (!file) {

@@ -110,6 +110,7 @@ export function DocumentForm({
           error={state.errors?.fileUrl}
           hint="Можно вставить ссылку или загрузить PDF."
           id="fileUrl"
+          key={String(value("fileUrl"))}
           kind="document"
           label="Ссылка на документ"
           name="fileUrl"
