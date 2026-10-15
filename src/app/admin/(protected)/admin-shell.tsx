@@ -1,12 +1,5 @@
 import {
-  FileText,
-  FolderKanban,
-  HandCoins,
-  Landmark,
-  LayoutDashboard,
   LogOut,
-  Mail,
-  Newspaper,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -14,16 +7,6 @@ import Link from "next/link";
 import styles from "../admin.module.css";
 import { logoutAction } from "./actions";
 import { AdminNav } from "./admin-nav";
-
-export const adminSections = [
-  { href: "/admin", label: "Обзор", icon: LayoutDashboard },
-  { href: "/admin/messages", label: "Письма", icon: Mail },
-  { href: "/admin/projects", label: "Проекты", icon: FolderKanban },
-  { href: "/admin/news", label: "Новости", icon: Newspaper },
-  { href: "/admin/documents", label: "Документы", icon: FileText },
-  { href: "/admin/requisites", label: "Реквизиты", icon: Landmark },
-  { href: "/admin/donations", label: "Пожертвования", icon: HandCoins },
-] as const;
 
 export function AdminShell({
   children,
@@ -56,7 +39,7 @@ export function AdminShell({
         </div>
 
         <div className={styles.adminNavViewport}>
-          <AdminNav sections={adminSections} />
+          <AdminNav />
         </div>
       </header>
 
