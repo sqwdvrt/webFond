@@ -29,14 +29,18 @@ describe("AdminNav", () => {
     );
   });
 
-  it("scrolls the current section link into view", () => {
-    const scrollIntoView = vi.fn();
+  it("scrolls the current section link into view after pathname changes", () => {
+    const scrolledElements: HTMLElement[] = [];
+    const scrollIntoView = vi.fn(function (this: HTMLElement) {
+      scrolledElements.push(this);
+    });
     HTMLElement.prototype.scrollIntoView = scrollIntoView;
     vi.mocked(usePathname).mockReturnValue("/admin/donations");
 
-    render(createElement(AdminNav as () => ReactElement));
+    const { rerender } = render(createElement(AdminNav as () => ReactElement));
 
-    expect(screen.getByRole("link", { name: "Пожертвования" })).toHaveAttribute(
+    const donationsLink = screen.getByRole("link", { name: "Пожертвования" });
+    expect(donationsLink).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -44,5 +48,18 @@ describe("AdminNav", () => {
       block: "nearest",
       inline: "center",
     });
+    expect(scrolledElements).toEqual([donationsLink]);
+
+    vi.mocked(usePathname).mockReturnValue("/admin/news");
+    rerender(createElement(AdminNav as () => ReactElement));
+
+    const newsLink = screen.getByRole("link", { name: "Новости" });
+    expect(newsLink).toHaveAttribute("aria-current", "page");
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    expect(scrollIntoView).toHaveBeenNthCalledWith(2, {
+      block: "nearest",
+      inline: "center",
+    });
+    expect(scrolledElements).toEqual([donationsLink, newsLink]);
   });
 });

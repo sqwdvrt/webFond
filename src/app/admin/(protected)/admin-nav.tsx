@@ -38,7 +38,7 @@ export function AdminNav() {
   const currentLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    currentLinkRef.current?.scrollIntoView({
+    currentLinkRef.current?.scrollIntoView?.({
       block: "nearest",
       inline: "center",
     });

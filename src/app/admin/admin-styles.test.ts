@@ -48,6 +48,9 @@ describe("admin navigation accessibility styles", () => {
   });
 
   it("keeps mobile scroll affordances pinned to a non-scrolling frame", () => {
+    expect(css).toMatch(
+      /@media \(max-width: 720px\) \{\s*\.adminNavFrame::before,\s*\.adminNavFrame::after\s*\{/,
+    );
     expect(declarationsFor(".adminNavFrame")).toMatchObject({
       position: "relative",
     });
