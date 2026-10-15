@@ -522,4 +522,3 @@ Expected: verification passes and status contains only intentional release files
 If no correction was required, do not create an empty commit. Otherwise, add the
 focused regression test and fix, rerun `npm run verify`, and commit with a message
 describing the verified defect.
-
