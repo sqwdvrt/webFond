@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -9,6 +9,14 @@ function read(relativePath: string) {
 }
 
 describe("Timeweb runtime contract", () => {
+  it("provides Timeweb an explicit Next.js runtime port and start command", () => {
+    expect(existsSync(resolve(root, "Dockerfile"))).toBe(true);
+    const dockerfile = read("Dockerfile");
+
+    expect(dockerfile).toContain("EXPOSE 3000");
+    expect(dockerfile).toContain('CMD ["npm", "run", "timeweb-start"]');
+  });
+
   it("migrates during build and only starts Next.js at runtime", () => {
     const packageJson = JSON.parse(read("package.json")) as {
       scripts?: Record<string, string>;
