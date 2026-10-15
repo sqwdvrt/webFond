@@ -9,6 +9,8 @@ describe("GET /api/health", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(response.headers.get("Content-Type")).toBe("application/json");
+    expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
     await expect(response.json()).resolves.toEqual({ ok: true });
   });
 });
