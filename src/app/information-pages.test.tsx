@@ -148,7 +148,11 @@ describe("information pages", () => {
   it("shows confirmed contacts and a message form that is not a help application", () => {
     render(<ContactsPage />);
     expect(screen.getByRole("link", { name: "sorovoi@mail.ru" })).toHaveAttribute("href", "mailto:sorovoi@mail.ru");
-    expect(screen.getByText("Позвоните нам:")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Как с нами связаться" })).toBeVisible();
+    expect(screen.queryByText("Позвоните нам:")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("По вопросам деятельности фонда, поддержки и документов можно написать через форму ниже."),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "8 928 714 77 83" })).toHaveAttribute(
       "href",
       "tel:+79287147783",

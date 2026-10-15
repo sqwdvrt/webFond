@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Mail, MapPin, PenLine } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 
 import { ContactForm } from "@/components/contact/contact-form";
 import { PageHero } from "@/components/content/page-hero";
@@ -33,17 +33,11 @@ export default function ContactsPage() {
             <address>{siteConfig.legal.address}</address>
           </div>
           <div>
-            <PenLine aria-hidden="true" />
-            <h2>Как написать</h2>
-            <span>Позвоните нам:</span>
-            <br />
+            <Phone aria-hidden="true" />
+            <h2>Как с нами связаться</h2>
             <a href="tel:+79287147783">8 928 714 77 83</a>
             <br />
             <a href="tel:+79287157783">8 928 715 77 83</a>
-            <p>
-              По вопросам деятельности фонда, поддержки и документов можно
-              написать через форму ниже.
-            </p>
           </div>
         </div>
         <div className="container">
