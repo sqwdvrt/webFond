@@ -58,6 +58,10 @@ Extend `ContactRequestStatus` with `SPAM` and add nullable
 on `(status, createdAt, id)` and add `(createdAt, id)` for unfiltered date-ordered
 pages.
 
+Add a donation index on `(status, paidAt)` for the successful-donation day and
+month aggregates. The existing `(status, createdAt)` index remains responsible for
+pending-payment age queries and cannot substitute for this paid-time index.
+
 Search uses case-insensitive substring matching across `name`, `email`, and
 `message`. PostgreSQL `pg_trgm` GIN indexes support those `%term%` predicates. The
 migration enables `pg_trgm` with `CREATE EXTENSION IF NOT EXISTS` and creates one
@@ -90,16 +94,18 @@ required lifecycle are not audited.
 ## Contact-request list
 
 Create a dedicated admin-messages feature module rather than expanding the public
-contact feature. Its parser accepts exactly one value for each of `status`, `from`,
-`to`, `q`, and `page`, rejects unknown enum values, invalid calendar dates,
-duplicate parameters, queries over 120 characters, and pages outside the bounded
+contact feature. Every filter is optional. When `status`, `from`, `to`, `q`, or
+`page` is present, the parser accepts exactly one value. It rejects duplicate
+parameters, unknown enum values, invalid calendar dates, `from` dates later than
+`to` dates, queries over 120 characters, and pages outside the bounded
 positive-integer format.
 
 Dates are interpreted as Moscow calendar dates and converted to UTC. The
 repository builds one Prisma `where` object, then runs `count` and `findMany` in a
 repeatable-read transaction. Rows are ordered by `(createdAt DESC, id DESC)`, and
 the query selects only fields needed by the page. The result contains rows, total,
-page, total pages, and page size 25.
+page, total pages, and page size 25. An empty result has page 1 and one logical
+page, so requesting an out-of-range page redirects once to page 1 and cannot loop.
 
 The server page authenticates before parsing or querying. Invalid filters render a
 safe error state. If the requested page is beyond the result set, the page redirects
@@ -116,12 +122,15 @@ characters. Whitespace-only notes normalize to `NULL`.
 
 Inside one database transaction the repository:
 
-1. reads the current status and whether a note exists;
+1. reads the current status and normalized note value for comparison;
 2. updates with `WHERE id = ? AND updatedAt = ?`;
 3. returns `missing` or `conflict` when no row is updated;
 4. adds `CONTACT_STATUS_CHANGED` when the status actually changed;
 5. adds `CONTACT_NOTE_CHANGED` when the normalized note actually changed, without
    copying either note value into the audit row.
+
+If neither normalized value changes, the repository performs no update, leaves
+`updatedAt` unchanged, and writes no audit row.
 
 The action returns validation errors with safe submitted values and a clear
 conflict message instructing the administrator to refresh. Success revalidates the
@@ -153,6 +162,8 @@ dashboard page. It returns:
 - count and kopeck sum of `SUCCEEDED` donations in the current month;
 - evaluated alert summaries;
 - a bounded recent audit-event list containing only safe fields.
+
+The recent list contains at most 20 rows ordered by `(createdAt DESC, id DESC)`.
 
 Database reads execute in one repeatable-read transaction so counters and recent
 activity describe one snapshot. Aggregates use `paidAt`, not `createdAt`, because
@@ -223,6 +234,12 @@ Implementation follows red-green-refactor. Unit tests cover parsers, UTC boundar
 helpers, alert thresholds, audit event derivation, action authorization order,
 optimistic conflicts, dashboard mapping, and accessible rendering. Repository tests
 assert Prisma query shapes and transactional audit writes.
+
+Application-boundary integration tests run the protected dashboard, message list,
+layout badge, and message/content action orchestration with database delegates that
+fail if called. With no session, each boundary must redirect or reject before any
+delegate is reached. A regression test runs the public contact submission path and
+proves it creates only `ContactRequest`, never `AdminAuditEvent`.
 
 A PostgreSQL integration test creates an isolated schema in a database whose host
 is local and whose name ends in `_test`. It applies the migration to a legacy
