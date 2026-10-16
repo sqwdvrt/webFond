@@ -103,6 +103,8 @@ function editorialSuccess(
   return {
     status: "ok",
     id: "entry-1",
+    previousStatus: null,
+    publicationStatus: "DRAFT",
     previousSlug: null,
     slug: editorialInput.slug,
     wasPublished: false,
@@ -118,6 +120,8 @@ function documentSuccess(
   return {
     status: "ok",
     id: "document-1",
+    previousStatus: null,
+    publicationStatus: "DRAFT",
     wasPublished: false,
     isPublished: false,
     publishedAt: null,

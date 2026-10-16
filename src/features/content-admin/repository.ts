@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 import type { DocumentInput, EditorialInput, ProjectInput, RequisitesInput } from "./types";
+import type { PublicationStatus } from "./types";
 import {
   defaultRequisitesDraft,
   parseRequisitesSetting,
@@ -315,8 +316,11 @@ export type PublishedRequisitesResult =
   | { status: "fallback"; value: RequisitesInput };
 
 export type EditorialMutationSuccess = {
+  /** Mutation outcome discriminator; publication state is `publicationStatus`. */
   status: "ok";
   id: string;
+  previousStatus: PublicationStatus | null;
+  publicationStatus: PublicationStatus;
   previousSlug: string | null;
   slug: string;
   wasPublished: boolean;
@@ -325,8 +329,11 @@ export type EditorialMutationSuccess = {
 };
 
 export type DocumentMutationSuccess = {
+  /** Mutation outcome discriminator; publication state is `publicationStatus`. */
   status: "ok";
   id: string;
+  previousStatus: PublicationStatus | null;
+  publicationStatus: PublicationStatus;
   wasPublished: boolean;
   isPublished: boolean;
   publishedAt: Date | null;
@@ -380,14 +387,17 @@ function requisitesJsonValue(input: RequisitesInput) {
   } satisfies Prisma.JsonObject;
 }
 
-function editorialSuccess(
+function editorialSuccess<T extends PublicationStatus | null>(
   row: EditorialMutationRow,
   previousSlug: string | null,
+  previousStatus: T,
   wasPublished: boolean,
-): EditorialMutationSuccess {
+): EditorialMutationSuccess & { previousStatus: T } {
   return {
     status: "ok",
     id: row.id,
+    previousStatus,
+    publicationStatus: row.status,
     previousSlug,
     slug: row.slug,
     wasPublished,
@@ -396,13 +406,16 @@ function editorialSuccess(
   };
 }
 
-function documentSuccess(
+function documentSuccess<T extends PublicationStatus | null>(
   row: DocumentMutationRow,
+  previousStatus: T,
   wasPublished: boolean,
-): DocumentMutationSuccess {
+): DocumentMutationSuccess & { previousStatus: T } {
   return {
     status: "ok",
     id: row.id,
+    previousStatus,
+    publicationStatus: row.status,
     wasPublished,
     isPublished: row.status === "PUBLISHED",
     publishedAt: row.publishedAt,
@@ -566,7 +579,7 @@ export async function createProject(
       },
       select: editorialMutationSelect,
     });
-    return editorialSuccess(row, null, false);
+    return editorialSuccess(row, null, null, false);
   } catch (error) {
     if (isPrismaP2002(error)) return { status: "duplicate" };
     throw error;
@@ -585,7 +598,7 @@ export async function createNews(
       },
       select: editorialMutationSelect,
     });
-    return editorialSuccess(row, null, false);
+    return editorialSuccess(row, null, null, false);
   } catch (error) {
     if (isPrismaP2002(error)) return { status: "duplicate" };
     throw error;
@@ -603,7 +616,7 @@ export async function createDocument(
     },
     select: documentMutationSelect,
   });
-  return documentSuccess(row, false);
+  return documentSuccess(row, null, false);
 }
 
 export async function updateProject(
@@ -634,6 +647,7 @@ export async function updateProject(
     return editorialSuccess(
       { id, slug: input.slug, status: input.status, publishedAt: nextPublishedAt },
       current.slug,
+      current.status,
       current.status === "PUBLISHED",
     );
   } catch (error) {
@@ -670,6 +684,7 @@ export async function updateNews(
     return editorialSuccess(
       { id, slug: input.slug, status: input.status, publishedAt: nextPublishedAt },
       current.slug,
+      current.status,
       current.status === "PUBLISHED",
     );
   } catch (error) {
@@ -703,6 +718,7 @@ export async function updateDocument(
 
   return documentSuccess(
     { id, status: input.status, publishedAt: nextPublishedAt },
+    current.status,
     current.status === "PUBLISHED",
   );
 }
