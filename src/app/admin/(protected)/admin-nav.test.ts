@@ -36,7 +36,13 @@ describe("AdminNav", () => {
   it("omits the messages badge when there are no new requests", () => {
     render(createElement(AdminNav, { newContactRequestCount: 0 }));
 
-    expect(screen.getByRole("link", { name: "Письма" })).toBeVisible();
+    const messagesLink = screen.getByRole("link", { name: "Письма" });
+
+    expect(messagesLink).toBeVisible();
+    expect(
+      messagesLink.querySelector("[class*='adminNavBadge']"),
+    ).not.toBeInTheDocument();
+    expect(messagesLink).not.toHaveTextContent("0");
     expect(screen.queryByLabelText(/новых обращения/)).not.toBeInTheDocument();
   });
 

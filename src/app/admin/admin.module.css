@@ -703,7 +703,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  color: #24322a;
+  color: var(--ink);
   background: var(--accent);
   border-radius: 999px;
   font-size: 11px;

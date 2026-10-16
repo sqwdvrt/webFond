@@ -54,6 +54,7 @@ describe("AdminShell", () => {
     );
     expect(css).toContain(".submitButtonLabel");
     expect(css).toContain('a[aria-current="page"]');
+    expect(css).toMatch(/\.adminNavBadge\s*\{[^}]*color:\s*var\(--ink\)/);
 
     const stickyOffsets = [
       ...css.matchAll(/\.workspaceHeader\s*\{[^}]*top:\s*([^;]+);/g),
@@ -172,7 +173,7 @@ describe("ProtectedAdminLayout", () => {
     expect(screen.getByLabelText("3 новых обращения")).toHaveTextContent("3");
   });
 
-  it("keeps the aggregate server-provided without a client request", () => {
+  it("does not add a client fetch or API endpoint for the aggregate", () => {
     const layoutSource = readFileSync(
       resolve(process.cwd(), "src/app/admin/(protected)/layout.tsx"),
       "utf8",
