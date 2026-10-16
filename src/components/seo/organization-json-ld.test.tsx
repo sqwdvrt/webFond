@@ -11,7 +11,7 @@ describe("OrganizationJsonLd", () => {
     expect(data.name).toBe("Фонд «Быть Добру»");
     expect(data.legalName).toBe("Фонд «Быть Добру»");
     expect(data.foundingDate).toBe("2025-07-17");
-    expect(data.email).toBe("sorovoi@mail.ru");
+    expect(data.email).toBe("fbd_2025@mail.ru");
     expect(data.identifier).toEqual([
       { "@type": "PropertyValue", propertyID: "ОГРН", value: "1257700318974" },
       { "@type": "PropertyValue", propertyID: "КПП", value: "772101001" },

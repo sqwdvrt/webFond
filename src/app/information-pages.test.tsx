@@ -147,7 +147,7 @@ describe("information pages", () => {
 
   it("shows confirmed contacts and a message form that is not a help application", () => {
     render(<ContactsPage />);
-    expect(screen.getByRole("link", { name: "sorovoi@mail.ru" })).toHaveAttribute("href", "mailto:sorovoi@mail.ru");
+    expect(screen.getByRole("link", { name: "fbd_2025@mail.ru" })).toHaveAttribute("href", "mailto:fbd_2025@mail.ru");
     expect(screen.getByRole("heading", { name: "Как с нами связаться" })).toBeVisible();
     expect(screen.queryByText("Позвоните нам:")).not.toBeInTheDocument();
     expect(

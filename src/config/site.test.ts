@@ -22,7 +22,7 @@ describe("siteConfig", () => {
     expect(siteConfig.navigation.find((item) => item.href === "/projects")?.label).toBe("Деятельность");
     expect(siteConfig.helpHref).toBe("/help");
     expect(siteConfig.routes.contactsForHelp).toBe("/need-help");
-    expect(siteConfig.legal.emailLabel).toBe("sorovoi@mail.ru");
+    expect(siteConfig.legal.emailLabel).toBe("fbd_2025@mail.ru");
     expect(siteConfig.routes.public).toContain("/requisites");
     expect(siteConfig.routes.public).toContain("/need-help");
     expect(siteConfig.routes.public).toEqual(

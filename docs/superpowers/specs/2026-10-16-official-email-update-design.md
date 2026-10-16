@@ -7,14 +7,14 @@ Replace the foundation's public official email address with
 
 ## Scope
 
-The change updates the shared site configuration, published legal content,
-donation-offer content, public-facing expectations in component/page/SEO tests,
-and the current project plan. All rendered labels and `mailto:` destinations use
-the same lowercase address.
+The change updates the shared site configuration, published website legal
+content, donation-offer content, and related expectations in
+component/page/SEO/admin-default tests. All rendered labels and `mailto:`
+destinations use the same lowercase address.
 
-The change does not alter visitor-supplied email addresses, administrator inbox
-links generated from contact requests, generic validation fixtures, historical
-implementation plans, or artifacts on unrelated branches.
+The change does not alter downloadable DOCX documents, visitor-supplied email
+addresses, administrator inbox links generated from contact requests, project
+plans, historical implementation plans, or artifacts on unrelated branches.
 
 ## Implementation
 
@@ -23,7 +23,8 @@ Hard-coded legal clauses in `src/content/legal.ts` and
 `src/content/donation-offer.ts` are updated separately because their text is
 published verbatim. Tests first assert the new configuration, SEO value,
 footer/contact links, donation preview link, and legal text, then production
-content is changed.
+content is changed. The requisites-draft test is also updated because its
+default email is derived from the shared site configuration.
 
 ## Verification
 
