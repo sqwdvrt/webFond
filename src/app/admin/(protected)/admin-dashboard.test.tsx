@@ -1,0 +1,166 @@
+import axe from "axe-core";
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import type { AdminDashboardReadModel } from "@/features/admin-dashboard/read-model";
+
+import { renderAdminDashboard } from "./page";
+
+const dashboard: AdminDashboardReadModel = {
+  messages: { newCount: 7 },
+  donations: {
+    today: { count: 4, amountKopecks: 125_500 },
+    month: { count: 18, amountKopecks: 990_000 },
+  },
+  alerts: [
+    {
+      code: "STALE_NEW_CONTACTS",
+      severity: "warning",
+      message: "Новых обращений старше 48 часов: 2.",
+    },
+    {
+      code: "ADMIN_CONFIGURATION",
+      severity: "warning",
+      message: "Обнаружена проблема конфигурации административной части.",
+    },
+  ],
+  recentActivity: [
+    {
+      id: "audit-private-id",
+      action: "CONTENT_PUBLISHED",
+      entityType: "PROJECT",
+      entityId: "project-private-id",
+      previousStatus: "DRAFT",
+      nextStatus: "PUBLISHED",
+      createdAt: new Date("2026-01-31T22:00:00.000Z"),
+    },
+    {
+      id: "audit-contact-id",
+      action: "CONTACT_NOTE_CHANGED",
+      entityType: "CONTACT_REQUEST",
+      entityId: "contact-private-id",
+      previousStatus: null,
+      nextStatus: null,
+      createdAt: new Date("2026-01-31T21:00:00.000Z"),
+    },
+    {
+      id: "audit-contact-status-id",
+      action: "CONTACT_STATUS_CHANGED",
+      entityType: "CONTACT_REQUEST",
+      entityId: "another-private-id",
+      previousStatus: "NEW",
+      nextStatus: "IN_PROGRESS",
+      createdAt: new Date("2026-01-31T20:00:00.000Z"),
+    },
+  ],
+};
+
+function dependencies(model = dashboard) {
+  return {
+    requireSession: vi.fn(async () => ({ username: "fixture-operator" })),
+    loadDashboard: vi.fn(async () => model),
+  };
+}
+
+describe("admin dashboard", () => {
+  it("authenticates before loading and does not query after denial", async () => {
+    const denied = new Error("guest denied");
+    const deps = dependencies();
+    deps.requireSession.mockRejectedValue(denied);
+
+    await expect(renderAdminDashboard(deps)).rejects.toBe(denied);
+    expect(deps.requireSession).toHaveBeenCalledOnce();
+    expect(deps.loadDashboard).not.toHaveBeenCalled();
+  });
+
+  it("loads once and renders safe operational metrics and activity", async () => {
+    const deps = dependencies();
+    const { container } = render(await renderAdminDashboard(deps));
+
+    expect(deps.requireSession).toHaveBeenCalledOnce();
+    expect(deps.loadDashboard).toHaveBeenCalledOnce();
+    expect(screen.getByRole("heading", { name: "Обзор" })).toBeVisible();
+    expect(screen.getByText("7", { selector: "strong" })).toBeVisible();
+    expect(screen.getByText("4 успешных")).toBeVisible();
+    expect(screen.getByText(/1\s255,00 RUB/)).toBeVisible();
+    expect(screen.getByText("18 успешных")).toBeVisible();
+    expect(screen.getByText(/9\s900,00 RUB/)).toBeVisible();
+    expect(screen.getByText("Новых обращений старше 48 часов: 2.")).toBeVisible();
+    expect(screen.getByText("Проект опубликован")).toBeVisible();
+    expect(screen.getByText("Изменена внутренняя заметка обращения")).toBeVisible();
+    expect(
+      screen.getByText("Статус обращения изменён: Новое → В работе"),
+    ).toBeVisible();
+    expect(screen.getByText("01.02.2026, 01:00")).toBeVisible();
+
+    expect(container).not.toHaveTextContent("project-private-id");
+    expect(container).not.toHaveTextContent("contact-private-id");
+    expect(container).not.toHaveTextContent("another-private-id");
+    expect(container).not.toHaveTextContent("audit-private-id");
+
+    const navigation = screen.getByRole("navigation", {
+      name: "Управление разделами",
+    });
+    expect(within(navigation).getAllByRole("link")).toHaveLength(6);
+    expect(within(navigation).getByRole("link", { name: /Письма/ })).toHaveAttribute(
+      "href",
+      "/admin/messages",
+    );
+    expect(within(navigation).getByRole("link", { name: /Проекты/ })).toHaveAttribute(
+      "href",
+      "/admin/projects",
+    );
+    expect(within(navigation).getByRole("link", { name: /Новости/ })).toHaveAttribute(
+      "href",
+      "/admin/news",
+    );
+    expect(within(navigation).getByRole("link", { name: /Документы/ })).toHaveAttribute(
+      "href",
+      "/admin/documents",
+    );
+    expect(within(navigation).getByRole("link", { name: /Реквизиты/ })).toHaveAttribute(
+      "href",
+      "/admin/requisites",
+    );
+    expect(within(navigation).getByRole("link", { name: /Пожертвования/ })).toHaveAttribute(
+      "href",
+      "/admin/donations",
+    );
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+  });
+
+  it("renders calm empty states accessibly", async () => {
+    const empty: AdminDashboardReadModel = {
+      messages: { newCount: 0 },
+      donations: {
+        today: { count: 0, amountKopecks: 0 },
+        month: { count: 0, amountKopecks: 0 },
+      },
+      alerts: [],
+      recentActivity: [],
+    };
+
+    const { container } = render(
+      await renderAdminDashboard(dependencies(empty)),
+    );
+
+    expect(screen.getByText("Требующих внимания предупреждений нет.")).toBeVisible();
+    expect(screen.getByText("Действий пока нет.")).toBeVisible();
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+  });
+});

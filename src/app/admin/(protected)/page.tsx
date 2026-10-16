@@ -9,7 +9,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { formatDonationAmount, formatDonationDateTime } from "@/features/admin-donations/format";
+import {
+  getAdminDashboardReadModel,
+  type AdminDashboardReadModel,
+  type SafeAdminAuditEvent,
+} from "@/features/admin-dashboard/read-model";
+import { requireAdminSession } from "@/lib/admin-auth/session";
+
 import styles from "../admin.module.css";
+
+export const dynamic = "force-dynamic";
 
 const overviewSections = [
   {
@@ -50,7 +60,76 @@ const overviewSections = [
   },
 ] as const;
 
-export default function AdminPage() {
+const contentActivityLabels = {
+  PROJECT: {
+    CONTENT_CREATED: "Проект создан",
+    CONTENT_PUBLISHED: "Проект опубликован",
+    CONTENT_ARCHIVED: "Проект архивирован",
+    CONTENT_STATUS_CHANGED: "Статус проекта изменён",
+    CONTENT_DELETED: "Проект удалён",
+  },
+  NEWS_POST: {
+    CONTENT_CREATED: "Новость создана",
+    CONTENT_PUBLISHED: "Новость опубликована",
+    CONTENT_ARCHIVED: "Новость архивирована",
+    CONTENT_STATUS_CHANGED: "Статус новости изменён",
+    CONTENT_DELETED: "Новость удалена",
+  },
+  DOCUMENT: {
+    CONTENT_CREATED: "Документ создан",
+    CONTENT_PUBLISHED: "Документ опубликован",
+    CONTENT_ARCHIVED: "Документ архивирован",
+    CONTENT_STATUS_CHANGED: "Статус документа изменён",
+    CONTENT_DELETED: "Документ удалён",
+  },
+} as const;
+
+const statusLabels: Record<string, string> = {
+  DRAFT: "Черновик",
+  PUBLISHED: "Опубликовано",
+  ARCHIVED: "В архиве",
+  NEW: "Новое",
+  IN_PROGRESS: "В работе",
+  CLOSED: "Закрыто",
+  SPAM: "Спам",
+};
+
+function activityLabel(event: SafeAdminAuditEvent) {
+  if (event.action === "CONTACT_NOTE_CHANGED") {
+    return "Изменена внутренняя заметка обращения";
+  }
+
+  if (event.action === "CONTACT_STATUS_CHANGED") {
+    const previous = event.previousStatus
+      ? statusLabels[event.previousStatus]
+      : undefined;
+    const next = event.nextStatus ? statusLabels[event.nextStatus] : undefined;
+    return previous && next
+      ? `Статус обращения изменён: ${previous} → ${next}`
+      : "Статус обращения изменён";
+  }
+
+  if (event.entityType === "CONTACT_REQUEST") {
+    return "Выполнено административное действие";
+  }
+
+  const label = contentActivityLabels[event.entityType]?.[event.action];
+  if (!label) return "Выполнено административное действие";
+
+  if (
+    event.action === "CONTENT_STATUS_CHANGED" &&
+    event.previousStatus &&
+    event.nextStatus
+  ) {
+    const previous = statusLabels[event.previousStatus];
+    const next = statusLabels[event.nextStatus];
+    if (previous && next) return `${label}: ${previous} → ${next}`;
+  }
+
+  return label;
+}
+
+function Dashboard({ model }: { model: AdminDashboardReadModel }) {
   return (
     <section className={styles.dashboard} aria-labelledby="admin-title">
       <div className={styles.dashboardHeader}>
@@ -58,6 +137,69 @@ export default function AdminPage() {
           <span className={styles.eyebrow}>Рабочая область</span>
           <h1 id="admin-title">Обзор</h1>
         </div>
+      </div>
+
+      <section className={styles.dashboardSection} aria-labelledby="metrics-title">
+        <h2 id="metrics-title">Ключевые показатели</h2>
+        <dl className={styles.dashboardMetrics}>
+          <div className={styles.dashboardMetric}>
+            <dt>Новые обращения</dt>
+            <dd><strong>{model.messages.newCount}</strong></dd>
+          </div>
+          <div className={styles.dashboardMetric}>
+            <dt>Успешные пожертвования сегодня</dt>
+            <dd>
+              <span>{model.donations.today.count} успешных</span>
+              <strong>
+                {formatDonationAmount(model.donations.today.amountKopecks, "RUB")}
+              </strong>
+            </dd>
+          </div>
+          <div className={styles.dashboardMetric}>
+            <dt>Успешные пожертвования за месяц</dt>
+            <dd>
+              <span>{model.donations.month.count} успешных</span>
+              <strong>
+                {formatDonationAmount(model.donations.month.amountKopecks, "RUB")}
+              </strong>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <div className={styles.dashboardColumns}>
+        <section className={styles.dashboardSection} aria-labelledby="alerts-title">
+          <h2 id="alerts-title">Предупреждения</h2>
+          {model.alerts.length ? (
+            <ul className={styles.dashboardAlerts} aria-label="Требует внимания">
+              {model.alerts.map((alert) => (
+                <li key={alert.code}>{alert.message}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.dashboardEmpty}>
+              Требующих внимания предупреждений нет.
+            </p>
+          )}
+        </section>
+
+        <section className={styles.dashboardSection} aria-labelledby="activity-title">
+          <h2 id="activity-title">Последние действия</h2>
+          {model.recentActivity.length ? (
+            <ol className={styles.dashboardActivity}>
+              {model.recentActivity.map((event) => (
+                <li key={event.id}>
+                  <strong>{activityLabel(event)}</strong>
+                  <time dateTime={event.createdAt.toISOString()}>
+                    {formatDonationDateTime(event.createdAt)}
+                  </time>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className={styles.dashboardEmpty}>Действий пока нет.</p>
+          )}
+        </section>
       </div>
 
       <nav
@@ -77,4 +219,26 @@ export default function AdminPage() {
       </nav>
     </section>
   );
+}
+
+type AdminDashboardDependencies = {
+  requireSession: () => Promise<unknown>;
+  loadDashboard: () => Promise<AdminDashboardReadModel>;
+};
+
+const defaultDependencies: AdminDashboardDependencies = {
+  requireSession: requireAdminSession,
+  loadDashboard: getAdminDashboardReadModel,
+};
+
+export async function renderAdminDashboard(
+  dependencies: AdminDashboardDependencies = defaultDependencies,
+) {
+  await dependencies.requireSession();
+  const model = await dependencies.loadDashboard();
+  return <Dashboard model={model} />;
+}
+
+export default async function AdminPage() {
+  return renderAdminDashboard();
 }
