@@ -16,6 +16,24 @@ export type ContactFormState = {
 
 type HeaderReader = Pick<Headers, "get">;
 
+type ContactSaveTransaction = {
+  $queryRaw: (
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ) => PromiseLike<unknown>;
+  contactRequest: {
+    create(args: {
+      data: ContactFormValues;
+    }): Promise<unknown>;
+  };
+};
+
+type ContactSaveClient = {
+  $transaction(
+    callback: (transaction: ContactSaveTransaction) => Promise<void>,
+  ): Promise<void>;
+};
+
 export type SubmitContactDependencies = {
   headers: HeaderReader;
   now: Date;
@@ -59,9 +77,10 @@ export async function defaultSaveContact(
   input: ContactFormValues,
   clientKey: string,
   now: Date,
+  client: ContactSaveClient = prisma as unknown as ContactSaveClient,
 ): Promise<"ok" | "rate-limited"> {
   try {
-    await prisma.$transaction(async (tx) => {
+    await client.$transaction(async (tx) => {
       await consumeBucket(tx, {
         key: `contact:client:10m:${clientKey}`,
         now,
