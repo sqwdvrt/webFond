@@ -15,10 +15,13 @@ const COPY_ROWS: ReadonlyArray<readonly [label: string, key: keyof RequisitesInp
   ["БИК", "bik"],
 ];
 
-export function formatPublishedRequisitesCopy(requisites: RequisitesInput): string {
+export function formatPublishedRequisitesCopy(
+  requisites: RequisitesInput,
+  officialEmail: string,
+): string {
   return COPY_ROWS.map(([label, key]) => {
     const value = requisites[key];
-    const text = key === "email" ? String(value).toLowerCase() : String(value);
+    const text = key === "email" ? officialEmail.toLowerCase() : String(value);
     return `${label}: ${text}`;
   }).join("\n");
 }

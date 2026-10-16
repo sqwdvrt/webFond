@@ -14,7 +14,7 @@ describe("DonationPreview", () => {
     );
     expect(screen.getByRole("link", { name: "Написать на почту" })).toHaveAttribute(
       "href",
-      "mailto:sorovoi@mail.ru",
+      "mailto:fbd_2025@mail.ru",
     );
     expect(
       screen.queryByText(/QR-код будет опубликован после подтверждения банковских реквизитов/i),

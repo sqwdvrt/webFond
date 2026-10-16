@@ -596,7 +596,7 @@ describe("defaultRequisitesDraft", () => {
       inn: "9721254417",
       kpp: "772101001",
       address: "109462, г. Москва, б-р Волжский, д. 51, стр. 17, помещ. 101",
-      email: "SOROVOI@MAIL.RU",
+      email: "fbd_2025@mail.ru",
       bankName: "",
       recipientName: "",
       checkingAccount: "",

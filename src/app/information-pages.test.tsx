@@ -147,7 +147,7 @@ describe("information pages", () => {
 
   it("shows confirmed contacts and a message form that is not a help application", () => {
     render(<ContactsPage />);
-    expect(screen.getByRole("link", { name: "sorovoi@mail.ru" })).toHaveAttribute("href", "mailto:sorovoi@mail.ru");
+    expect(screen.getByRole("link", { name: "fbd_2025@mail.ru" })).toHaveAttribute("href", "mailto:fbd_2025@mail.ru");
     expect(screen.getByRole("heading", { name: "Как с нами связаться" })).toBeVisible();
     expect(screen.queryByText("Позвоните нам:")).not.toBeInTheDocument();
     expect(
@@ -177,10 +177,11 @@ describe("information pages", () => {
     expect(screen.getByText(publishedRequisites.ogrn)).toBeVisible();
     expect(screen.getByText(publishedRequisites.bankName)).toBeVisible();
     expect(screen.getByText(publishedRequisites.bik)).toBeVisible();
-    expect(screen.getByRole("link", { name: publishedRequisites.email })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: siteConfig.legal.emailLabel })).toHaveAttribute(
       "href",
-      `mailto:${publishedRequisites.email}`,
+      `mailto:${siteConfig.legal.email}`,
     );
+    expect(screen.queryByText(publishedRequisites.email)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();

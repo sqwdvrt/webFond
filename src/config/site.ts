@@ -43,7 +43,7 @@ export const siteConfig = {
     kpp: "772101001",
     address:
       "109462, г. Москва, б-р Волжский, д. 51, стр. 17, помещ. 101",
-    email: "SOROVOI@MAIL.RU",
-    emailLabel: "sorovoi@mail.ru",
+    email: "fbd_2025@mail.ru",
+    emailLabel: "fbd_2025@mail.ru",
   },
 } as const;
