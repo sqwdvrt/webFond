@@ -40,6 +40,19 @@ describe("Moscow calendar boundaries", () => {
     ).toBe("2010-03-28T20:00:00.000Z");
   });
 
+  it("maps a skipped Moscow midnight to the first instant of that date", () => {
+    expect(
+      moscowStartOfDate({ year: 1981, month: 4, day: 1 }).toISOString(),
+    ).toBe("1981-03-31T21:00:00.000Z");
+  });
+
+  it("keeps both boundaries around an ambiguous 2010 clock transition", () => {
+    expect(moscowDayInterval(new Date("2010-10-31T12:00:00.000Z"))).toEqual({
+      start: new Date("2010-10-30T20:00:00.000Z"),
+      end: new Date("2010-10-31T21:00:00.000Z"),
+    });
+  });
+
   it.each([
     [
       "immediately before midnight",

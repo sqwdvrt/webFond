@@ -1,5 +1,6 @@
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MOSCOW_TIME_ZONE = "Europe/Moscow";
+const DAY_IN_MILLISECONDS = 86_400_000;
 
 export type CalendarDate = {
   year: number;
@@ -45,7 +46,9 @@ function calendarDateFromUtcTimestamp(timestamp: number): CalendarDate {
 }
 
 function addCalendarDays(parts: CalendarDate, days: number) {
-  return calendarDateFromUtcTimestamp(utcTimestamp(parts) + days * 86_400_000);
+  return calendarDateFromUtcTimestamp(
+    utcTimestamp(parts) + days * DAY_IN_MILLISECONDS,
+  );
 }
 
 function moscowParts(instant: Date): CalendarDate & {
@@ -83,6 +86,17 @@ function moscowOffsetAt(instant: Date) {
   return localAsUtc - instant.getTime();
 }
 
+function isCalendarDate(
+  value: CalendarDate,
+  expected: CalendarDate,
+) {
+  return (
+    value.year === expected.year &&
+    value.month === expected.month &&
+    value.day === expected.day
+  );
+}
+
 export function parseCalendarDate(value: string): CalendarDate | null {
   const match = DATE_PATTERN.exec(value);
   if (!match) return null;
@@ -105,12 +119,25 @@ export function parseCalendarDate(value: string): CalendarDate | null {
 export function moscowStartOfDate(parts: CalendarDate) {
   const localAsUtc = utcTimestamp(parts);
   let instant = localAsUtc;
+  const offsets = new Set([
+    moscowOffsetAt(new Date(localAsUtc - DAY_IN_MILLISECONDS)),
+    moscowOffsetAt(new Date(localAsUtc + DAY_IN_MILLISECONDS)),
+  ]);
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    instant = localAsUtc - moscowOffsetAt(new Date(instant));
+    const offset = moscowOffsetAt(new Date(instant));
+    offsets.add(offset);
+    instant = localAsUtc - offset;
   }
 
-  return new Date(instant);
+  // A skipped midnight has no fixed point: iteration alternates across the
+  // gap. Nearby offsets also preserve both candidates for an ambiguous time.
+  const firstInstantOnDate = [...offsets]
+    .map((offset) => new Date(localAsUtc - offset))
+    .sort((left, right) => left.getTime() - right.getTime())
+    .find((candidate) => isCalendarDate(moscowParts(candidate), parts));
+
+  return firstInstantOnDate ?? new Date(instant);
 }
 
 export function moscowDateRange(
