@@ -21,11 +21,11 @@ const published: RequisitesInput = {
 };
 
 describe("formatPublishedRequisitesCopy", () => {
-  it("formats legal and bank rows as plain text with a lowercase email", () => {
-    const text = formatPublishedRequisitesCopy(published);
+  it("formats legal and bank rows with the current official email", () => {
+    const text = formatPublishedRequisitesCopy(published, "fbd_2025@mail.ru");
 
     expect(text).toContain("ОГРН: 1234567890123");
-    expect(text).toContain("Email: verified@example.org");
+    expect(text).toContain("Email: fbd_2025@mail.ru");
     expect(text).toContain("Расчетный счет: 40703810000000000001");
     expect(text).toContain("БИК: 044525001");
     expect(text).not.toContain("VERIFIED@EXAMPLE.ORG");

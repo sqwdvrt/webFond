@@ -55,7 +55,7 @@ function publishedRows(requisites: RequisitesInput): RequisitesRow[] {
     ["ИНН", requisites.inn],
     ["КПП", requisites.kpp],
     ["Адрес", requisites.address],
-    ["Email", emailLink(requisites.email.toLowerCase())],
+    ["Email", emailLink(siteConfig.legal.emailLabel)],
     ["Банк", requisites.bankName],
     ["Получатель", requisites.recipientName],
     ["Расчетный счет", requisites.checkingAccount],
@@ -97,7 +97,9 @@ export async function renderRequisitesPage(
           </dl>
           {published ? (
             <div className="requisites-aside">
-              <CopyRequisitesButton text={formatPublishedRequisitesCopy(published)} />
+              <CopyRequisitesButton
+                text={formatPublishedRequisitesCopy(published, siteConfig.legal.email)}
+              />
               <BankQrTransfer />
             </div>
           ) : result === null ? (
