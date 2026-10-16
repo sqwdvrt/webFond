@@ -198,6 +198,26 @@ describe("MessagesView", () => {
     expect(screen.queryByText(contact.internalNote)).not.toBeInTheDocument();
   });
 
+  it("encodes reserved email characters instead of creating mailto headers", () => {
+    const email = "victim?subject=Injected&body=Text@example.org";
+    render(
+      <MessagesView
+        filters={{ page: 1 }}
+        result={{
+          ...pageResult,
+          page: 1,
+          rows: [{ ...contact, email }],
+          totalPages: 1,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: email })).toHaveAttribute(
+      "href",
+      "mailto:victim%3Fsubject%3DInjected%26body%3DText@example.org",
+    );
+  });
+
   it("renders an empty state without pagination", () => {
     render(
       <MessagesView
@@ -287,5 +307,25 @@ describe("message detail page", () => {
       ),
     ).rejects.toThrow("not-found");
     expect(deps.showNotFound).toHaveBeenCalledOnce();
+  });
+
+  it("encodes reserved email characters on the protected detail page", async () => {
+    const email = "victim?subject=Injected&body=Text@example.org";
+    const deps = detailDependencies({
+      getContact: vi.fn(async () => ({ ...contact, email })),
+    });
+
+    render(
+      await renderMessageDetailPage(
+        Promise.resolve({ id: contact.id }),
+        Promise.resolve({}),
+        deps,
+      ),
+    );
+
+    expect(screen.getByRole("link", { name: email })).toHaveAttribute(
+      "href",
+      "mailto:victim%3Fsubject%3DInjected%26body%3DText@example.org",
+    );
   });
 });

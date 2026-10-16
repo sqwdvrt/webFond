@@ -36,6 +36,10 @@ function excerpt(value: string) {
     : value;
 }
 
+export function contactEmailHref(email: string) {
+  return `mailto:${encodeURIComponent(email).replaceAll("%40", "@")}`;
+}
+
 export function InvalidMessageFilters() {
   return (
     <section className={styles.messagesPage}>
@@ -137,7 +141,7 @@ export function MessagesView({
                 </span>
               </header>
               <div className={styles.messageQueueMeta}>
-                <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                <a href={contactEmailHref(contact.email)}>{contact.email}</a>
                 <time dateTime={contact.createdAt.toISOString()}>
                   {dateTimeFormatter.format(contact.createdAt)} МСК
                 </time>

@@ -8,6 +8,7 @@ import { requireAdminSession } from "@/lib/admin-auth/session";
 import styles from "../../../admin.module.css";
 import { updateContactRequestAction } from "../actions";
 import { MessageForm } from "../message-form";
+import { contactEmailHref } from "../messages-view";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export async function renderMessageDetailPage(
           </div>
           <div>
             <dt>Email</dt>
-            <dd><a href={`mailto:${contact.email}`}>{contact.email}</a></dd>
+            <dd><a href={contactEmailHref(contact.email)}>{contact.email}</a></dd>
           </div>
           <div>
             <dt>Получено</dt>

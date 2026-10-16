@@ -59,7 +59,7 @@ export function MessageForm({
         <div className={styles.field}>
           <label htmlFor="contact-status">Статус обращения</label>
           <select
-            aria-describedby="contact-status-error"
+            aria-describedby={state.errors?.status ? "contact-status-error" : undefined}
             aria-invalid={Boolean(state.errors?.status)}
             defaultValue={status}
             id="contact-status"

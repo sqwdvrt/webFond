@@ -206,6 +206,16 @@ describe("admin message queue styles", () => {
       "overflow-wrap": "anywhere",
       "white-space": "pre-wrap",
     });
+    expect(declarationsFor(".messageHeading")).toMatchObject({
+      "min-width": "0",
+    });
+    expect(declarationsFor(".messageHeading h1")).toMatchObject({
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".messageQueueLink")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
     expect(declarationsFor(".messageQueueLink:focus-visible")).toMatchObject({
       outline: "2px solid var(--brand)",
       "outline-offset": "2px",
@@ -223,8 +233,8 @@ describe("admin message queue styles", () => {
 
     expect(pageRule?.declarations).toMatchObject({
       width: "min(100% - 32px, 1240px)",
-      "overflow-x": "clip",
     });
+    expect(pageRule?.declarations).not.toHaveProperty("overflow-x");
     expect(filterRule?.declarations).toMatchObject({
       "grid-template-columns": "minmax(0, 1fr)",
     });
