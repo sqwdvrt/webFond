@@ -8,6 +8,8 @@ const VALIDATION_MESSAGE = "Проверьте заполнение формы";
 const CONFLICT_MESSAGE =
   "Данные изменились. Обновите страницу и повторите действие";
 const NOTE_MAX_LENGTH = 4_000;
+const CANONICAL_UTC_ISO =
+  /^(?:\d{4}|[+-]\d{6})-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 export type ContactMutationInput = {
   status: ContactStatusValue;
@@ -98,7 +100,13 @@ export function parseContactMutation(
   formData: FormData,
 ): ParseContactMutationResult {
   const rawStatus = oneString(formData, "status");
-  const rawNote = oneString(formData, "note") ?? "";
+  const noteEntries = formData.getAll("note");
+  const noteIsValid =
+    noteEntries.length === 0 ||
+    (noteEntries.length === 1 && typeof noteEntries[0] === "string");
+  const rawNote = noteIsValid && typeof noteEntries[0] === "string"
+    ? noteEntries[0]
+    : "";
   const note = rawNote.trim() || null;
   const values: ContactMutationValues = {
     status: rawStatus ?? "",
@@ -109,7 +117,9 @@ export function parseContactMutation(
   if (!rawStatus || !CONTACT_STATUSES.includes(rawStatus as ContactStatusValue)) {
     errors.status = "Выберите статус";
   }
-  if (note && Array.from(note).length > NOTE_MAX_LENGTH) {
+  if (!noteIsValid) {
+    errors.note = "Введите заметку текстом";
+  } else if (note && Array.from(note).length > NOTE_MAX_LENGTH) {
     errors.note = "Не более 4000 символов";
   }
 
@@ -172,10 +182,14 @@ function conflict(values: ContactMutationValues): ContactMutationOutcome {
 
 function readUpdatedAt(formData: FormData, now: Date): Date | undefined {
   const raw = oneString(formData, "updatedAt");
-  if (!raw) return undefined;
+  if (!raw || !CANONICAL_UTC_ISO.test(raw)) return undefined;
 
   const value = new Date(raw);
-  if (!Number.isFinite(value.getTime()) || value.getTime() > now.getTime()) {
+  if (
+    !Number.isFinite(value.getTime()) ||
+    value.toISOString() !== raw ||
+    value.getTime() > now.getTime()
+  ) {
     return undefined;
   }
   return value;

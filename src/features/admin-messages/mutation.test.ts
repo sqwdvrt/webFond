@@ -55,6 +55,45 @@ describe("parseContactMutation", () => {
     });
   });
 
+  it("allows a missing note as an intentional empty value", () => {
+    expect(parseContactMutation(form({ status: "NEW" }))).toEqual({
+      ok: true,
+      value: { status: "NEW", note: null },
+    });
+  });
+
+  it("rejects repeated notes instead of treating them as a destructive clear", () => {
+    const data = new FormData();
+    data.set("status", "NEW");
+    data.append("note", "keep this note");
+    data.append("note", "replace this note");
+
+    expect(parseContactMutation(data)).toEqual({
+      ok: false,
+      errors: { note: "Введите заметку текстом" },
+      values: { status: "NEW", note: null },
+    });
+  });
+
+  it("rejects a binary note without exposing its contents or filename", () => {
+    const data = new FormData();
+    data.set("status", "NEW");
+    data.append(
+      "note",
+      new Blob(["private file contents"], { type: "text/plain" }),
+      "private-note.txt",
+    );
+
+    const result = parseContactMutation(data);
+
+    expect(result).toEqual({
+      ok: false,
+      errors: { note: "Введите заметку текстом" },
+      values: { status: "NEW", note: null },
+    });
+    expect(JSON.stringify(result)).not.toMatch(/private file|private-note/i);
+  });
+
   it("accepts a 4,000-character normalized note", () => {
     const note = "я".repeat(4_000);
 
@@ -348,6 +387,12 @@ describe("updateContactRequestMutation", () => {
 
   const invalidTokenCases: Array<[string[], string]> = [
     [[], "missing"],
+    [["0"], "permissive numeric date"],
+    [["2026-10-16"], "date only"],
+    [["10/16/2026"], "locale date"],
+    [["2026-10-16T10:00:00.000+00:00"], "UTC offset"],
+    [["2026-10-16T13:00:00.000+03:00"], "non-UTC offset"],
+    [["2026-10-16T10:00:00Z"], "missing milliseconds"],
     [["bad-date"], "invalid"],
     [["2026-10-16T13:00:00.000Z"], "future"],
     [[updatedAt.toISOString(), updatedAt.toISOString()], "repeated"],
@@ -373,6 +418,25 @@ describe("updateContactRequestMutation", () => {
       },
     });
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("accepts an exact UTC ISO updatedAt token with milliseconds", async () => {
+    await updateContactRequestMutation("contact-1", form({
+      status: "CLOSED",
+      note: "keep me",
+      updatedAt: "2026-10-16T10:00:00.000Z",
+    }), {
+      requireSession,
+      parse,
+      update,
+      now: clock,
+    });
+
+    expect(update).toHaveBeenCalledWith(
+      "contact-1",
+      updatedAt,
+      { status: "CLOSED", note: "keep me" },
+    );
   });
 
   it.each(["missing", "conflict"] as const)(
