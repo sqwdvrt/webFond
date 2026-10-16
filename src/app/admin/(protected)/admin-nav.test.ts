@@ -17,7 +17,11 @@ describe("isAdminSectionCurrent", () => {
 
 describe("AdminNav", () => {
   it("owns the static section definitions without receiving icon components", () => {
-    render(createElement(AdminNav as () => ReactElement));
+    render(
+      createElement(AdminNav as () => ReactElement, {
+        newContactRequestCount: 0,
+      }),
+    );
 
     expect(screen.getByRole("link", { name: "Обзор" })).toHaveAttribute(
       "href",
@@ -29,6 +33,40 @@ describe("AdminNav", () => {
     );
   });
 
+  it("omits the messages badge when there are no new requests", () => {
+    render(createElement(AdminNav, { newContactRequestCount: 0 }));
+
+    expect(screen.getByRole("link", { name: "Письма" })).toBeVisible();
+    expect(screen.queryByLabelText(/новых обращения/)).not.toBeInTheDocument();
+  });
+
+  it("shows an accessible exact count only beside messages", () => {
+    render(createElement(AdminNav, { newContactRequestCount: 3 }));
+
+    const messagesLink = screen.getByRole("link", {
+      name: "Письма 3 новых обращения",
+    });
+    const badge = screen.getByLabelText("3 новых обращения");
+
+    expect(messagesLink).toContainElement(badge);
+    expect(badge).toHaveTextContent("3");
+    expect(screen.getAllByText("3")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "Обзор" })).not.toContainElement(
+      badge,
+    );
+  });
+
+  it.each([
+    [1, "Письма 1 новое обращение"],
+    [2, "Письма 2 новых обращения"],
+    [5, "Письма 5 новых обращений"],
+    [21, "Письма 21 новое обращение"],
+  ])("uses a Russian accessible count label for %i", (count, accessibleName) => {
+    render(createElement(AdminNav, { newContactRequestCount: count }));
+
+    expect(screen.getByRole("link", { name: accessibleName })).toBeVisible();
+  });
+
   it("scrolls the current section link into view after pathname changes", () => {
     const scrolledElements: HTMLElement[] = [];
     const scrollIntoView = vi.fn(function (this: HTMLElement) {
@@ -37,7 +75,11 @@ describe("AdminNav", () => {
     HTMLElement.prototype.scrollIntoView = scrollIntoView;
     vi.mocked(usePathname).mockReturnValue("/admin/donations");
 
-    const { rerender } = render(createElement(AdminNav as () => ReactElement));
+    const { rerender } = render(
+      createElement(AdminNav as () => ReactElement, {
+        newContactRequestCount: 0,
+      }),
+    );
 
     const donationsLink = screen.getByRole("link", { name: "Пожертвования" });
     expect(donationsLink).toHaveAttribute(
@@ -51,7 +93,11 @@ describe("AdminNav", () => {
     expect(scrolledElements).toEqual([donationsLink]);
 
     vi.mocked(usePathname).mockReturnValue("/admin/news");
-    rerender(createElement(AdminNav as () => ReactElement));
+    rerender(
+      createElement(AdminNav as () => ReactElement, {
+        newContactRequestCount: 0,
+      }),
+    );
 
     const newsLink = screen.getByRole("link", { name: "Новости" });
     expect(newsLink).toHaveAttribute("aria-current", "page");

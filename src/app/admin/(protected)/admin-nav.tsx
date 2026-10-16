@@ -33,7 +33,28 @@ export function isAdminSectionCurrent(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AdminNav() {
+function newContactRequestsLabel(count: number) {
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return `${count} новых обращений`;
+  }
+
+  if (lastDigit === 1) {
+    return `${count} новое обращение`;
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${count} новых обращения`;
+  }
+
+  return `${count} новых обращений`;
+}
+
+export function AdminNav({
+  newContactRequestCount,
+}: Readonly<{ newContactRequestCount: number }>) {
   const pathname = usePathname();
   const currentLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -58,6 +79,17 @@ export function AdminNav() {
           >
             <Icon aria-hidden="true" size={17} />
             {label}
+            {href === "/admin/messages" && newContactRequestCount > 0 ? (
+              <>
+                {" "}
+                <span
+                  aria-label={newContactRequestsLabel(newContactRequestCount)}
+                  className={styles.adminNavBadge}
+                >
+                  {newContactRequestCount}
+                </span>
+              </>
+            ) : null}
           </Link>
         );
       })}

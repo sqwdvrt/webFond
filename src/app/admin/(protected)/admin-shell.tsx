@@ -10,9 +10,11 @@ import { AdminNav } from "./admin-nav";
 
 export function AdminShell({
   children,
+  newContactRequestCount,
   username,
 }: Readonly<{
   children: React.ReactNode;
+  newContactRequestCount: number;
   username: string;
 }>) {
   return (
@@ -44,7 +46,7 @@ export function AdminShell({
 
         <div className={styles.adminNavFrame}>
           <div className={styles.adminNavViewport}>
-            <AdminNav />
+            <AdminNav newContactRequestCount={newContactRequestCount} />
           </div>
         </div>
       </header>
