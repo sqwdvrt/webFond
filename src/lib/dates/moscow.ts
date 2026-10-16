@@ -23,16 +23,25 @@ const moscowFormatter = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
+  era: "short",
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
   hourCycle: "h23",
 });
 
-function utcTimestamp(parts: CalendarDate) {
+function utcTimestamp(
+  parts: CalendarDate,
+  time = { hour: 0, minute: 0, second: 0, millisecond: 0 },
+) {
   const date = new Date(0);
   date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
-  date.setUTCHours(0, 0, 0, 0);
+  date.setUTCHours(
+    time.hour,
+    time.minute,
+    time.second,
+    time.millisecond,
+  );
   return date.getTime();
 }
 
@@ -56,15 +65,16 @@ function moscowParts(instant: Date): CalendarDate & {
   minute: number;
   second: number;
 } {
+  const formattedParts = moscowFormatter.formatToParts(instant);
   const values = Object.fromEntries(
-    moscowFormatter
-      .formatToParts(instant)
-      .filter((part) => part.type !== "literal")
+    formattedParts
+      .filter((part) => part.type !== "literal" && part.type !== "era")
       .map((part) => [part.type, Number(part.value)]),
   );
+  const era = formattedParts.find((part) => part.type === "era")?.value;
 
   return {
-    year: values.year,
+    year: era === "BC" ? 1 - values.year : values.year,
     month: values.month,
     day: values.day,
     hour: values.hour,
@@ -75,14 +85,12 @@ function moscowParts(instant: Date): CalendarDate & {
 
 function moscowOffsetAt(instant: Date) {
   const parts = moscowParts(instant);
-  const localAsUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-    parts.second,
-  );
+  const localAsUtc = utcTimestamp(parts, {
+    hour: parts.hour,
+    minute: parts.minute,
+    second: parts.second,
+    millisecond: instant.getUTCMilliseconds(),
+  });
   return localAsUtc - instant.getTime();
 }
 

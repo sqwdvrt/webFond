@@ -31,6 +31,28 @@ describe("Moscow calendar boundaries", () => {
     expect(parseCalendarDate(value)).toBeNull();
   });
 
+  it("preserves year 1 while resolving the Moscow offset", () => {
+    const parts = parseCalendarDate("0001-01-01");
+    expect(parts).toEqual({ year: 1, month: 1, day: 1 });
+    if (!parts) throw new Error("Expected a valid calendar date");
+
+    const start = moscowStartOfDate(parts);
+    expect(start.toISOString()).toBe("0000-12-31T21:29:43.000Z");
+
+    const localParts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Moscow",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+        .formatToParts(start)
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, Number(part.value)]),
+    );
+    expect(localParts).toEqual({ year: 1, month: 1, day: 1 });
+  });
+
   it("resolves midnight using Moscow's offset on that date", () => {
     expect(
       moscowStartOfDate({ year: 2010, month: 3, day: 28 }).toISOString(),
