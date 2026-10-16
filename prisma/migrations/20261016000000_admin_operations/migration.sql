@@ -30,14 +30,17 @@ CREATE TABLE "AdminAuditEvent" (
     CONSTRAINT "AdminAuditEvent_pkey" PRIMARY KEY ("id")
 );
 
--- DropIndex
-DROP INDEX "ContactRequest_status_createdAt_idx";
+-- Operational note: ordinary index builds on the existing Donation and ContactRequest tables block writes.
+-- Run this migration in a maintenance window; rollout documentation will be added with the release docs.
 
 -- CreateIndex
 CREATE INDEX "Donation_status_paidAt_idx" ON "Donation"("status", "paidAt");
 
 -- CreateIndex
 CREATE INDEX "ContactRequest_status_createdAt_id_idx" ON "ContactRequest"("status", "createdAt", "id");
+
+-- DropIndex
+DROP INDEX "ContactRequest_status_createdAt_idx";
 
 -- CreateIndex
 CREATE INDEX "ContactRequest_createdAt_id_idx" ON "ContactRequest"("createdAt", "id");

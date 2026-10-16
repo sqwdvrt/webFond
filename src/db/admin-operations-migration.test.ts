@@ -77,6 +77,23 @@ describe("admin operations migration", () => {
     expect(normalizedMigration).toContain(
       'CREATE INDEX "AdminAuditEvent_entityType_entityId_createdAt_idx" ON "AdminAuditEvent"("entityType", "entityId", "createdAt")',
     );
+
+    const replacementIndex = normalizedMigration.indexOf(
+      'CREATE INDEX "ContactRequest_status_createdAt_id_idx"',
+    );
+    const legacyIndexDrop = normalizedMigration.indexOf(
+      'DROP INDEX "ContactRequest_status_createdAt_idx"',
+    );
+
+    expect(replacementIndex).toBeGreaterThanOrEqual(0);
+    expect(legacyIndexDrop).toBeGreaterThan(replacementIndex);
+  });
+
+  it("documents the write-blocking index rollout requirement", () => {
+    expect(normalizedMigration).toContain(
+      "ordinary index builds on the existing Donation and ContactRequest tables block writes",
+    );
+    expect(normalizedMigration).toContain("maintenance window");
   });
 
   it("enables trigram search and indexes each searchable contact field", () => {

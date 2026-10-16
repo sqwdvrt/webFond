@@ -127,7 +127,10 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
       "-At",
       "-c",
       `
-        SELECT 'contact|' || "id" || '|' || "status"::text || '|' ||
+        SELECT 'contact|' || "id" || '|' || "name" || '|' || "email" || '|' ||
+          "message" || '|' || "status"::text || '|' ||
+          to_char("createdAt", 'YYYY-MM-DD HH24:MI:SS') || '|' ||
+          to_char("updatedAt", 'YYYY-MM-DD HH24:MI:SS') || '|' ||
           COALESCE("internalNote", 'NULL')
         FROM "ContactRequest"
         UNION ALL
@@ -141,8 +144,8 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
       .split("\n");
 
     expect(legacyRows).toEqual([
-      "contact|contact-closed|CLOSED|NULL",
-      "contact|contact-new|NEW|NULL",
+      "contact|contact-closed|Closed Person|closed@example.com|Second message|CLOSED|2026-10-02 10:00:00|2026-10-02 10:00:00|NULL",
+      "contact|contact-new|New Person|new@example.com|First message|NEW|2026-10-01 10:00:00|2026-10-01 10:00:00|NULL",
       "donation|donation-paid|SUCCEEDED|2026-10-01 10:00:00",
       "donation|donation-pending|PENDING|NULL",
     ]);
