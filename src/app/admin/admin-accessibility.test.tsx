@@ -4,6 +4,11 @@ import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import type { ContactPageResult } from "@/features/admin-messages/repository";
+
+import { MessageForm } from "./(protected)/messages/message-form";
+import { MessagesView } from "./(protected)/messages/messages-view";
+
 const formPath = resolve(
   process.cwd(),
   "src/app/admin/login/login-form.tsx",
@@ -25,6 +30,62 @@ describe("admin login accessibility", () => {
     expect(screen.getByRole("textbox", { name: "Логин" })).toBeRequired();
     expect(screen.getByLabelText("Пароль")).toBeRequired();
     expect(screen.getByRole("button", { name: "Войти" })).toBeEnabled();
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("admin messages accessibility", () => {
+  const contact = {
+    id: "contact-1",
+    name: "Анна Иванова",
+    email: "anna@example.org",
+    message: "Хочу помочь фонду.",
+    status: "NEW" as const,
+    createdAt: new Date("2026-08-23T08:00:00.000Z"),
+    updatedAt: new Date("2026-08-23T09:00:00.000Z"),
+  };
+
+  it("has no serious or critical violations in a populated queue", async () => {
+    const result: ContactPageResult = {
+      rows: [contact],
+      total: 1,
+      totalPages: 1,
+      page: 1,
+      pageSize: 25,
+    };
+    const { container } = render(
+      <MessagesView filters={{ page: 1 }} result={result} />,
+    );
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+  });
+
+  it("has no serious or critical violations in the private edit form", async () => {
+    const action = async () => ({ status: "idle" as const, message: "" });
+    const { container } = render(
+      <main>
+        <h1>Обращение от Анна Иванова</h1>
+        <MessageForm
+          action={action}
+          contact={{ ...contact, internalNote: null }}
+        />
+      </main>,
+    );
 
     const results = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } },

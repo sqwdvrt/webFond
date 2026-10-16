@@ -79,9 +79,13 @@ describe("admin navigation accessibility styles", () => {
   });
 
   it("keeps mobile scroll affordances pinned to a non-scrolling frame", () => {
-    expect(css).toMatch(
-      /@media \(max-width: 720px\) \{\s*\.adminNavFrame::before,\s*\.adminNavFrame::after\s*\{/,
-    );
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    expect(
+      mobileRules.some(
+        ({ selectors }) =>
+          selectors === ".adminNavFrame::before, .adminNavFrame::after",
+      ),
+    ).toBe(true);
     expect(declarationsFor(".adminNavFrame")).toMatchObject({
       position: "relative",
     });
@@ -177,6 +181,55 @@ describe("admin form control styles", () => {
       padding: "8px 0",
       background: "transparent",
       border: "0",
+    });
+  });
+});
+
+describe("admin message queue styles", () => {
+  it("reduces the message filter grid before desktop columns overflow", () => {
+    const tabletRules = parseRules(mediaContentsFor("(max-width: 1040px)"));
+    const filterRule = tabletRules.find(
+      ({ selectors }) => selectors === ".messageFilters",
+    );
+
+    expect(filterRule?.declarations).toMatchObject({
+      "grid-template-columns": "repeat(3, minmax(0, 1fr))",
+    });
+  });
+
+  it("wraps contact data and exposes visible focus states", () => {
+    expect(declarationsFor(".messageQueueCard")).toMatchObject({
+      display: "grid",
+      "min-width": "0",
+    });
+    expect(declarationsFor(".messageQueueExcerpt")).toMatchObject({
+      "overflow-wrap": "anywhere",
+      "white-space": "pre-wrap",
+    });
+    expect(declarationsFor(".messageQueueLink:focus-visible")).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+    expect(declarationsFor(".statusSPAM")).toMatchObject({
+      color: "#6b2d52",
+    });
+  });
+
+  it("stacks queue controls and metadata without horizontal overflow on mobile", () => {
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    const pageRule = mobileRules.find(({ selectors }) => selectors === ".messagesPage");
+    const filterRule = mobileRules.find(({ selectors }) => selectors === ".messageFilters");
+    const metaRule = mobileRules.find(({ selectors }) => selectors === ".messageQueueMeta");
+
+    expect(pageRule?.declarations).toMatchObject({
+      width: "min(100% - 32px, 1240px)",
+      "overflow-x": "clip",
+    });
+    expect(filterRule?.declarations).toMatchObject({
+      "grid-template-columns": "minmax(0, 1fr)",
+    });
+    expect(metaRule?.declarations).toMatchObject({
+      "grid-template-columns": "minmax(0, 1fr)",
     });
   });
 });
