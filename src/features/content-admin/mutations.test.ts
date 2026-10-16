@@ -156,7 +156,7 @@ describe("content mutation authorization order", () => {
     });
   });
 
-  it.each([
+  const mutationCases = [
     ["project create", () => createProjectMutation(new FormData(), {
       requireSession,
       parse: vi.fn(() => { events.push("parse"); return ok(projectInput); }),
@@ -216,7 +216,9 @@ describe("content mutation authorization order", () => {
       replace: vi.fn(async () => { events.push("repository"); return { status: "ok" as const }; }),
       now: clock,
     })],
-  ])("checks the session before parsing or repository access for %s", async (_name, run) => {
+  ] as const;
+
+  it.each(mutationCases)("checks the session before parsing or repository access for %s", async (_name, run) => {
     await run();
 
     expect(events[0]).toBe("session");
@@ -226,23 +228,15 @@ describe("content mutation authorization order", () => {
     }
   });
 
-  it("does not parse, read the clock or access the repository when auth rejects", async () => {
+  it.each(mutationCases)("short-circuits every protected %s mutation when auth rejects", async (_name, run) => {
     const denied = new Error("redirected");
-    const parse = vi.fn(() => ok(projectInput));
-    const update = vi.fn<() => Promise<UpdateEditorialResult>>();
     requireSession = vi.fn(async () => {
+      events.push("session");
       throw denied;
     });
 
-    await expect(updateProjectMutation("entry-1", formWithToken(), {
-      requireSession,
-      parse,
-      update,
-      now: clock,
-    })).rejects.toBe(denied);
-    expect(parse).not.toHaveBeenCalled();
-    expect(clock).not.toHaveBeenCalled();
-    expect(update).not.toHaveBeenCalled();
+    await expect(run()).rejects.toBe(denied);
+    expect(events).toEqual(["session"]);
   });
 });
 

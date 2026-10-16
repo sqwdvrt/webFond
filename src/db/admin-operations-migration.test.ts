@@ -98,12 +98,12 @@ describe("admin operations migration", () => {
 
   it("enables trigram search and indexes each searchable contact field", () => {
     expect(normalizedMigration).toContain(
-      "CREATE EXTENSION IF NOT EXISTS pg_trgm",
+      "CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public",
     );
 
     for (const field of ["name", "email", "message"]) {
       expect(normalizedMigration).toContain(
-        `CREATE INDEX "ContactRequest_${field}_trgm_idx" ON "ContactRequest" USING GIN ("${field}" gin_trgm_ops)`,
+        `CREATE INDEX "ContactRequest_${field}_trgm_idx" ON "ContactRequest" USING GIN ("${field}" public.gin_trgm_ops)`,
       );
     }
   });

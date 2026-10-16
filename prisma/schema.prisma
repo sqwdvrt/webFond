@@ -134,9 +134,9 @@ model ContactRequest {
 
   @@index([status, createdAt, id])
   @@index([createdAt, id])
-  @@index([name(ops: raw("gin_trgm_ops"))], map: "ContactRequest_name_trgm_idx", type: Gin)
-  @@index([email(ops: raw("gin_trgm_ops"))], map: "ContactRequest_email_trgm_idx", type: Gin)
-  @@index([message(ops: raw("gin_trgm_ops"))], map: "ContactRequest_message_trgm_idx", type: Gin)
+  @@index([name(ops: raw("public.gin_trgm_ops"))], map: "ContactRequest_name_trgm_idx", type: Gin)
+  @@index([email(ops: raw("public.gin_trgm_ops"))], map: "ContactRequest_email_trgm_idx", type: Gin)
+  @@index([message(ops: raw("public.gin_trgm_ops"))], map: "ContactRequest_message_trgm_idx", type: Gin)
 }
 
 model AdminAuditEvent {

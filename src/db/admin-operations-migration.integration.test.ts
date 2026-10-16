@@ -81,6 +81,7 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
       psql(
         "-c",
         `
+          CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
           CREATE SCHEMA "${schemaName}";
           SET search_path TO "${schemaName}", public;
           CREATE TYPE "DonationStatus" AS ENUM ('PENDING', 'SUCCEEDED', 'CANCELED');

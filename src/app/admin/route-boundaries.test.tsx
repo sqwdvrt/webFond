@@ -23,7 +23,9 @@ vi.mock("@/lib/admin-auth/session", () => ({
   setAdminSession: vi.fn(),
 }));
 
-import ProtectedAdminLayout from "./(protected)/layout";
+import ProtectedAdminLayout, {
+  dynamic as protectedAdminRendering,
+} from "./(protected)/layout";
 import AdminLoginPage from "./login/page";
 
 describe("admin route boundaries", () => {
@@ -45,6 +47,10 @@ describe("admin route boundaries", () => {
       ProtectedAdminLayout({ children: <p>Protected content</p> }),
     ).rejects.toBe(denied);
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
+  });
+
+  it("forces every protected child route to render per request", () => {
+    expect(protectedAdminRendering).toBe("force-dynamic");
   });
 
   it("renders protected content for an active session", async () => {

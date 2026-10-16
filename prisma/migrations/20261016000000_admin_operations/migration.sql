@@ -1,5 +1,5 @@
 -- CreateExtension
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 -- AlterEnum
 ALTER TYPE "ContactRequestStatus" ADD VALUE 'SPAM';
@@ -46,13 +46,13 @@ DROP INDEX "ContactRequest_status_createdAt_idx";
 CREATE INDEX "ContactRequest_createdAt_id_idx" ON "ContactRequest"("createdAt", "id");
 
 -- CreateIndex
-CREATE INDEX "ContactRequest_name_trgm_idx" ON "ContactRequest" USING GIN ("name" gin_trgm_ops);
+CREATE INDEX "ContactRequest_name_trgm_idx" ON "ContactRequest" USING GIN ("name" public.gin_trgm_ops);
 
 -- CreateIndex
-CREATE INDEX "ContactRequest_email_trgm_idx" ON "ContactRequest" USING GIN ("email" gin_trgm_ops);
+CREATE INDEX "ContactRequest_email_trgm_idx" ON "ContactRequest" USING GIN ("email" public.gin_trgm_ops);
 
 -- CreateIndex
-CREATE INDEX "ContactRequest_message_trgm_idx" ON "ContactRequest" USING GIN ("message" gin_trgm_ops);
+CREATE INDEX "ContactRequest_message_trgm_idx" ON "ContactRequest" USING GIN ("message" public.gin_trgm_ops);
 
 -- CreateIndex
 CREATE INDEX "AdminAuditEvent_createdAt_id_idx" ON "AdminAuditEvent"("createdAt", "id");

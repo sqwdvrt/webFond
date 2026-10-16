@@ -3,6 +3,8 @@ import { requireAdminSession } from "@/lib/admin-auth/session";
 
 import { AdminShell } from "./admin-shell";
 
+export const dynamic = "force-dynamic";
+
 type ProtectedAdminLayoutDependencies = Readonly<{
   countNewContactRequests: typeof countNewContactRequests;
   requireAdminSession: typeof requireAdminSession;
