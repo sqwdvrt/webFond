@@ -9,7 +9,8 @@ import type { AdminDashboardReadModel } from "@/features/admin-dashboard/read-mo
 import { renderAdminDashboard } from "./page";
 
 const dashboard: AdminDashboardReadModel = {
-  messages: { newCount: 7 },
+  messages: { newCount: 7, activeCount: 5 },
+  content: { publishedProjectCount: 11, draftCount: 12 },
   donations: {
     today: { count: 4, amountKopecks: 125_500 },
     month: { count: 18, amountKopecks: 990_000 },
@@ -19,11 +20,13 @@ const dashboard: AdminDashboardReadModel = {
       code: "STALE_NEW_CONTACTS",
       severity: "warning",
       message: "Новых обращений старше 48 часов: 2.",
+      href: "/admin/messages?status=NEW",
     },
     {
       code: "ADMIN_CONFIGURATION",
       severity: "warning",
       message: "Обнаружена проблема конфигурации административной части.",
+      href: "/api/ready",
     },
   ],
   recentActivity: [
@@ -31,7 +34,6 @@ const dashboard: AdminDashboardReadModel = {
       id: "audit-private-id",
       action: "CONTENT_PUBLISHED",
       entityType: "PROJECT",
-      entityId: "project-private-id",
       previousStatus: "DRAFT",
       nextStatus: "PUBLISHED",
       createdAt: new Date("2026-01-31T22:00:00.000Z"),
@@ -40,7 +42,6 @@ const dashboard: AdminDashboardReadModel = {
       id: "audit-contact-id",
       action: "CONTACT_NOTE_CHANGED",
       entityType: "CONTACT_REQUEST",
-      entityId: "contact-private-id",
       previousStatus: null,
       nextStatus: null,
       createdAt: new Date("2026-01-31T21:00:00.000Z"),
@@ -49,7 +50,6 @@ const dashboard: AdminDashboardReadModel = {
       id: "audit-contact-status-id",
       action: "CONTACT_STATUS_CHANGED",
       entityType: "CONTACT_REQUEST",
-      entityId: "another-private-id",
       previousStatus: "NEW",
       nextStatus: "IN_PROGRESS",
       createdAt: new Date("2026-01-31T20:00:00.000Z"),
@@ -170,7 +170,8 @@ describe("admin dashboard", () => {
 
   it("renders calm empty states accessibly", async () => {
     const empty: AdminDashboardReadModel = {
-      messages: { newCount: 0 },
+      messages: { newCount: 0, activeCount: 0 },
+      content: { publishedProjectCount: 0, draftCount: 0 },
       donations: {
         today: { count: 0, amountKopecks: 0 },
         month: { count: 0, amountKopecks: 0 },

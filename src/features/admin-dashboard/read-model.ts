@@ -16,14 +16,14 @@ export type SafeAdminAuditEvent = Pick<
   | "id"
   | "action"
   | "entityType"
-  | "entityId"
   | "previousStatus"
   | "nextStatus"
   | "createdAt"
 >;
 
 export type AdminDashboardReadModel = {
-  messages: { newCount: number };
+  messages: { newCount: number; activeCount: number };
+  content: { publishedProjectCount: number; draftCount: number };
   donations: {
     today: { count: number; amountKopecks: number };
     month: { count: number; amountKopecks: number };
@@ -43,6 +43,9 @@ type DonationAggregate = {
 
 type DashboardTransaction = {
   contactRequest: CountDelegate;
+  project: CountDelegate;
+  newsPost: CountDelegate;
+  document: CountDelegate;
   donation: CountDelegate & {
     aggregate: (args: unknown) => Promise<DonationAggregate>;
   };
@@ -79,19 +82,29 @@ export async function getAdminDashboardReadModel(
   const snapshot = await dependencies.database.$transaction(async (tx) => {
     const [
       newContactCount,
+      activeContactCount,
       staleNewContactCount,
+      publishedProjectCount,
+      draftProjectCount,
+      draftNewsPostCount,
+      draftDocumentCount,
       stalePendingDonationCount,
       today,
       currentMonth,
       recentActivity,
     ] = await Promise.all([
       tx.contactRequest.count({ where: { status: "NEW" } }),
+      tx.contactRequest.count({ where: { status: "IN_PROGRESS" } }),
       tx.contactRequest.count({
         where: {
           status: "NEW",
           createdAt: { lt: staleContactCutoff(now) },
         },
       }),
+      tx.project.count({ where: { status: "PUBLISHED" } }),
+      tx.project.count({ where: { status: "DRAFT" } }),
+      tx.newsPost.count({ where: { status: "DRAFT" } }),
+      tx.document.count({ where: { status: "DRAFT" } }),
       tx.donation.count({
         where: {
           status: "PENDING",
@@ -115,13 +128,12 @@ export async function getAdminDashboardReadModel(
         _sum: { amountKopecks: true },
       }),
       tx.adminAuditEvent.findMany({
-        take: 20,
+        take: 10,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: {
           id: true,
           action: true,
           entityType: true,
-          entityId: true,
           previousStatus: true,
           nextStatus: true,
           createdAt: true,
@@ -131,7 +143,12 @@ export async function getAdminDashboardReadModel(
 
     return {
       newContactCount,
+      activeContactCount,
       staleNewContactCount,
+      publishedProjectCount,
+      draftProjectCount,
+      draftNewsPostCount,
+      draftDocumentCount,
       stalePendingDonationCount,
       today,
       currentMonth,
@@ -140,7 +157,17 @@ export async function getAdminDashboardReadModel(
   }, { isolationLevel: "RepeatableRead" });
 
   return {
-    messages: { newCount: snapshot.newContactCount },
+    messages: {
+      newCount: snapshot.newContactCount,
+      activeCount: snapshot.activeContactCount,
+    },
+    content: {
+      publishedProjectCount: snapshot.publishedProjectCount,
+      draftCount:
+        snapshot.draftProjectCount
+        + snapshot.draftNewsPostCount
+        + snapshot.draftDocumentCount,
+    },
     donations: {
       today: {
         count: snapshot.today._count,

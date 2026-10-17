@@ -7,6 +7,9 @@ import {
 
 function createDatabase(overrides: {
   contactCounts?: number[];
+  projectCounts?: number[];
+  newsPostCount?: number;
+  documentCount?: number;
   donationCount?: number;
   donationAggregates?: Array<{
     _count: number;
@@ -18,7 +21,19 @@ function createDatabase(overrides: {
     contactRequest: {
       count: vi.fn()
         .mockResolvedValueOnce(overrides.contactCounts?.[0] ?? 7)
-        .mockResolvedValueOnce(overrides.contactCounts?.[1] ?? 2),
+        .mockResolvedValueOnce(overrides.contactCounts?.[1] ?? 5)
+        .mockResolvedValueOnce(overrides.contactCounts?.[2] ?? 2),
+    },
+    project: {
+      count: vi.fn()
+        .mockResolvedValueOnce(overrides.projectCounts?.[0] ?? 11)
+        .mockResolvedValueOnce(overrides.projectCounts?.[1] ?? 3),
+    },
+    newsPost: {
+      count: vi.fn().mockResolvedValue(overrides.newsPostCount ?? 4),
+    },
+    document: {
+      count: vi.fn().mockResolvedValue(overrides.documentCount ?? 5),
     },
     donation: {
       count: vi.fn().mockResolvedValue(overrides.donationCount ?? 3),
@@ -38,7 +53,6 @@ function createDatabase(overrides: {
           id: "audit-1",
           action: "CONTENT_PUBLISHED",
           entityType: "PROJECT",
-          entityId: "project-private-id",
           previousStatus: "DRAFT",
           nextStatus: "PUBLISHED",
           createdAt: new Date("2026-01-31T22:00:00.000Z"),
@@ -80,10 +94,25 @@ describe("getAdminDashboardReadModel", () => {
       where: { status: "NEW" },
     });
     expect(tx.contactRequest.count).toHaveBeenNthCalledWith(2, {
+      where: { status: "IN_PROGRESS" },
+    });
+    expect(tx.contactRequest.count).toHaveBeenNthCalledWith(3, {
       where: {
         status: "NEW",
         createdAt: { lt: new Date("2026-01-29T21:30:00.000Z") },
       },
+    });
+    expect(tx.project.count).toHaveBeenNthCalledWith(1, {
+      where: { status: "PUBLISHED" },
+    });
+    expect(tx.project.count).toHaveBeenNthCalledWith(2, {
+      where: { status: "DRAFT" },
+    });
+    expect(tx.newsPost.count).toHaveBeenCalledWith({
+      where: { status: "DRAFT" },
+    });
+    expect(tx.document.count).toHaveBeenCalledWith({
+      where: { status: "DRAFT" },
     });
     expect(tx.donation.count).toHaveBeenCalledWith({
       where: {
@@ -114,39 +143,42 @@ describe("getAdminDashboardReadModel", () => {
       _sum: { amountKopecks: true },
     });
     expect(tx.adminAuditEvent.findMany).toHaveBeenCalledWith({
-      take: 20,
+      take: 10,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: {
         id: true,
         action: true,
         entityType: true,
-        entityId: true,
         previousStatus: true,
         nextStatus: true,
         createdAt: true,
       },
     });
     expect(model).toEqual({
-      messages: { newCount: 7 },
+      messages: { newCount: 7, activeCount: 5 },
+      content: { publishedProjectCount: 11, draftCount: 12 },
       donations: {
         today: { count: 4, amountKopecks: 125_500 },
         month: { count: 18, amountKopecks: 990_000 },
       },
       alerts: [
         {
-          code: "STALE_NEW_CONTACTS",
+          code: "ADMIN_CONFIGURATION",
           severity: "warning",
-          message: "Новых обращений старше 48 часов: 2.",
+          message: "Обнаружена проблема конфигурации административной части.",
+          href: "/api/ready",
         },
         {
           code: "STALE_PENDING_DONATIONS",
           severity: "warning",
           message: "Ожидающих пожертвований старше часа: 3.",
+          href: "/admin/donations?status=PENDING",
         },
         {
-          code: "ADMIN_CONFIGURATION",
+          code: "STALE_NEW_CONTACTS",
           severity: "warning",
-          message: "Обнаружена проблема конфигурации административной части.",
+          message: "Новых обращений старше 48 часов: 2.",
+          href: "/admin/messages?status=NEW",
         },
       ],
       recentActivity: [
@@ -154,7 +186,6 @@ describe("getAdminDashboardReadModel", () => {
           id: "audit-1",
           action: "CONTENT_PUBLISHED",
           entityType: "PROJECT",
-          entityId: "project-private-id",
           previousStatus: "DRAFT",
           nextStatus: "PUBLISHED",
           createdAt: new Date("2026-01-31T22:00:00.000Z"),
@@ -165,7 +196,10 @@ describe("getAdminDashboardReadModel", () => {
 
   it("normalizes nullable donation sums to zero", async () => {
     const { database } = createDatabase({
-      contactCounts: [0, 0],
+      contactCounts: [0, 0, 0],
+      projectCounts: [0, 0],
+      newsPostCount: 0,
+      documentCount: 0,
       donationCount: 0,
       donationAggregates: [
         { _count: 0, _sum: { amountKopecks: null } },

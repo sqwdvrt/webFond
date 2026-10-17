@@ -50,19 +50,22 @@ describe("buildOperationalAlerts", () => {
       }),
     ).toEqual([
       {
-        code: "STALE_NEW_CONTACTS",
+        code: "ADMIN_CONFIGURATION",
         severity: "warning",
-        message: "Новых обращений старше 48 часов: 3.",
+        message: "Обнаружена проблема конфигурации административной части.",
+        href: "/api/ready",
       },
       {
         code: "STALE_PENDING_DONATIONS",
         severity: "warning",
         message: "Ожидающих пожертвований старше часа: 2.",
+        href: "/admin/donations?status=PENDING",
       },
       {
-        code: "ADMIN_CONFIGURATION",
+        code: "STALE_NEW_CONTACTS",
         severity: "warning",
-        message: "Обнаружена проблема конфигурации административной части.",
+        message: "Новых обращений старше 48 часов: 3.",
+        href: "/admin/messages?status=NEW",
       },
     ]);
   });
@@ -78,6 +81,8 @@ describe("buildOperationalAlerts", () => {
     expect(serialized).not.toContain("email");
     expect(serialized).not.toContain("AUTH_SECRET");
     expect(serialized).not.toContain("ADMIN_USERNAME");
+    expect(serialized).not.toContain("ADMIN_AUTH");
+    expect(serialized).not.toContain("private@example.test");
   });
 
   it("ignores invalid aggregate counts", () => {

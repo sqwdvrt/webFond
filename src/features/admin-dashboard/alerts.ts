@@ -12,6 +12,7 @@ export type OperationalAlert = {
   code: OperationalAlertCode;
   severity: "warning";
   message: string;
+  href: string;
 };
 
 type OperationalAlertInput = {
@@ -41,11 +42,12 @@ export function buildOperationalAlerts({
   const contacts = normalizeCount(staleNewContactCount);
   const donations = normalizeCount(stalePendingDonationCount);
 
-  if (contacts > 0) {
+  if (readinessIssues.includes("ADMIN_AUTH")) {
     alerts.push({
-      code: "STALE_NEW_CONTACTS",
+      code: "ADMIN_CONFIGURATION",
       severity: "warning",
-      message: `Новых обращений старше 48 часов: ${contacts}.`,
+      message: "Обнаружена проблема конфигурации административной части.",
+      href: "/api/ready",
     });
   }
 
@@ -54,14 +56,16 @@ export function buildOperationalAlerts({
       code: "STALE_PENDING_DONATIONS",
       severity: "warning",
       message: `Ожидающих пожертвований старше часа: ${donations}.`,
+      href: "/admin/donations?status=PENDING",
     });
   }
 
-  if (readinessIssues.includes("ADMIN_AUTH")) {
+  if (contacts > 0) {
     alerts.push({
-      code: "ADMIN_CONFIGURATION",
+      code: "STALE_NEW_CONTACTS",
       severity: "warning",
-      message: "Обнаружена проблема конфигурации административной части.",
+      message: `Новых обращений старше 48 часов: ${contacts}.`,
+      href: "/admin/messages?status=NEW",
     });
   }
 

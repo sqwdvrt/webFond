@@ -320,6 +320,51 @@ describeWithDatabase("admin operations application integration", () => {
         },
       ],
     });
+    await client.contactRequest.create({
+      data: {
+        id: "contact-in-progress-dashboard",
+        name: "Обращение в работе",
+        email: "in-progress@example.test",
+        message: "Активное обращение",
+        status: "IN_PROGRESS",
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+    await client.project.createMany({
+      data: [
+        {
+          id: "dashboard-project-published",
+          title: "Опубликованный проект dashboard",
+          slug: "dashboard-project-published",
+          status: "PUBLISHED",
+          publishedAt: now,
+        },
+        {
+          id: "dashboard-project-draft",
+          title: "Черновик проекта dashboard",
+          slug: "dashboard-project-draft",
+          status: "DRAFT",
+        },
+      ],
+    });
+    await client.newsPost.create({
+      data: {
+        id: "dashboard-news-draft",
+        title: "Черновик новости dashboard",
+        slug: "dashboard-news-draft",
+        status: "DRAFT",
+      },
+    });
+    await client.document.create({
+      data: {
+        id: "dashboard-document-draft",
+        title: "Черновик документа dashboard",
+        category: "REPORT",
+        fileUrl: "/documents/dashboard-document-draft.pdf",
+        status: "DRAFT",
+      },
+    });
 
     const model = await getAdminDashboardReadModel(now, {
       database: client as never,
@@ -328,12 +373,27 @@ describeWithDatabase("admin operations application integration", () => {
 
     expect(model.donations.today).toEqual({ count: 2, amountKopecks: 900 });
     expect(model.donations.month).toEqual({ count: 5, amountKopecks: 2_000 });
+    expect(model.messages.activeCount).toBe(1);
+    expect(model.content).toEqual({
+      publishedProjectCount: 1,
+      draftCount: 3,
+    });
     expect(model.alerts).toEqual([
-      expect.objectContaining({ code: "STALE_NEW_CONTACTS" }),
-      expect.objectContaining({ code: "STALE_PENDING_DONATIONS" }),
+      expect.objectContaining({
+        code: "STALE_PENDING_DONATIONS",
+        href: "/admin/donations?status=PENDING",
+      }),
+      expect.objectContaining({
+        code: "STALE_NEW_CONTACTS",
+        href: "/admin/messages?status=NEW",
+      }),
     ]);
     expect(model.alerts[0]?.message).toContain(": 1.");
     expect(model.alerts[1]?.message).toContain(": 1.");
+    expect(model.recentActivity.length).toBeLessThanOrEqual(10);
+    for (const event of model.recentActivity) {
+      expect(event).not.toHaveProperty("entityId");
+    }
   }, TEST_TIMEOUT_MS);
 
   it("keeps contact audit rows private and rolls back when audit insertion fails", async () => {
