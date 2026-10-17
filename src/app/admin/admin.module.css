@@ -1043,8 +1043,13 @@
   overflow-wrap: anywhere;
 }
 
+.adminLoadingContent {
+  display: grid;
+  gap: 14px;
+}
+
 .adminLoading h1,
-.adminLoading p {
+.adminLoadingStatus {
   margin: 0;
 }
 
@@ -1055,7 +1060,7 @@
   letter-spacing: 0;
 }
 
-.adminLoading p {
+.adminLoadingStatus {
   color: var(--muted);
 }
 

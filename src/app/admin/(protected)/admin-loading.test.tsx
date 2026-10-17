@@ -18,9 +18,20 @@ describe("protected admin loading states", () => {
   ])("renders an accessible neutral %s state", async (_name, Loading) => {
     const { container } = render(<Loading />);
 
-    expect(screen.getByRole("heading", { name: "Загрузка данных" })).toBeVisible();
-    expect(screen.getByText("Загрузка данных…")).toBeVisible();
-    expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("heading", { name: "Административная часть" }),
+    ).toBeVisible();
+    const busySection = screen.getByRole("region", {
+      name: "Административная часть",
+    });
+    expect(busySection).toHaveAttribute("aria-busy", "true");
+    expect(busySection).not.toHaveAttribute("role", "status");
+
+    const statuses = screen.getAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveTextContent(/^Загрузка данных…$/);
+    expect(statuses[0]).not.toHaveAttribute("aria-busy");
+    expect(busySection).not.toContainElement(statuses[0]);
     expect(container).not.toHaveTextContent(/\d/);
     expect(container).not.toHaveTextContent(privateMarkers);
 

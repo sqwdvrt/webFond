@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { describe, expect, it, vi } from "vitest";
 
@@ -13,6 +14,7 @@ describe("protected admin error boundary", () => {
       "utf8",
     );
     const reset = vi.fn();
+    const user = userEvent.setup();
     const privateMarkers = [
       "message-private-marker",
       "digest-private-marker",
@@ -39,9 +41,9 @@ describe("protected admin error boundary", () => {
     }
 
     const retry = screen.getByRole("button", { name: "Повторить" });
-    retry.focus();
+    await user.tab();
     expect(retry).toHaveFocus();
-    fireEvent.click(retry);
+    await user.keyboard("{Enter}");
     expect(reset).toHaveBeenCalledOnce();
 
     const results = await axe.run(container, {
