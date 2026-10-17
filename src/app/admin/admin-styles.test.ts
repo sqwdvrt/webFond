@@ -186,7 +186,13 @@ describe("admin form control styles", () => {
 });
 
 describe("admin dashboard styles", () => {
-  it("keeps metric cards width-safe and collapses the grid on mobile", () => {
+  it("keeps dashboard grids and metric cards width-safe and collapses them on mobile", () => {
+    expect(declarationsFor(".dashboardMetrics")).toMatchObject({
+      "min-width": "0",
+    });
+    expect(declarationsFor(".dashboardColumns")).toMatchObject({
+      "min-width": "0",
+    });
     expect(declarationsFor(".dashboardMetric")).toMatchObject({
       "min-width": "0",
       "overflow-wrap": "anywhere",
@@ -246,6 +252,7 @@ describe("admin contact table styles", () => {
   });
 
   it("renders a width-safe semantic table and wraps long contact data", () => {
+    expect(declarationsFor(".messagesPage")).not.toHaveProperty("overflow-x");
     expect(declarationsFor(".contactTable")).toMatchObject({
       width: "100%",
       "border-collapse": "collapse",
@@ -287,6 +294,63 @@ describe("admin contact table styles", () => {
       outline: "2px solid var(--brand)",
       "outline-offset": "2px",
     });
+    expect(declarationsFor(".messageDetailActions a:focus-visible")).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+  });
+
+  it("keeps filter, detail, pagination and alert actions large enough to target", () => {
+    expect(declarationsFor(".compactField input", ".compactField select")).toMatchObject({
+      "min-height": "44px",
+    });
+    expect(
+      declarationsFor(
+        ".exportButton",
+        ".primaryLink",
+        ".clearButton",
+        ".pagination a",
+      ),
+    ).toMatchObject({ "min-height": "44px" });
+    expect(declarationsFor(".messageDetailActions a")).toMatchObject({
+      "min-height": "44px",
+    });
+    expect(declarationsFor(".dashboardAlerts a")).toMatchObject({
+      "min-height": "44px",
+    });
+  });
+
+  it("pins the four contact status palettes and preserves them in forced colors", () => {
+    expect(declarationsFor(".contactStatusNEW")).toEqual({
+      color: "#174761",
+      background: "#dcecf4",
+      "border-color": "#174761",
+    });
+    expect(declarationsFor(".contactStatusIN_PROGRESS")).toEqual({
+      color: "#614500",
+      background: "#fff3c4",
+      "border-color": "#614500",
+    });
+    expect(declarationsFor(".contactStatusCLOSED")).toEqual({
+      color: "#174f29",
+      background: "#dcefe1",
+      "border-color": "#174f29",
+    });
+    expect(declarationsFor(".contactStatusSPAM")).toEqual({
+      color: "#602849",
+      background: "#f2ddea",
+      "border-color": "#602849",
+    });
+
+    const forcedColorRules = parseRules(mediaContentsFor("(forced-colors: active)"));
+    const statusRule = forcedColorRules.find(
+      ({ selectors }) => selectors === ".contactStatus",
+    );
+
+    expect(statusRule?.declarations).toMatchObject({
+      "border-color": "CanvasText",
+      "forced-color-adjust": "auto",
+    });
   });
 
   it("turns the same table DOM into cards without horizontal overflow on mobile", () => {
@@ -320,6 +384,20 @@ describe("admin contact table styles", () => {
       "grid-template-columns": "minmax(88px, 0.35fr) minmax(0, 1fr)",
       "min-width": "0",
       "overflow-wrap": "anywhere",
+    });
+
+    const dashboardRule = mobileRules.find(
+      ({ selectors }) => selectors === ".dashboard",
+    );
+    const workspaceRule = mobileRules.find(
+      ({ selectors }) =>
+        selectors === ".workspaceHeaderInner, .adminNav, .workspaceMain",
+    );
+    expect(dashboardRule?.declarations).toMatchObject({
+      width: "min(100% - 32px, 1040px)",
+    });
+    expect(workspaceRule?.declarations).toMatchObject({
+      width: "min(100% - 32px, 1240px)",
     });
   });
 });

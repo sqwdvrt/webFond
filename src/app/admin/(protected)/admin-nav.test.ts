@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createElement, type ReactElement } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -43,6 +45,7 @@ describe("AdminNav", () => {
       messagesLink.querySelector("[class*='adminNavBadge']"),
     ).not.toBeInTheDocument();
     expect(messagesLink).not.toHaveTextContent("0");
+    expect(messagesLink).toHaveAccessibleName("Письма");
     expect(screen.queryByLabelText(/новых обращения/)).not.toBeInTheDocument();
   });
 
@@ -57,9 +60,22 @@ describe("AdminNav", () => {
     expect(messagesLink).toContainElement(badge);
     expect(badge).toHaveTextContent("3");
     expect(screen.getAllByText("3")).toHaveLength(1);
+    expect(messagesLink).toHaveAccessibleName("Письма 3 новых обращения");
+    expect(screen.getAllByLabelText("3 новых обращения")).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Обзор" })).not.toContainElement(
       badge,
     );
+  });
+
+  it("receives the count as data and never loads it through a client API path", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/app/admin/(protected)/admin-nav.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("newContactRequestCount");
+    expect(source).not.toMatch(/fetch\s*\(/);
+    expect(source).not.toContain("/api/");
   });
 
   it.each([

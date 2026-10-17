@@ -2,6 +2,7 @@ import axe from "axe-core";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import type { ContactPageResult } from "@/features/admin-messages/repository";
@@ -73,6 +74,39 @@ describe("admin messages accessibility", () => {
         ({ impact }) => impact === "serious" || impact === "critical",
       ),
     ).toEqual([]);
+  });
+
+  it("keeps populated message filters in their natural keyboard order", async () => {
+    const user = userEvent.setup();
+    const result: ContactPageResult = {
+      rows: [contact],
+      total: 51,
+      totalPages: 3,
+      page: 2,
+      pageSize: 25,
+    };
+    render(<MessagesView filters={{ page: 2 }} result={result} />);
+
+    expect(document.body).toHaveFocus();
+    for (const element of document.querySelectorAll<HTMLElement>("[tabindex]")) {
+      expect(element.tabIndex).toBeLessThanOrEqual(0);
+    }
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Административная часть" })).toHaveFocus();
+
+    const filterControls = [
+      screen.getByLabelText("Статус"),
+      screen.getByLabelText("Дата от"),
+      screen.getByLabelText("Дата до"),
+      screen.getByRole("searchbox", { name: "Поиск" }),
+      screen.getByRole("button", { name: "Применить" }),
+      screen.getByRole("link", { name: "Сбросить" }),
+    ];
+
+    for (const control of filterControls) {
+      await user.tab();
+      expect(control).toHaveFocus();
+    }
   });
 
   it("has no serious or critical violations in the private edit form", async () => {

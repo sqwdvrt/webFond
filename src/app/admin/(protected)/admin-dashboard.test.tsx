@@ -256,6 +256,9 @@ describe("admin dashboard", () => {
       "href",
       "/admin/donations",
     );
+    for (const icon of navigation.querySelectorAll("svg")) {
+      expect(icon).toHaveAttribute("aria-hidden", "true");
+    }
 
     const results = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } },

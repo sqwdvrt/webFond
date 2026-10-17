@@ -1,7 +1,7 @@
 import axe from "axe-core";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ContactPageResult } from "@/features/admin-messages/repository";
@@ -165,7 +165,7 @@ describe("messages page orchestration", () => {
 
 describe("MessagesView", () => {
   it("renders GET filters, a semantic contact table and numbered pagination", () => {
-    render(<MessagesView filters={filters} result={pageResult} />);
+    const { container } = render(<MessagesView filters={filters} result={pageResult} />);
 
     expect(screen.getByRole("heading", { name: "Обращения" })).toBeVisible();
     expect(screen.getByLabelText("Статус")).toHaveValue("IN_PROGRESS");
@@ -220,11 +220,26 @@ describe("MessagesView", () => {
       "href",
       "/admin/messages?status=IN_PROGRESS&from=2026-08-01&to=2026-08-23&q=%D0%90%D0%BD%D0%BD%D0%B0",
     );
-    expect(screen.getByText("2", { selector: '[aria-current="page"]' })).toBeVisible();
+    const pagination = screen.getByRole("navigation", { name: "Страницы обращений" });
+    const currentPages = within(pagination).getAllByText("2", {
+      selector: '[aria-current="page"]',
+    });
+    expect(pagination.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    expect(currentPages).toHaveLength(1);
+    expect(currentPages[0]).toBeVisible();
+    expect(currentPages[0]?.tagName).toBe("SPAN");
+    expect(currentPages[0]?.closest("a")).toBeNull();
+    expect(within(pagination).getAllByText("2")).toHaveLength(1);
+    expect(within(pagination).getByRole("link", { name: "1" })).toBeVisible();
+    expect(within(pagination).getByRole("link", { name: "3" })).toBeVisible();
     expect(screen.getByRole("link", { name: "3" })).toHaveAttribute(
       "href",
       "/admin/messages?status=IN_PROGRESS&from=2026-08-01&to=2026-08-23&q=%D0%90%D0%BD%D0%BD%D0%B0&page=3",
     );
+
+    for (const icon of container.querySelectorAll("form svg, nav svg, table svg")) {
+      expect(icon).toHaveAttribute("aria-hidden", "true");
+    }
 
     const source = readFileSync(
       resolve(process.cwd(), "src/app/admin/(protected)/messages/messages-view.tsx"),
@@ -233,6 +248,8 @@ describe("MessagesView", () => {
     expect(source).toMatch(
       /href=\{`\/admin\/messages\/\$\{contact\.id\}`\}[\s\S]*?prefetch=\{false\}/,
     );
+    expect(source).not.toMatch(/tabIndex=\{?[1-9]/);
+    expect(source).not.toMatch(/window\.innerWidth|matchMedia/);
   });
 
   it("normalizes and truncates the message excerpt without exposing a private note", () => {
@@ -383,6 +400,10 @@ describe("message detail page", () => {
     expect(document.querySelector('input[name="updatedAt"]')).toHaveValue(
       contact.updatedAt.toISOString(),
     );
+
+    for (const icon of container.querySelectorAll("svg")) {
+      expect(icon).toHaveAttribute("aria-hidden", "true");
+    }
 
     fireEvent.click(screen.getByRole("button", { name: "Сохранить обращение" }));
     await waitFor(() => expect(deps.updateAction).toHaveBeenCalledOnce());
