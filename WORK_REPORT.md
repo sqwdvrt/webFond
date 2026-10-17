@@ -74,6 +74,21 @@
 | T9 — интеграция | `admin-operations.integration.test.ts` использует реальные repositories/wrappers в случайной схеме и проверяет поиск, SQL predicates, границы, audit privacy, public no-audit и forced rollback. Текущий DB-прогон unavailable: безопасный URL не задан. |
 | T10 — release review | Полные unit/a11y tests, lint, typecheck, Prisma validate, production build, dependency audit, статический security/query review. Authenticated desktop/mobile smoke и `EXPLAIN` unavailable без безопасной БД. |
 
+### L13 — эксплуатационная документация
+
+- README фиксирует владение `pg_trgm`, резервную копию и окно обслуживания,
+  защищённые локальные DB-команды и точные строгие пороги `NEW`/`PENDING`.
+- Для отката описан предпочтительный forward-fix и совместимый артефакт с
+  перегенерированным Prisma Client, который знает enum `SPAM`; исходная сборка
+  после возможной записи `SPAM` считается небезопасной.
+- Аварийный remap `SPAM → IN_PROGRESS` требует backup, остановку записи, явный
+  count, одобренную транзакцию и операторский журнал изменений. Потеря
+  классификации отмечена как lossy.
+- Destructive automatic down отсутствует: аддитивная схема сохраняется, а
+  поздняя очистка возможна только отдельной reviewed maintenance migration после
+  свежей копии и доказанного отсутствия `SPAM` и использования
+  `internalNote`/audit. Текущие сведения о DB- и browser-проверках не изменены.
+
 ### Проверки релиза
 
 - `npm test`: 120 файлов passed, 4 DB-gated suites skipped; 1251 тест
