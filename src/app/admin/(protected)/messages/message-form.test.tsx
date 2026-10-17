@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { ContactMutationState } from "@/features/admin-messages/mutation";
+import { CONTACT_STATUS_LABELS } from "@/features/admin-messages/presentation";
 
 import { MessageForm } from "./message-form";
 
@@ -21,12 +22,9 @@ describe("MessageForm", () => {
     render(<MessageForm action={idleAction} contact={contact} />);
 
     expect(screen.getByLabelText("Статус обращения")).toHaveValue("NEW");
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "Новое",
-      "В работе",
-      "Закрыто",
-      "Спам",
-    ]);
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(
+      Object.values(CONTACT_STATUS_LABELS),
+    );
     expect(screen.getByLabelText("Внутренняя заметка")).toHaveValue(contact.internalNote);
     expect(screen.getByLabelText("Внутренняя заметка")).toHaveAttribute("maxlength", "4000");
     expect(screen.getByText(/видна только администраторам/i)).toBeVisible();

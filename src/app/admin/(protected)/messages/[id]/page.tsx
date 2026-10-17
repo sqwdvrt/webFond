@@ -2,13 +2,17 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import {
+  contactEmailHref,
+  contactReplyHref,
+} from "@/features/admin-messages/presentation";
 import { getAdminContactRequest } from "@/features/admin-messages/repository";
 import { requireAdminSession } from "@/lib/admin-auth/session";
 
 import styles from "../../../admin.module.css";
 import { updateContactRequestAction } from "../actions";
+import { ContactStatusBadge } from "../contact-status-badge";
 import { MessageForm } from "../message-form";
-import { contactEmailHref } from "../messages-view";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +72,10 @@ export async function renderMessageDetailPage(
             <dd><a href={contactEmailHref(contact.email)}>{contact.email}</a></dd>
           </div>
           <div>
+            <dt>Статус</dt>
+            <dd><ContactStatusBadge status={contact.status} /></dd>
+          </div>
+          <div>
             <dt>Получено</dt>
             <dd>
               <time dateTime={contact.createdAt.toISOString()}>
@@ -84,6 +92,9 @@ export async function renderMessageDetailPage(
             </dd>
           </div>
         </dl>
+        <div className={styles.messageDetailActions}>
+          <a href={contactReplyHref(contact.email)}>Ответить по email</a>
+        </div>
         <div className={styles.messageDetailBody}>
           <h2>Текст обращения</h2>
           <p>{contact.message}</p>

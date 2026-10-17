@@ -15,6 +15,11 @@ import {
   type AdminDashboardReadModel,
   type SafeAdminAuditEvent,
 } from "@/features/admin-dashboard/read-model";
+import { CONTACT_STATUS_LABELS } from "@/features/admin-messages/presentation";
+import {
+  CONTACT_STATUSES,
+  type ContactStatusValue,
+} from "@/features/admin-messages/types";
 import { requireAdminSession } from "@/lib/admin-auth/session";
 
 import styles from "../admin.module.css";
@@ -84,15 +89,15 @@ const contentActivityLabels = {
   },
 } as const;
 
-const statusLabels: Record<string, string> = {
+const publicationStatusLabels: Record<string, string> = {
   DRAFT: "Черновик",
   PUBLISHED: "Опубликовано",
   ARCHIVED: "В архиве",
-  NEW: "Новое",
-  IN_PROGRESS: "В работе",
-  CLOSED: "Закрыто",
-  SPAM: "Спам",
 };
+
+function isContactStatus(value: string): value is ContactStatusValue {
+  return (CONTACT_STATUSES as readonly string[]).includes(value);
+}
 
 function activityLabel(event: SafeAdminAuditEvent) {
   if (event.action === "CONTACT_NOTE_CHANGED") {
@@ -100,10 +105,12 @@ function activityLabel(event: SafeAdminAuditEvent) {
   }
 
   if (event.action === "CONTACT_STATUS_CHANGED") {
-    const previous = event.previousStatus
-      ? statusLabels[event.previousStatus]
+    const previous = event.previousStatus && isContactStatus(event.previousStatus)
+      ? CONTACT_STATUS_LABELS[event.previousStatus]
       : undefined;
-    const next = event.nextStatus ? statusLabels[event.nextStatus] : undefined;
+    const next = event.nextStatus && isContactStatus(event.nextStatus)
+      ? CONTACT_STATUS_LABELS[event.nextStatus]
+      : undefined;
     return previous && next
       ? `Статус обращения изменён: ${previous} → ${next}`
       : "Статус обращения изменён";
@@ -121,8 +128,8 @@ function activityLabel(event: SafeAdminAuditEvent) {
     event.previousStatus &&
     event.nextStatus
   ) {
-    const previous = statusLabels[event.previousStatus];
-    const next = statusLabels[event.nextStatus];
+    const previous = publicationStatusLabels[event.previousStatus];
+    const next = publicationStatusLabels[event.nextStatus];
     if (previous && next) return `${label}: ${previous} → ${next}`;
   }
 

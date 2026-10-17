@@ -1252,6 +1252,27 @@
   overflow-wrap: anywhere;
 }
 
+.messageDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.messageDetailActions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.messageDetailActions a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 .messageDetailBody {
   padding-top: 24px;
   border-top: 1px solid var(--line);

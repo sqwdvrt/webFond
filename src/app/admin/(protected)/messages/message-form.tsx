@@ -3,8 +3,9 @@
 import { useActionState } from "react";
 
 import type { ContactMutationState } from "@/features/admin-messages/mutation";
+import { CONTACT_STATUS_LABELS } from "@/features/admin-messages/presentation";
 import type { getAdminContactRequest } from "@/features/admin-messages/repository";
-import { CONTACT_STATUSES, type ContactStatusValue } from "@/features/admin-messages/types";
+import { CONTACT_STATUSES } from "@/features/admin-messages/types";
 
 import styles from "../../admin.module.css";
 
@@ -16,13 +17,6 @@ type MessageFormAction = (
 ) => Promise<ContactMutationState>;
 
 const initialState: ContactMutationState = { status: "idle", message: "" };
-
-const STATUS_LABELS: Record<ContactStatusValue, string> = {
-  NEW: "Новое",
-  IN_PROGRESS: "В работе",
-  CLOSED: "Закрыто",
-  SPAM: "Спам",
-};
 
 export function MessageForm({
   action,
@@ -67,7 +61,7 @@ export function MessageForm({
             name="status"
           >
             {CONTACT_STATUSES.map((value) => (
-              <option key={value} value={value}>{STATUS_LABELS[value]}</option>
+              <option key={value} value={value}>{CONTACT_STATUS_LABELS[value]}</option>
             ))}
           </select>
           {state.errors?.status ? (

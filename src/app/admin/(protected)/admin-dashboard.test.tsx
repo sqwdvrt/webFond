@@ -1,4 +1,6 @@
 import axe from "axe-core";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -63,6 +65,35 @@ function dependencies(model = dashboard) {
 }
 
 describe("admin dashboard", () => {
+  it("uses canonical contact status labels in every contact-status consumer", () => {
+    const consumerPaths = [
+      "src/app/admin/(protected)/messages/message-form.tsx",
+      "src/app/admin/(protected)/messages/messages-view.tsx",
+      "src/app/admin/(protected)/page.tsx",
+    ];
+    const consumers = consumerPaths.map((path) => ({
+      path,
+      source: readFileSync(resolve(process.cwd(), path), "utf8"),
+    }));
+
+    for (const { path, source } of consumers) {
+      expect(source, path).toMatch(
+        /import\s*\{[^}]*\bCONTACT_STATUS_LABELS\b[^}]*\}\s*from ["']@\/features\/admin-messages\/presentation["']/,
+      );
+      expect(source, path).not.toMatch(/NEW:\s*["']Новое["']/);
+      expect(source, path).not.toMatch(/IN_PROGRESS:\s*["']В работе["']/);
+      expect(source, path).not.toMatch(/CLOSED:\s*["']Закрыто["']/);
+      expect(source, path).not.toMatch(/SPAM:\s*["']Спам["']/);
+    }
+
+    const dashboardSource = consumers.find(
+      ({ path }) => path === "src/app/admin/(protected)/page.tsx",
+    )?.source;
+    expect(dashboardSource).toMatch(
+      /event\.action === ["']CONTACT_STATUS_CHANGED["'][\s\S]*?CONTACT_STATUS_LABELS\[/,
+    );
+  });
+
   it("authenticates before loading and does not query after denial", async () => {
     const denied = new Error("guest denied");
     const deps = dependencies();

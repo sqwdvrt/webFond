@@ -6,7 +6,11 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ContactPageResult } from "@/features/admin-messages/repository";
 import type { ContactMutationState } from "@/features/admin-messages/mutation";
-import { contactExcerpt } from "@/features/admin-messages/presentation";
+import {
+  contactEmailHref,
+  contactExcerpt,
+  contactReplyHref,
+} from "@/features/admin-messages/presentation";
 import type { ContactPageFilters } from "@/features/admin-messages/types";
 
 import { renderMessageDetailPage } from "./[id]/page";
@@ -338,7 +342,7 @@ describe("message detail page", () => {
   it("loads only the authenticated contact and renders private details safely", async () => {
     const deps = detailDependencies();
 
-    render(
+    const { container } = render(
       await renderMessageDetailPage(
         Promise.resolve({ id: contact.id }),
         Promise.resolve({ success: "saved" }),
@@ -351,11 +355,18 @@ describe("message detail page", () => {
     expect(screen.getByRole("heading", { name: "Обращение от Анна Иванова" })).toBeVisible();
     expect(screen.getByRole("link", { name: contact.email })).toHaveAttribute(
       "href",
-      `mailto:${contact.email}`,
+      contactEmailHref(contact.email),
     );
+    expect(screen.getByRole("link", { name: "Ответить по email" })).toHaveAttribute(
+      "href",
+      contactReplyHref(contact.email),
+    );
+    const statusTerm = screen.getByText("Статус");
+    expect(statusTerm.nextElementSibling).toHaveTextContent("В работе");
     expect(screen.getByText(contact.message)).toBeVisible();
     expect(screen.getByText("23 августа 2026 г. в 11:00 МСК")).toBeVisible();
     expect(screen.getByText("23 августа 2026 г. в 12:00 МСК")).toBeVisible();
+    expect(screen.getByLabelText("Внутренняя заметка")).toHaveValue(contact.internalNote);
     expect(screen.getByText("Обращение сохранено")).toHaveAttribute("role", "status");
     expect(document.querySelector('input[name="id"]')).not.toBeInTheDocument();
     expect(document.querySelector('input[name="updatedAt"]')).toHaveValue(
@@ -365,6 +376,15 @@ describe("message detail page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Сохранить обращение" }));
     await waitFor(() => expect(deps.updateAction).toHaveBeenCalledOnce());
     expect(deps.updateAction.mock.calls[0]?.[0]).toBe(contact.id);
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
   });
 
   it("uses the protected not-found boundary for a missing contact", async () => {
@@ -402,6 +422,10 @@ describe("message detail page", () => {
     expect(screen.getByRole("link", { name: email })).toHaveAttribute(
       "href",
       "mailto:victim%3Fsubject%3DInjected%26body%3DText@example.org",
+    );
+    expect(screen.getByRole("link", { name: "Ответить по email" })).toHaveAttribute(
+      "href",
+      contactReplyHref(email),
     );
   });
 });
