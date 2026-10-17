@@ -48,8 +48,10 @@ Create one reusable `ContactStatusBadge` component for `NEW`, `IN_PROGRESS`,
 the state; color is supplementary. The CSS uses high-contrast foreground,
 background, and border combinations in both normal and forced-colors modes.
 
-The list and detail page use this component. Filter `<option>` labels may reuse
-the same exported label map without rendering the visual badge.
+The list and detail page use this component. One exported label map is the
+canonical source for the badge, filter `<option>` elements, edit-form `<option>`
+elements, and dashboard activity descriptions. No page keeps a second copy of
+the four labels.
 
 ### L2–L4: filters, table, and pagination
 
@@ -79,9 +81,10 @@ all active filters and omitting `page=1`.
 
 ### L5–L6: contact detail and reply
 
-The detail view shows the full message, status badge, private note editor,
-creation time, and last-modified time in Europe/Moscow. The mutation keeps the
-canonical `updatedAt` hidden token and existing conflict feedback.
+The detail view shows the contact name, displayed email address, full message,
+status badge, private note editor, creation time, and last-modified time in
+Europe/Moscow. The mutation keeps the canonical `updatedAt` hidden token and
+existing conflict feedback.
 
 «Ответить по email» is a regular `mailto:` link. Both the address and subject
 are encoded as separate components; the fixed Russian subject contains no
@@ -104,25 +107,33 @@ query Prisma or fetch an API.
 
 ### L8: recent actions
 
-Keep the ten-event limit and the existing allow-listed audit projection. Each
-entry shows Moscow date/time, a safe entity type label, and a description built
-only from action plus allow-listed previous/next status. IDs, titles, contact
-names, email, notes, and content are never rendered.
+Change the current repository limit from 20 to exactly ten events and assert
+`take: 10` in its test. Narrow the allow-listed dashboard projection by removing
+the unused `entityId`; retain the audit event `id` only as the React list key.
+Each entry shows Moscow date/time, a safe entity type label, and a description
+built only from action plus allow-listed previous/next status. Entity IDs,
+titles, contact names, email, notes, and content are neither selected nor
+rendered.
 
 ### L9: warnings
 
 The alert read model adds a safe `href` selected by alert code, never by stored
 personal data:
 
-- stale NEW contacts → `/admin/messages?status=NEW` plus the applicable
-  date-only upper bound where it remains semantically accurate;
-- stale PENDING donations → `/admin/donations?status=PENDING` plus the
-  applicable date filter supported by that page;
+- stale NEW contacts → `/admin/messages?status=NEW`;
+- stale PENDING donations → `/admin/donations?status=PENDING`;
 - readiness configuration → `/api/ready`, whose response is already reduced to
   safe readiness codes.
 
-Warnings are ordered by the existing priority rules. The entire warning title
-is a keyboard-focusable link with a descriptive accessible name.
+Status-only links intentionally show a superset because the current date-only
+filters cannot represent an exact 48-hour or one-hour instant without either
+excluding stale records or including newer records unpredictably. The warning
+text retains the exact count and threshold.
+
+Warnings use the explicit priority order: readiness configuration first, stale
+PENDING donations second, stale NEW contacts third. The entire warning title is
+a keyboard-focusable link with a descriptive accessible name. Tests assert the
+order and exact constant href for each code.
 
 ### L10: navigation badge
 
@@ -167,9 +178,16 @@ Update the operator documentation with:
 - the admin operations migration prerequisites and `pg_trgm` ownership rule;
 - integration-test commands and the exact warning thresholds (48 hours for NEW
   contacts, one hour for PENDING donations);
-- a forward-fix rollback strategy: stop the new application version, restore
-  the previous application build, and leave additive columns/enums/audit data in
-  place;
+- forward-fix as the preferred recovery because the migration is additive;
+- an application rollback must use a prepared compatibility build generated
+  with the `SPAM` enum value even if it omits the new UI. The original
+  pre-migration artifact must not be restored after any row may have used
+  `SPAM`, because its generated Prisma client cannot safely decode that value;
+- if no compatibility build exists, restoring the original artifact requires a
+  backup, a maintenance window, an explicit count of `SPAM` rows, and an
+  approved transactional remediation of every such row to the legacy
+  `IN_PROGRESS` status before deployment. This lossy emergency path is recorded
+  in the operator change log and is not automated;
 - why `SPAM` cannot be removed from a PostgreSQL enum safely during an emergency
   rollback, and why destructive down SQL is not supplied;
 - a later cleanup procedure requiring a backup, proof that no rows use the new
@@ -180,7 +198,8 @@ Update the operator documentation with:
 1. The protected layout/session check runs before query parsing or repository
    access.
 2. The server validates query parameters and canonicalizes clamped page values.
-3. Repositories return only the fields needed by their page/read model.
+3. Repositories return only the fields needed by their page/read model; recent
+   activity does not select `entityId`.
 4. Server components render the list/dashboard. There is no client list fetch.
 5. Server actions validate the session before form parsing and update by
    `id + updatedAt` inside the existing audit transaction.
@@ -208,15 +227,15 @@ Use test-driven changes in small groups:
 
 | Requirement | Acceptance evidence |
 | --- | --- |
-| L1 | One reusable badge, four labels, contrast/forced-color tests |
+| L1 | One badge and one canonical four-label map across all consumers; contrast/forced-color tests |
 | L2 | GET controls, Apply/Reset, URL persistence tests |
 | L3 | Six-column semantic table and responsive-row tests |
 | L4 | Previous/next/numbers, `aria-current`, preserved filters |
-| L5 | Full message, status, note, created/updated Moscow times |
+| L5 | Name, displayed email, full message, status, note, created/updated Moscow times |
 | L6 | Encoded address and fixed encoded subject; no send path |
 | L7 | Six metric groups from one authenticated read model |
-| L8 | Ten safe events with date, entity type, description; no IDs/PII |
-| L9 | Prioritized warnings with code-derived filtered links |
+| L8 | Repository changes `take: 20` to `take: 10`; safe events contain no entity IDs/PII |
+| L9 | Explicit readiness → donations → contacts order and exact code-derived status-only links |
 | L10 | Zero hidden, non-zero announced once |
 | L11 | Empty, invalid, loading, error, conflict coverage |
 | L12 | 390×844 and 1440×900 contracts, keyboard, focus, axe, overflow |
