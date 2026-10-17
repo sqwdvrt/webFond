@@ -1,3 +1,4 @@
+import axe from "axe-core";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -5,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ContactPageResult } from "@/features/admin-messages/repository";
 import type { ContactMutationState } from "@/features/admin-messages/mutation";
+import { contactExcerpt } from "@/features/admin-messages/presentation";
 import type { ContactPageFilters } from "@/features/admin-messages/types";
 
 import { renderMessageDetailPage } from "./[id]/page";
@@ -147,7 +149,7 @@ describe("messages page orchestration", () => {
 });
 
 describe("MessagesView", () => {
-  it("renders filter defaults, statuses, result summary and stable pagination", () => {
+  it("renders GET filters, a semantic contact table and numbered pagination", () => {
     render(<MessagesView filters={filters} result={pageResult} />);
 
     expect(screen.getByRole("heading", { name: "Обращения" })).toBeVisible();
@@ -159,6 +161,15 @@ describe("MessagesView", () => {
       "placeholder",
       "Имя, email или текст обращения",
     );
+    expect(screen.getByRole("searchbox", { name: "Поиск" })).toHaveAttribute("name", "q");
+    expect(screen.getByLabelText("Статус")).toHaveAttribute("name", "status");
+    expect(screen.getByLabelText("Дата от")).toHaveAttribute("name", "from");
+    expect(screen.getByLabelText("Дата до")).toHaveAttribute("name", "to");
+    expect(screen.getByRole("button", { name: "Применить" })).toHaveAttribute("type", "submit");
+    expect(screen.getByRole("link", { name: "Сбросить" })).toHaveAttribute(
+      "href",
+      "/admin/messages",
+    );
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
       "Все статусы",
       "Новое",
@@ -169,6 +180,15 @@ describe("MessagesView", () => {
     expect(screen.getByText("Найдено: 51")).toBeVisible();
     expect(screen.getByText("По 25 на странице")).toBeVisible();
     expect(screen.getByText("Страница 2 из 3")).toBeVisible();
+    const table = screen.getByRole("table", { name: "Обращения" });
+    expect(table.querySelector("thead")).not.toBeNull();
+    expect(table.querySelector("tbody")).not.toBeNull();
+    expect(
+      screen.getAllByRole("columnheader").map((header) => header.textContent),
+    ).toEqual(["Имя", "Email", "Получено", "Статус", "Сообщение", "Действие"]);
+    expect(screen.getByRole("row", { name: /Анна Иванова/ })).toBeVisible();
+    expect(screen.getByText("23.08.2026, 11:00 МСК")).toBeVisible();
+    expect(screen.getByRole("cell", { name: "В работе" })).toBeVisible();
     expect(screen.getByRole("link", { name: /Открыть обращение Анна Иванова/ })).toHaveAttribute(
       "href",
       "/admin/messages/contact-1",
@@ -181,21 +201,51 @@ describe("MessagesView", () => {
       "href",
       "/admin/messages?status=IN_PROGRESS&from=2026-08-01&to=2026-08-23&q=%D0%90%D0%BD%D0%BD%D0%B0&page=3",
     );
+    expect(screen.getByRole("link", { name: "1" })).toHaveAttribute(
+      "href",
+      "/admin/messages?status=IN_PROGRESS&from=2026-08-01&to=2026-08-23&q=%D0%90%D0%BD%D0%BD%D0%B0",
+    );
+    expect(screen.getByText("2", { selector: '[aria-current="page"]' })).toBeVisible();
+    expect(screen.getByRole("link", { name: "3" })).toHaveAttribute(
+      "href",
+      "/admin/messages?status=IN_PROGRESS&from=2026-08-01&to=2026-08-23&q=%D0%90%D0%BD%D0%BD%D0%B0&page=3",
+    );
 
     const source = readFileSync(
       resolve(process.cwd(), "src/app/admin/(protected)/messages/messages-view.tsx"),
       "utf8",
     );
     expect(source).toMatch(
-      /className=\{styles\.messageQueueLink\}[\s\S]*?href=\{`\/admin\/messages\/\$\{contact\.id\}`\}[\s\S]*?prefetch=\{false\}/,
+      /href=\{`\/admin\/messages\/\$\{contact\.id\}`\}[\s\S]*?prefetch=\{false\}/,
     );
   });
 
-  it("never renders a private note from a loose list row", () => {
-    render(<MessagesView filters={filters} result={pageResult} />);
+  it("normalizes and truncates the message excerpt without exposing a private note", () => {
+    const message = `  ${"Сообщение ".repeat(30)}\n конец  `;
+    render(
+      <MessagesView
+        filters={filters}
+        result={{ ...pageResult, rows: [{ ...contact, message }] }}
+      />,
+    );
 
-    expect(screen.getByText(contact.message)).toBeVisible();
+    expect(screen.getByText(contactExcerpt(message))).toBeVisible();
     expect(screen.queryByText(contact.internalNote)).not.toBeInTheDocument();
+  });
+
+  it("uses stable ellipses for long page ranges", () => {
+    render(
+      <MessagesView
+        filters={{ page: 5 }}
+        result={{ ...pageResult, page: 5, totalPages: 10 }}
+      />,
+    );
+
+    expect(screen.getAllByText("…")).toHaveLength(2);
+    for (const ellipsis of screen.getAllByText("…")) {
+      expect(ellipsis).toHaveAttribute("aria-hidden", "true");
+    }
+    expect(screen.getByText("5", { selector: '[aria-current="page"]' })).toBeVisible();
   });
 
   it("encodes reserved email characters instead of creating mailto headers", () => {
@@ -218,8 +268,8 @@ describe("MessagesView", () => {
     );
   });
 
-  it("renders an empty state without pagination", () => {
-    render(
+  it("renders an accessible empty state with a reset and without pagination", async () => {
+    const { container } = render(
       <MessagesView
         filters={{ page: 1 }}
         result={{ ...pageResult, rows: [], total: 0, totalPages: 1, page: 1 }}
@@ -227,7 +277,33 @@ describe("MessagesView", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Обращения не найдены" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Сбросить фильтры" })).toHaveAttribute(
+      "href",
+      "/admin/messages",
+    );
     expect(screen.queryByRole("navigation", { name: "Страницы обращений" })).not.toBeInTheDocument();
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
+  });
+
+  it("renders an accessible populated table and filter form", async () => {
+    const { container } = render(<MessagesView filters={filters} result={pageResult} />);
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
   });
 });
 

@@ -2,21 +2,22 @@ import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import Link from "next/link";
 
 import { buildContactQuery } from "@/features/admin-messages/filters";
+import {
+  CONTACT_STATUS_LABELS,
+  contactEmailHref,
+  contactExcerpt,
+  paginationItems,
+} from "@/features/admin-messages/presentation";
 import type { ContactPageResult } from "@/features/admin-messages/repository";
 import {
   CONTACT_STATUSES,
   type ContactPageFilters,
-  type ContactStatusValue,
 } from "@/features/admin-messages/types";
 
+import { ContactStatusBadge } from "./contact-status-badge";
 import styles from "../../admin.module.css";
 
-const STATUS_LABELS: Record<ContactStatusValue, string> = {
-  NEW: "Новое",
-  IN_PROGRESS: "В работе",
-  CLOSED: "Закрыто",
-  SPAM: "Спам",
-};
+export { contactEmailHref } from "@/features/admin-messages/presentation";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "short",
@@ -27,17 +28,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", {
 function messagesHref(filters: ContactPageFilters, page: number) {
   const query = buildContactQuery({ ...filters, page });
   return `/admin/messages${query.size ? `?${query}` : ""}`;
-}
-
-function excerpt(value: string) {
-  const characters = Array.from(value);
-  return characters.length > 180
-    ? `${characters.slice(0, 180).join("")}…`
-    : value;
-}
-
-export function contactEmailHref(email: string) {
-  return `mailto:${encodeURIComponent(email).replaceAll("%40", "@")}`;
 }
 
 export function InvalidMessageFilters() {
@@ -89,7 +79,7 @@ export function MessagesView({
             <option value="">Все статусы</option>
             {CONTACT_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {STATUS_LABELS[status]}
+                {CONTACT_STATUS_LABELS[status]}
               </option>
             ))}
           </select>
@@ -119,7 +109,7 @@ export function MessagesView({
           </button>
           <Link className={styles.clearButton} href="/admin/messages">
             <X aria-hidden="true" size={18} />
-            Очистить
+            Сбросить
           </Link>
         </div>
       </form>
@@ -131,37 +121,59 @@ export function MessagesView({
       </div>
 
       {result.rows.length ? (
-        <div className={styles.messageQueue}>
-          {result.rows.map((contact) => (
-            <article className={styles.messageQueueCard} key={contact.id}>
-              <header className={styles.messageQueueHeader}>
-                <strong>{contact.name}</strong>
-                <span className={`${styles.status} ${styles[`status${contact.status}`]}`}>
-                  {STATUS_LABELS[contact.status]}
-                </span>
-              </header>
-              <div className={styles.messageQueueMeta}>
-                <a href={contactEmailHref(contact.email)}>{contact.email}</a>
-                <time dateTime={contact.createdAt.toISOString()}>
-                  {dateTimeFormatter.format(contact.createdAt)} МСК
-                </time>
-              </div>
-              <p className={styles.messageQueueExcerpt}>{excerpt(contact.message)}</p>
-              <Link
-                className={styles.messageQueueLink}
-                href={`/admin/messages/${contact.id}`}
-                prefetch={false}
-              >
-                Открыть обращение {contact.name}
-                <ChevronRight aria-hidden="true" size={18} />
-              </Link>
-            </article>
-          ))}
-        </div>
+        <table className={styles.contactTable}>
+          <caption className={styles.visuallyHidden}>Обращения</caption>
+          <thead>
+            <tr>
+              <th scope="col">Имя</th>
+              <th scope="col">Email</th>
+              <th scope="col">Получено</th>
+              <th scope="col">Статус</th>
+              <th scope="col">Сообщение</th>
+              <th scope="col">Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.rows.map((contact) => (
+              <tr key={contact.id}>
+                <td data-label="Имя">{contact.name}</td>
+                <td data-label="Email">
+                  <a className={styles.contactEmail} href={contactEmailHref(contact.email)}>
+                    {contact.email}
+                  </a>
+                </td>
+                <td data-label="Получено">
+                  <time dateTime={contact.createdAt.toISOString()}>
+                    {dateTimeFormatter.format(contact.createdAt)} МСК
+                  </time>
+                </td>
+                <td data-label="Статус">
+                  <ContactStatusBadge status={contact.status} />
+                </td>
+                <td className={styles.contactExcerpt} data-label="Сообщение">
+                  {contactExcerpt(contact.message)}
+                </td>
+                <td data-label="Действие">
+                  <Link
+                    className={styles.contactDetailLink}
+                    href={`/admin/messages/${contact.id}`}
+                    prefetch={false}
+                  >
+                    Открыть обращение {contact.name}
+                    <ChevronRight aria-hidden="true" size={18} />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       ) : (
         <div className={styles.emptyState}>
           <h2>Обращения не найдены</h2>
           <p>Измените фильтры или очистите их, чтобы увидеть другие записи.</p>
+          <Link className={styles.primaryLink} href="/admin/messages">
+            Сбросить фильтры
+          </Link>
         </div>
       )}
 
@@ -173,14 +185,33 @@ export function MessagesView({
               Назад
             </Link>
           ) : (
-            <span />
+            <span className={styles.paginationPlaceholder} />
           )}
+          <div className={styles.paginationPages}>
+            {paginationItems(result.page, result.totalPages).map((item) =>
+              item.type === "ellipsis" ? (
+                <span aria-hidden="true" key={item.key}>
+                  …
+                </span>
+              ) : item.page === result.page ? (
+                <span aria-current="page" key={item.page}>
+                  {item.page}
+                </span>
+              ) : (
+                <Link href={messagesHref(filters, item.page)} key={item.page}>
+                  {item.page}
+                </Link>
+              ),
+            )}
+          </div>
           {result.page < result.totalPages ? (
             <Link href={messagesHref(filters, result.page + 1)}>
               Далее
               <ChevronRight aria-hidden="true" size={18} />
             </Link>
-          ) : null}
+          ) : (
+            <span className={styles.paginationPlaceholder} />
+          )}
         </nav>
       ) : null}
     </section>

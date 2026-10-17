@@ -6,6 +6,7 @@ import {
   contactEmailHref,
   contactExcerpt,
   contactReplyHref,
+  paginationItems,
 } from "./presentation";
 
 describe("contact presentation", () => {
@@ -40,5 +41,40 @@ describe("contact presentation", () => {
   it("counts Unicode code points and appends an ellipsis only past the default limit", () => {
     expect(contactExcerpt("😀".repeat(180))).toBe("😀".repeat(180));
     expect(contactExcerpt("😀".repeat(181))).toBe(`${"😀".repeat(180)}…`);
+  });
+
+  it("returns the only page when there is one page", () => {
+    expect(paginationItems(1, 1)).toEqual([{ type: "page", page: 1 }]);
+  });
+
+  it("returns every page when there are at most seven pages", () => {
+    expect(paginationItems(4, 7)).toEqual(
+      Array.from({ length: 7 }, (_, index) => ({ type: "page", page: index + 1 })),
+    );
+  });
+
+  it("places stable ellipses around the current page window", () => {
+    expect(paginationItems(5, 10)).toEqual([
+      { type: "page", page: 1 },
+      { type: "ellipsis", key: "start" },
+      { type: "page", page: 3 },
+      { type: "page", page: 4 },
+      { type: "page", page: 5 },
+      { type: "page", page: 6 },
+      { type: "page", page: 7 },
+      { type: "ellipsis", key: "end" },
+      { type: "page", page: 10 },
+    ]);
+  });
+
+  it("normalizes impossible pagination input without emitting invalid pages", () => {
+    expect(paginationItems(-12, 3)).toEqual([
+      { type: "page", page: 1 },
+      { type: "page", page: 2 },
+      { type: "page", page: 3 },
+    ]);
+    expect(paginationItems(99, 2).every((item) => item.type !== "page" || item.page <= 2)).toBe(
+      true,
+    );
   });
 });

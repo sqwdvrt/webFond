@@ -185,7 +185,7 @@ describe("admin form control styles", () => {
   });
 });
 
-describe("admin message queue styles", () => {
+describe("admin contact table styles", () => {
   it("reduces the message filter grid before desktop columns overflow", () => {
     const tabletRules = parseRules(mediaContentsFor("(max-width: 1040px)"));
     const filterRule = tabletRules.find(
@@ -197,39 +197,59 @@ describe("admin message queue styles", () => {
     });
   });
 
-  it("wraps contact data and exposes visible focus states", () => {
-    expect(declarationsFor(".messageQueueCard")).toMatchObject({
-      display: "grid",
-      "min-width": "0",
+  it("renders a width-safe semantic table and wraps long contact data", () => {
+    expect(declarationsFor(".contactTable")).toMatchObject({
+      width: "100%",
+      "border-collapse": "collapse",
+      "table-layout": "fixed",
     });
-    expect(declarationsFor(".messageQueueExcerpt")).toMatchObject({
-      "overflow-wrap": "anywhere",
-      "white-space": "pre-wrap",
-    });
-    expect(declarationsFor(".messageHeading")).toMatchObject({
-      "min-width": "0",
-    });
-    expect(declarationsFor(".messageHeading h1")).toMatchObject({
-      "overflow-wrap": "anywhere",
-    });
-    expect(declarationsFor(".messageQueueLink")).toMatchObject({
+    expect(declarationsFor(".contactTable")).not.toHaveProperty("min-width");
+    expect(declarationsFor(".contactTable th", ".contactTable td")).toMatchObject({
       "min-width": "0",
       "overflow-wrap": "anywhere",
     });
-    expect(declarationsFor(".messageQueueLink:focus-visible")).toMatchObject({
-      outline: "2px solid var(--brand)",
-      "outline-offset": "2px",
+    expect(declarationsFor(".contactExcerpt")).toMatchObject({
+      "overflow-wrap": "anywhere",
     });
-    expect(declarationsFor(".statusSPAM")).toMatchObject({
-      color: "#6b2d52",
+    expect(declarationsFor(".contactEmail", ".contactDetailLink")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
     });
   });
 
-  it("stacks queue controls and metadata without horizontal overflow on mobile", () => {
+  it("exposes visible focus states for filters, contact links and pagination", () => {
+    expect(
+      declarationsFor(
+        ".messageFilters input:focus-visible",
+        ".messageFilters select:focus-visible",
+        ".filterActions a:focus-visible",
+        ".filterActions button:focus-visible",
+      ),
+    ).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+    expect(
+      declarationsFor(
+        ".contactEmail:focus-visible",
+        ".contactDetailLink:focus-visible",
+        ".pagination a:focus-visible",
+      ),
+    ).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+  });
+
+  it("turns the same table DOM into cards without horizontal overflow on mobile", () => {
     const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
     const pageRule = mobileRules.find(({ selectors }) => selectors === ".messagesPage");
     const filterRule = mobileRules.find(({ selectors }) => selectors === ".messageFilters");
-    const metaRule = mobileRules.find(({ selectors }) => selectors === ".messageQueueMeta");
+    const tableRule = mobileRules.find(({ selectors }) => selectors === ".contactTable");
+    const headRule = mobileRules.find(({ selectors }) => selectors === ".contactTable thead");
+    const bodyRule = mobileRules.find(({ selectors }) => selectors === ".contactTable tbody");
+    const rowRule = mobileRules.find(({ selectors }) => selectors === ".contactTable tr");
+    const cellRule = mobileRules.find(({ selectors }) => selectors === ".contactTable td");
 
     expect(pageRule?.declarations).toMatchObject({
       width: "min(100% - 32px, 1240px)",
@@ -238,8 +258,20 @@ describe("admin message queue styles", () => {
     expect(filterRule?.declarations).toMatchObject({
       "grid-template-columns": "minmax(0, 1fr)",
     });
-    expect(metaRule?.declarations).toMatchObject({
-      "grid-template-columns": "minmax(0, 1fr)",
+    expect(tableRule?.declarations).toMatchObject({ display: "block" });
+    expect(headRule?.declarations).toMatchObject({
+      position: "absolute",
+      width: "1px",
+      overflow: "hidden",
+    });
+    expect(headRule?.declarations.display).not.toBe("none");
+    expect(bodyRule?.declarations).toMatchObject({ display: "grid" });
+    expect(rowRule?.declarations).toMatchObject({ display: "grid" });
+    expect(cellRule?.declarations).toMatchObject({
+      display: "grid",
+      "grid-template-columns": "minmax(88px, 0.35fr) minmax(0, 1fr)",
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
     });
   });
 });
