@@ -122,8 +122,8 @@ personal data:
 
 - stale NEW contacts → `/admin/messages?status=NEW`;
 - stale PENDING donations → `/admin/donations?status=PENDING`;
-- readiness configuration → `/api/ready`, whose response is already reduced to
-  safe readiness codes.
+- readiness configuration → `/api/ready`, whose public response remains the
+  existing safe boolean readiness result and does not expose issue codes.
 
 Status-only links intentionally show a superset because the current date-only
 filters cannot represent an exact 48-hour or one-hour instant without either
