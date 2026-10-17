@@ -46,6 +46,7 @@ describe("AdminNav", () => {
     ).not.toBeInTheDocument();
     expect(messagesLink).not.toHaveTextContent("0");
     expect(messagesLink).toHaveAccessibleName("Письма");
+    expect(messagesLink).not.toHaveAttribute("aria-label");
     expect(screen.queryByLabelText(/новых обращения/)).not.toBeInTheDocument();
   });
 
@@ -55,13 +56,21 @@ describe("AdminNav", () => {
     const messagesLink = screen.getByRole("link", {
       name: "Письма 3 новых обращения",
     });
-    const badge = screen.getByLabelText("3 новых обращения");
+    const badge = messagesLink.querySelector<HTMLElement>(
+      "[class*='adminNavBadge']",
+    );
 
+    expect(badge).not.toBeNull();
     expect(messagesLink).toContainElement(badge);
+    expect(messagesLink).toHaveAttribute(
+      "aria-label",
+      "Письма 3 новых обращения",
+    );
     expect(badge).toHaveTextContent("3");
+    expect(badge).toHaveAttribute("aria-hidden", "true");
+    expect(badge).not.toHaveAttribute("aria-label");
     expect(screen.getAllByText("3")).toHaveLength(1);
     expect(messagesLink).toHaveAccessibleName("Письма 3 новых обращения");
-    expect(screen.getAllByLabelText("3 новых обращения")).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Обзор" })).not.toContainElement(
       badge,
     );

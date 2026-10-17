@@ -170,7 +170,17 @@ describe("ProtectedAdminLayout", () => {
     expect(calls).toEqual(["session", "count"]);
     expect(screen.getByText("fixture-operator")).toBeVisible();
     expect(screen.getByText("Закрытые данные")).toBeVisible();
-    expect(screen.getByLabelText("3 новых обращения")).toHaveTextContent("3");
+    const messagesLink = screen.getByRole("link", {
+      name: "Письма 3 новых обращения",
+    });
+    expect(messagesLink).toHaveAttribute(
+      "aria-label",
+      "Письма 3 новых обращения",
+    );
+    expect(messagesLink.querySelector("[class*='adminNavBadge']")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 
   it("does not add a client fetch or API endpoint for the aggregate", () => {

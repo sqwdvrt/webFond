@@ -69,26 +69,24 @@ export function AdminNav({
     <nav className={styles.adminNav} aria-label="Разделы административной части">
       {adminSections.map(({ href, icon: Icon, label }) => {
         const isCurrent = isAdminSectionCurrent(pathname, href);
+        const countLabel = href === "/admin/messages" && newContactRequestCount > 0
+          ? newContactRequestsLabel(newContactRequestCount)
+          : undefined;
 
         return (
           <Link
             aria-current={isCurrent ? "page" : undefined}
+            aria-label={countLabel ? `${label} ${countLabel}` : undefined}
             href={href}
             key={href}
             ref={isCurrent ? currentLinkRef : undefined}
           >
             <Icon aria-hidden="true" size={17} />
             {label}
-            {href === "/admin/messages" && newContactRequestCount > 0 ? (
-              <>
-                {" "}
-                <span
-                  aria-label={newContactRequestsLabel(newContactRequestCount)}
-                  className={styles.adminNavBadge}
-                >
-                  {newContactRequestCount}
-                </span>
-              </>
+            {countLabel ? (
+              <span aria-hidden="true" className={styles.adminNavBadge}>
+                {newContactRequestCount}
+              </span>
             ) : null}
           </Link>
         );

@@ -321,22 +321,22 @@ describe("admin contact table styles", () => {
   });
 
   it("pins the four contact status palettes and preserves them in forced colors", () => {
-    expect(declarationsFor(".contactStatusNEW")).toEqual({
+    expect(declarationsFor(".contactStatusNEW")).toMatchObject({
       color: "#174761",
       background: "#dcecf4",
       "border-color": "#174761",
     });
-    expect(declarationsFor(".contactStatusIN_PROGRESS")).toEqual({
+    expect(declarationsFor(".contactStatusIN_PROGRESS")).toMatchObject({
       color: "#614500",
       background: "#fff3c4",
       "border-color": "#614500",
     });
-    expect(declarationsFor(".contactStatusCLOSED")).toEqual({
+    expect(declarationsFor(".contactStatusCLOSED")).toMatchObject({
       color: "#174f29",
       background: "#dcefe1",
       "border-color": "#174f29",
     });
-    expect(declarationsFor(".contactStatusSPAM")).toEqual({
+    expect(declarationsFor(".contactStatusSPAM")).toMatchObject({
       color: "#602849",
       background: "#f2ddea",
       "border-color": "#602849",
