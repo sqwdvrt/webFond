@@ -522,4 +522,3 @@ git commit -m "docs: record admin operations release"
 - [ ] **Step 13: Request final review**
 
 Use `superpowers:requesting-code-review` on the full branch diff. Address verified findings, rerun relevant tests, then rerun `npm run verify` before any completion claim.
-

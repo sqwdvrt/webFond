@@ -100,6 +100,14 @@ describe("admin operations migration", () => {
     expect(normalizedMigration).toContain(
       "CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public",
     );
+    expect(normalizedMigration).toContain(
+      "ALTER EXTENSION pg_trgm SET SCHEMA public",
+    );
+    expect(
+      normalizedMigration.indexOf("ALTER EXTENSION pg_trgm SET SCHEMA public"),
+    ).toBeLessThan(
+      normalizedMigration.indexOf('CREATE INDEX "ContactRequest_name_trgm_idx"'),
+    );
 
     for (const field of ["name", "email", "message"]) {
       expect(normalizedMigration).toContain(

@@ -8,6 +8,7 @@ const describeWithDatabase = databaseUrlValue ? describe : describe.skip;
 const PSQL_PROCESS_TIMEOUT_MS = 10_000;
 const VITEST_HOOK_TIMEOUT_MS = 25_000;
 const schemaName = `admin_operations_${randomUUID().replaceAll("-", "")}`;
+const extensionSchemaName = `${schemaName}_extension`;
 const migrationPath = resolve(
   process.cwd(),
   "prisma/migrations/20261016000000_admin_operations/migration.sql",
@@ -55,7 +56,26 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
   function dropSchema() {
     if (!connection) return;
 
-    psql("-c", `DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`);
+    psql(
+      "-c",
+      `
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM pg_catalog.pg_extension AS ext
+            JOIN pg_catalog.pg_namespace AS ns ON ns.oid = ext.extnamespace
+            WHERE ext.extname = 'pg_trgm'
+              AND ns.nspname = '${extensionSchemaName}'
+          ) THEN
+            ALTER EXTENSION pg_trgm SET SCHEMA public;
+          END IF;
+        END
+        $$;
+        DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;
+        DROP SCHEMA IF EXISTS "${extensionSchemaName}" CASCADE;
+      `,
+    );
   }
 
   function cleanupAfterSetupFailure(primaryError: unknown): never {
@@ -82,6 +102,8 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
         "-c",
         `
           CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
+          CREATE SCHEMA "${extensionSchemaName}";
+          ALTER EXTENSION pg_trgm SET SCHEMA "${extensionSchemaName}";
           CREATE SCHEMA "${schemaName}";
           SET search_path TO "${schemaName}", public;
           CREATE TYPE "DonationStatus" AS ENUM ('PENDING', 'SUCCEEDED', 'CANCELED');
@@ -199,6 +221,18 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
   });
 
   it("creates every expected B-tree and GIN index", () => {
+    expect(
+      psql(
+        "-At",
+        "-c",
+        `SELECT namespace.nspname
+         FROM pg_catalog.pg_extension AS ext
+         JOIN pg_catalog.pg_namespace AS ns
+           ON ns.oid = ext.extnamespace
+         WHERE ext.extname = 'pg_trgm'`,
+      ).trim(),
+    ).toBe("public");
+
     const indexes = psql(
       "-At",
       "-c",

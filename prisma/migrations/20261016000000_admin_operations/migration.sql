@@ -1,6 +1,24 @@
 -- CreateExtension
 CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
+-- Normalize an existing relocatable pg_trgm installation before referring to its
+-- operator classes by a stable, schema-qualified name below. If the deploy role
+-- does not own a pre-existing extension, this fails before any application DDL.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_extension AS ext
+        JOIN pg_catalog.pg_namespace AS ns
+          ON ns.oid = ext.extnamespace
+        WHERE ext.extname = 'pg_trgm'
+          AND ns.nspname <> 'public'
+    ) THEN
+        ALTER EXTENSION pg_trgm SET SCHEMA public;
+    END IF;
+END
+$$;
+
 -- AlterEnum
 ALTER TYPE "ContactRequestStatus" ADD VALUE 'SPAM';
 
