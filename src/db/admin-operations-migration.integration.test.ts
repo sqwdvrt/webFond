@@ -225,7 +225,7 @@ describeWithDatabase("admin operations migration against PostgreSQL", () => {
       psql(
         "-At",
         "-c",
-        `SELECT namespace.nspname
+        `SELECT ns.nspname
          FROM pg_catalog.pg_extension AS ext
          JOIN pg_catalog.pg_namespace AS ns
            ON ns.oid = ext.extnamespace
