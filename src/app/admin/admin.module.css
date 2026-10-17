@@ -740,8 +740,10 @@
 .dashboardMetric {
   display: grid;
   gap: 14px;
+  min-width: 0;
   min-height: 144px;
   padding: 20px;
+  overflow-wrap: anywhere;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -791,12 +793,36 @@
 }
 
 .dashboardAlerts li {
+  min-width: 0;
   color: #6f4f00;
+}
+
+.dashboardAlerts a {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 44px;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+.dashboardAlerts a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 
 .dashboardActivity li {
   display: grid;
   gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboardActivityEntity {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .dashboardActivity time,
@@ -1479,7 +1505,7 @@
 
   .dashboardMetrics,
   .dashboardColumns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .adminError {

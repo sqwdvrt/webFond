@@ -95,6 +95,13 @@ const publicationStatusLabels: Record<string, string> = {
   ARCHIVED: "В архиве",
 };
 
+const activityEntityLabels: Record<SafeAdminAuditEvent["entityType"], string> = {
+  PROJECT: "Проект",
+  NEWS_POST: "Новость",
+  DOCUMENT: "Документ",
+  CONTACT_REQUEST: "Обращение",
+};
+
 function isContactStatus(value: string): value is ContactStatusValue {
   return (CONTACT_STATUSES as readonly string[]).includes(value);
 }
@@ -154,6 +161,10 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
             <dd><strong>{model.messages.newCount}</strong></dd>
           </div>
           <div className={styles.dashboardMetric}>
+            <dt>Активные обращения</dt>
+            <dd><strong>{model.messages.activeCount}</strong></dd>
+          </div>
+          <div className={styles.dashboardMetric}>
             <dt>Успешные пожертвования сегодня</dt>
             <dd>
               <span>{model.donations.today.count} успешных</span>
@@ -171,6 +182,14 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
               </strong>
             </dd>
           </div>
+          <div className={styles.dashboardMetric}>
+            <dt>Опубликованные проекты</dt>
+            <dd><strong>{model.content.publishedProjectCount}</strong></dd>
+          </div>
+          <div className={styles.dashboardMetric}>
+            <dt>Черновики</dt>
+            <dd><strong>{model.content.draftCount}</strong></dd>
+          </div>
         </dl>
       </section>
 
@@ -180,7 +199,11 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
           {model.alerts.length ? (
             <ul className={styles.dashboardAlerts} aria-label="Требует внимания">
               {model.alerts.map((alert) => (
-                <li key={alert.code}>{alert.message}</li>
+                <li key={alert.code}>
+                  <Link href={alert.href} prefetch={false}>
+                    {alert.message}
+                  </Link>
+                </li>
               ))}
             </ul>
           ) : (
@@ -196,6 +219,9 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
             <ol className={styles.dashboardActivity}>
               {model.recentActivity.map((event) => (
                 <li key={event.id}>
+                  <span className={styles.dashboardActivityEntity}>
+                    {activityEntityLabels[event.entityType]}
+                  </span>
                   <strong>{activityLabel(event)}</strong>
                   <time dateTime={event.createdAt.toISOString()}>
                     {formatDonationDateTime(event.createdAt)}

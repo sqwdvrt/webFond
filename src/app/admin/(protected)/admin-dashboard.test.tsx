@@ -17,16 +17,22 @@ const dashboard: AdminDashboardReadModel = {
   },
   alerts: [
     {
-      code: "STALE_NEW_CONTACTS",
-      severity: "warning",
-      message: "Новых обращений старше 48 часов: 2.",
-      href: "/admin/messages?status=NEW",
-    },
-    {
       code: "ADMIN_CONFIGURATION",
       severity: "warning",
       message: "Обнаружена проблема конфигурации административной части.",
       href: "/api/ready",
+    },
+    {
+      code: "STALE_PENDING_DONATIONS",
+      severity: "warning",
+      message: "Ожидающих пожертвований старше часа: 3.",
+      href: "/admin/donations?status=PENDING",
+    },
+    {
+      code: "STALE_NEW_CONTACTS",
+      severity: "warning",
+      message: "Новых обращений старше 48 часов: 2.",
+      href: "/admin/messages?status=NEW",
     },
   ],
   recentActivity: [
@@ -37,6 +43,22 @@ const dashboard: AdminDashboardReadModel = {
       previousStatus: "DRAFT",
       nextStatus: "PUBLISHED",
       createdAt: new Date("2026-01-31T22:00:00.000Z"),
+    },
+    {
+      id: "audit-news-id",
+      action: "CONTENT_CREATED",
+      entityType: "NEWS_POST",
+      previousStatus: null,
+      nextStatus: "DRAFT",
+      createdAt: new Date("2026-01-31T21:30:00.000Z"),
+    },
+    {
+      id: "audit-document-id",
+      action: "CONTENT_ARCHIVED",
+      entityType: "DOCUMENT",
+      previousStatus: "PUBLISHED",
+      nextStatus: "ARCHIVED",
+      createdAt: new Date("2026-01-31T21:15:00.000Z"),
     },
     {
       id: "audit-contact-id",
@@ -50,8 +72,8 @@ const dashboard: AdminDashboardReadModel = {
       id: "audit-contact-status-id",
       action: "CONTACT_STATUS_CHANGED",
       entityType: "CONTACT_REQUEST",
-      previousStatus: "NEW",
-      nextStatus: "IN_PROGRESS",
+      previousStatus: "PRIVATE-OLD",
+      nextStatus: "PRIVATE-NEW",
       createdAt: new Date("2026-01-31T20:00:00.000Z"),
     },
   ],
@@ -104,27 +126,75 @@ describe("admin dashboard", () => {
     expect(deps.loadDashboard).not.toHaveBeenCalled();
   });
 
-  it("loads once and renders safe operational metrics and activity", async () => {
+  it("links prioritized operational alerts in model order", async () => {
+    render(await renderAdminDashboard(dependencies()));
+
+    const alerts = screen.getByRole("list", { name: "Требует внимания" });
+    const alertLinks = within(alerts).getAllByRole("link");
+
+    expect(alertLinks.map((link) => link.textContent)).toEqual([
+      "Обнаружена проблема конфигурации административной части.",
+      "Ожидающих пожертвований старше часа: 3.",
+      "Новых обращений старше 48 часов: 2.",
+    ]);
+    expect(alertLinks.map((link) => link.getAttribute("href"))).toEqual([
+      "/api/ready",
+      "/admin/donations?status=PENDING",
+      "/admin/messages?status=NEW",
+    ]);
+  });
+
+  it("renders safe entity labels and descriptions without audit details", async () => {
+    const { container } = render(await renderAdminDashboard(dependencies()));
+
+    expect(screen.getByText("Проект")).toBeVisible();
+    expect(screen.getByText("Проект опубликован")).toBeVisible();
+    expect(screen.getByText("Новость")).toBeVisible();
+    expect(screen.getByText("Новость создана")).toBeVisible();
+    expect(screen.getByText("Документ")).toBeVisible();
+    expect(screen.getByText("Документ архивирован")).toBeVisible();
+    expect(screen.getAllByText("Обращение")).toHaveLength(2);
+    expect(screen.getByText("Изменена внутренняя заметка обращения")).toBeVisible();
+    expect(screen.getByText("Статус обращения изменён")).toBeVisible();
+    expect(screen.getByText("01.02.2026, 01:00")).toBeVisible();
+
+    for (const event of dashboard.recentActivity) {
+      expect(container).not.toHaveTextContent(event.id);
+    }
+    expect(container).not.toHaveTextContent("PRIVATE-OLD");
+    expect(container).not.toHaveTextContent("PRIVATE-NEW");
+  });
+
+  it("loads once and renders six operational metric groups accessibly", async () => {
     const deps = dependencies();
     const { container } = render(await renderAdminDashboard(deps));
 
     expect(deps.requireSession).toHaveBeenCalledOnce();
     expect(deps.loadDashboard).toHaveBeenCalledOnce();
     expect(screen.getByRole("heading", { name: "Обзор" })).toBeVisible();
-    expect(screen.getByText("7", { selector: "strong" })).toBeVisible();
-    expect(screen.getByText("4 успешных")).toBeVisible();
-    expect(screen.getByText(/1\s255,00 RUB/)).toBeVisible();
-    expect(screen.getByText("18 успешных")).toBeVisible();
-    expect(screen.getByText(/9\s900,00 RUB/)).toBeVisible();
-    expect(screen.getByText("Новых обращений старше 48 часов: 2.")).toBeVisible();
-    expect(screen.getByText("Проект опубликован")).toBeVisible();
-    expect(screen.getByText("Изменена внутренняя заметка обращения")).toBeVisible();
-    expect(
-      screen.getByText("Статус обращения изменён: Новое → В работе"),
-    ).toBeVisible();
-    expect(screen.getByText("01.02.2026, 01:00")).toBeVisible();
 
-    expect(container).not.toHaveTextContent("audit-private-id");
+    const metricExpectations: Array<[string, ...(string | RegExp)[]]> = [
+      ["Новые обращения", "7"],
+      ["Активные обращения", "5"],
+      ["Успешные пожертвования сегодня", "4 успешных", /1\s255,00 RUB/],
+      ["Успешные пожертвования за месяц", "18 успешных", /9\s900,00 RUB/],
+      ["Опубликованные проекты", "11"],
+      ["Черновики", "12"],
+    ];
+
+    expect(
+      Array.from(container.querySelectorAll("dt"), (term) => term.textContent),
+    ).toEqual(metricExpectations.map(([label]) => label));
+
+    for (const [label, ...values] of metricExpectations) {
+      const term = screen.getByText(label, { selector: "dt" });
+      const metric = term.closest("div");
+
+      expect(metric).not.toBeNull();
+      for (const value of values) {
+        expect(within(metric!).getByText(value)).toBeVisible();
+      }
+    }
 
     const navigation = screen.getByRole("navigation", {
       name: "Управление разделами",

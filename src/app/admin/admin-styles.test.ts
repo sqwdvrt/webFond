@@ -185,6 +185,54 @@ describe("admin form control styles", () => {
   });
 });
 
+describe("admin dashboard styles", () => {
+  it("keeps metric cards width-safe and collapses the grid on mobile", () => {
+    expect(declarationsFor(".dashboardMetric")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    const gridRule = mobileRules.find(
+      ({ selectors }) => selectors === ".dashboardMetrics, .dashboardColumns",
+    );
+
+    expect(gridRule?.declarations).toMatchObject({
+      "grid-template-columns": "minmax(0, 1fr)",
+    });
+  });
+
+  it("makes the full warning message a safe keyboard target", () => {
+    expect(declarationsFor(".dashboardAlerts li")).toMatchObject({
+      "min-width": "0",
+    });
+    expect(declarationsFor(".dashboardAlerts a")).toMatchObject({
+      display: "flex",
+      "align-items": "center",
+      "min-height": "44px",
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".dashboardAlerts a:focus-visible")).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+  });
+
+  it("keeps activity text width-safe and distinguishes entity labels", () => {
+    expect(declarationsFor(".dashboardActivity li")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".dashboardActivityEntity")).toMatchObject({
+      color: "var(--muted)",
+      "font-size": "12px",
+      "font-weight": "700",
+      "text-transform": "uppercase",
+    });
+  });
+});
+
 describe("admin contact table styles", () => {
   it("reduces the message filter grid before desktop columns overflow", () => {
     const tabletRules = parseRules(mediaContentsFor("(max-width: 1040px)"));
