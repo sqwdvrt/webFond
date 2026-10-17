@@ -89,6 +89,8 @@ const contentActivityLabels = {
   },
 } as const;
 
+type ContentActivityAction = keyof typeof contentActivityLabels.PROJECT;
+
 const publicationStatusLabels: Record<string, string> = {
   DRAFT: "Черновик",
   PUBLISHED: "Опубликовано",
@@ -106,29 +108,38 @@ function isContactStatus(value: string): value is ContactStatusValue {
   return (CONTACT_STATUSES as readonly string[]).includes(value);
 }
 
+function isContentActivityAction(
+  action: SafeAdminAuditEvent["action"],
+): action is ContentActivityAction {
+  return action in contentActivityLabels.PROJECT;
+}
+
 function activityLabel(event: SafeAdminAuditEvent) {
-  if (event.action === "CONTACT_NOTE_CHANGED") {
-    return "Изменена внутренняя заметка обращения";
-  }
-
-  if (event.action === "CONTACT_STATUS_CHANGED") {
-    const previous = event.previousStatus && isContactStatus(event.previousStatus)
-      ? CONTACT_STATUS_LABELS[event.previousStatus]
-      : undefined;
-    const next = event.nextStatus && isContactStatus(event.nextStatus)
-      ? CONTACT_STATUS_LABELS[event.nextStatus]
-      : undefined;
-    return previous && next
-      ? `Статус обращения изменён: ${previous} → ${next}`
-      : "Статус обращения изменён";
-  }
-
   if (event.entityType === "CONTACT_REQUEST") {
+    if (event.action === "CONTACT_NOTE_CHANGED") {
+      return "Изменена внутренняя заметка обращения";
+    }
+
+    if (event.action === "CONTACT_STATUS_CHANGED") {
+      const previous = event.previousStatus && isContactStatus(event.previousStatus)
+        ? CONTACT_STATUS_LABELS[event.previousStatus]
+        : undefined;
+      const next = event.nextStatus && isContactStatus(event.nextStatus)
+        ? CONTACT_STATUS_LABELS[event.nextStatus]
+        : undefined;
+      return previous && next
+        ? `Статус обращения изменён: ${previous} → ${next}`
+        : "Статус обращения изменён";
+    }
+
     return "Выполнено административное действие";
   }
 
-  const label = contentActivityLabels[event.entityType]?.[event.action];
-  if (!label) return "Выполнено административное действие";
+  if (!isContentActivityAction(event.action)) {
+    return "Выполнено административное действие";
+  }
+
+  const label = contentActivityLabels[event.entityType][event.action];
 
   if (
     event.action === "CONTENT_STATUS_CHANGED" &&

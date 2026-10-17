@@ -72,9 +72,25 @@ const dashboard: AdminDashboardReadModel = {
       id: "audit-contact-status-id",
       action: "CONTACT_STATUS_CHANGED",
       entityType: "CONTACT_REQUEST",
+      previousStatus: "NEW",
+      nextStatus: "IN_PROGRESS",
+      createdAt: new Date("2026-01-31T20:30:00.000Z"),
+    },
+    {
+      id: "audit-hostile-contact-status-id",
+      action: "CONTACT_STATUS_CHANGED",
+      entityType: "CONTACT_REQUEST",
       previousStatus: "PRIVATE-OLD",
       nextStatus: "PRIVATE-NEW",
       createdAt: new Date("2026-01-31T20:00:00.000Z"),
+    },
+    {
+      id: "audit-incompatible-action-id",
+      action: "CONTACT_NOTE_CHANGED",
+      entityType: "PROJECT",
+      previousStatus: "PRIVATE-INCOMPATIBLE",
+      nextStatus: null,
+      createdAt: new Date("2026-01-31T19:30:00.000Z"),
     },
   ],
 };
@@ -144,18 +160,33 @@ describe("admin dashboard", () => {
     ]);
   });
 
+  it("disables route prefetching for operational alert links", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/app/admin/(protected)/page.tsx"),
+      "utf8",
+    );
+
+    expect(source).toMatch(
+      /<Link\s+href=\{alert\.href\}\s+prefetch=\{false\}>/,
+    );
+  });
+
   it("renders safe entity labels and descriptions without audit details", async () => {
     const { container } = render(await renderAdminDashboard(dependencies()));
 
-    expect(screen.getByText("Проект")).toBeVisible();
+    expect(screen.getAllByText("Проект")).toHaveLength(2);
     expect(screen.getByText("Проект опубликован")).toBeVisible();
     expect(screen.getByText("Новость")).toBeVisible();
     expect(screen.getByText("Новость создана")).toBeVisible();
     expect(screen.getByText("Документ")).toBeVisible();
     expect(screen.getByText("Документ архивирован")).toBeVisible();
-    expect(screen.getAllByText("Обращение")).toHaveLength(2);
-    expect(screen.getByText("Изменена внутренняя заметка обращения")).toBeVisible();
+    expect(screen.getAllByText("Обращение")).toHaveLength(3);
+    expect(screen.getAllByText("Изменена внутренняя заметка обращения")).toHaveLength(1);
+    expect(
+      screen.getByText("Статус обращения изменён: Новое → В работе"),
+    ).toBeVisible();
     expect(screen.getByText("Статус обращения изменён")).toBeVisible();
+    expect(screen.getByText("Выполнено административное действие")).toBeVisible();
     expect(screen.getByText("01.02.2026, 01:00")).toBeVisible();
 
     for (const event of dashboard.recentActivity) {
@@ -163,6 +194,7 @@ describe("admin dashboard", () => {
     }
     expect(container).not.toHaveTextContent("PRIVATE-OLD");
     expect(container).not.toHaveTextContent("PRIVATE-NEW");
+    expect(container).not.toHaveTextContent("PRIVATE-INCOMPATIBLE");
   });
 
   it("loads once and renders six operational metric groups accessibly", async () => {
