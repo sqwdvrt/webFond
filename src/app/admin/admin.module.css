@@ -1033,6 +1033,46 @@
   color: var(--muted);
 }
 
+.adminLoading {
+  display: grid;
+  gap: 14px;
+  width: min(100% - 40px, 1240px);
+  min-width: 0;
+  margin-inline: auto;
+  padding: 44px 0 88px;
+  overflow-wrap: anywhere;
+}
+
+.adminLoading h1,
+.adminLoading p {
+  margin: 0;
+}
+
+.adminLoading h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.adminLoading p {
+  color: var(--muted);
+}
+
+.adminLoadingBlocks {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+  margin-top: 12px;
+}
+
+.adminLoadingBlocks span {
+  min-height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;
@@ -1348,6 +1388,11 @@
 }
 
 @media (max-width: 720px) {
+  .adminLoading {
+    width: min(100% - 32px, 1240px);
+    padding: 36px 0 64px;
+  }
+
   .messagesPage {
     width: min(100% - 32px, 1240px);
     padding: 0 0 64px;

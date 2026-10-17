@@ -107,12 +107,14 @@ describe("messages page orchestration", () => {
     expect(deps.getPage).not.toHaveBeenCalled();
   });
 
-  it("renders a safe invalid-filter view without loading contacts", async () => {
+  it("renders an accessible safe invalid-filter view without loading contacts", async () => {
     const deps = listDependencies({
       parseFilters: vi.fn(() => ({ ok: false as const })),
     });
 
-    render(await renderMessagesPage({ status: "PENDING" }, deps));
+    const { container } = render(
+      await renderMessagesPage({ status: "PENDING" }, deps),
+    );
 
     expect(screen.getByRole("heading", { name: "Некорректные фильтры" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Сбросить фильтры" })).toHaveAttribute(
@@ -120,6 +122,15 @@ describe("messages page orchestration", () => {
       "/admin/messages",
     );
     expect(deps.getPage).not.toHaveBeenCalled();
+
+    const results = await axe.run(container, {
+      rules: { "color-contrast": { enabled: false } },
+    });
+    expect(
+      results.violations.filter(
+        ({ impact }) => impact === "serious" || impact === "critical",
+      ),
+    ).toEqual([]);
   });
 
   it("redirects a clamped page to the canonical URL", async () => {
