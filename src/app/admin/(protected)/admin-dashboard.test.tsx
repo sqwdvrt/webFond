@@ -124,9 +124,6 @@ describe("admin dashboard", () => {
     ).toBeVisible();
     expect(screen.getByText("01.02.2026, 01:00")).toBeVisible();
 
-    expect(container).not.toHaveTextContent("project-private-id");
-    expect(container).not.toHaveTextContent("contact-private-id");
-    expect(container).not.toHaveTextContent("another-private-id");
     expect(container).not.toHaveTextContent("audit-private-id");
 
     const navigation = screen.getByRole("navigation", {

@@ -320,6 +320,19 @@ describeWithDatabase("admin operations application integration", () => {
         },
       ],
     });
+    const [
+      baselineActiveCount,
+      baselinePublishedProjectCount,
+      baselineDraftProjectCount,
+      baselineDraftNewsPostCount,
+      baselineDraftDocumentCount,
+    ] = await Promise.all([
+      client.contactRequest.count({ where: { status: "IN_PROGRESS" } }),
+      client.project.count({ where: { status: "PUBLISHED" } }),
+      client.project.count({ where: { status: "DRAFT" } }),
+      client.newsPost.count({ where: { status: "DRAFT" } }),
+      client.document.count({ where: { status: "DRAFT" } }),
+    ]);
     await client.contactRequest.create({
       data: {
         id: "contact-in-progress-dashboard",
@@ -365,34 +378,57 @@ describeWithDatabase("admin operations application integration", () => {
         status: "DRAFT",
       },
     });
+    const auditRows = Array.from({ length: 11 }, (_, index) => ({
+      id: `dashboard-audit-${String(index).padStart(2, "0")}`,
+      action: "CONTENT_PUBLISHED" as const,
+      entityType: "PROJECT" as const,
+      entityId: `dashboard-audit-project-${String(index).padStart(2, "0")}`,
+      previousStatus: "DRAFT",
+      nextStatus: "PUBLISHED",
+      createdAt: new Date(Date.UTC(2099, 0, 1, 0, 0, index)),
+    }));
+    await client.adminAuditEvent.createMany({ data: auditRows });
 
-    const model = await getAdminDashboardReadModel(now, {
-      database: client as never,
-      evaluateReadiness: () => ({ ok: true as const, issues: [] }),
-    });
+    try {
+      const model = await getAdminDashboardReadModel(now, {
+        database: client as never,
+        evaluateReadiness: () => ({ ok: true as const, issues: [] }),
+      });
 
-    expect(model.donations.today).toEqual({ count: 2, amountKopecks: 900 });
-    expect(model.donations.month).toEqual({ count: 5, amountKopecks: 2_000 });
-    expect(model.messages.activeCount).toBe(1);
-    expect(model.content).toEqual({
-      publishedProjectCount: 1,
-      draftCount: 3,
-    });
-    expect(model.alerts).toEqual([
-      expect.objectContaining({
-        code: "STALE_PENDING_DONATIONS",
-        href: "/admin/donations?status=PENDING",
-      }),
-      expect.objectContaining({
-        code: "STALE_NEW_CONTACTS",
-        href: "/admin/messages?status=NEW",
-      }),
-    ]);
-    expect(model.alerts[0]?.message).toContain(": 1.");
-    expect(model.alerts[1]?.message).toContain(": 1.");
-    expect(model.recentActivity.length).toBeLessThanOrEqual(10);
-    for (const event of model.recentActivity) {
-      expect(event).not.toHaveProperty("entityId");
+      expect(model.donations.today).toEqual({ count: 2, amountKopecks: 900 });
+      expect(model.donations.month).toEqual({ count: 5, amountKopecks: 2_000 });
+      expect(model.messages.activeCount).toBe(baselineActiveCount + 1);
+      expect(model.content).toEqual({
+        publishedProjectCount: baselinePublishedProjectCount + 1,
+        draftCount:
+          baselineDraftProjectCount
+          + baselineDraftNewsPostCount
+          + baselineDraftDocumentCount
+          + 3,
+      });
+      expect(model.alerts).toEqual([
+        expect.objectContaining({
+          code: "STALE_PENDING_DONATIONS",
+          href: "/admin/donations?status=PENDING",
+        }),
+        expect.objectContaining({
+          code: "STALE_NEW_CONTACTS",
+          href: "/admin/messages?status=NEW",
+        }),
+      ]);
+      expect(model.alerts[0]?.message).toContain(": 1.");
+      expect(model.alerts[1]?.message).toContain(": 1.");
+      expect(model.recentActivity).toHaveLength(10);
+      expect(model.recentActivity.map(({ id }) => id)).toEqual(
+        auditRows.slice(1).reverse().map(({ id }) => id),
+      );
+      for (const event of model.recentActivity) {
+        expect(event).not.toHaveProperty("entityId");
+      }
+    } finally {
+      await client.adminAuditEvent.deleteMany({
+        where: { id: { startsWith: "dashboard-audit-" } },
+      });
     }
   }, TEST_TIMEOUT_MS);
 
