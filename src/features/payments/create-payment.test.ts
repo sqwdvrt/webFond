@@ -39,6 +39,14 @@ function donation(overrides: Partial<Donation> = {}): Donation {
     donorName: null,
     donorEmail: CUSTOMER_EMAIL,
     paidAt: null,
+    lastProviderStatus: null,
+    lastReconciledAt: null,
+    lastReconcileErrorCode: null,
+    nextReconcileAt: null,
+    reconcileAttempts: 0,
+    claimToken: null,
+    claimExpiresAt: null,
+    manualReviewRequired: false,
     createdAt: NOW,
     updatedAt: NOW,
     projectId: null,
@@ -114,6 +122,10 @@ function repositoryFixture(initial: Donation = donation()) {
       }
       return false;
     }),
+    listPendingForReconciliation: vi.fn(async () => []),
+    claimForReconciliation: vi.fn(async () => false),
+    updateReconciliation: vi.fn(async () => undefined),
+    clearManualReview: vi.fn(async () => undefined),
   };
 
   return {

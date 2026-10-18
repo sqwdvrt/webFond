@@ -222,6 +222,7 @@ DB-backed интеграционные проверки остаются отд�
 PAYMENTS_ENABLED=false
 PAYMENTS_OFFER_VERSION=
 PAYMENTS_RATE_LIMIT_SECRET=
+PAYMENTS_RECONCILE_SECRET=
 PAYMENTS_TRUST_PROXY=false
 YOOKASSA_SHOP_ID=""
 YOOKASSA_SECRET_KEY=""
@@ -238,6 +239,8 @@ YOOKASSA_RETURN_URL="http://localhost:3000/donation/result"
 - `POST /api/payments/create` — создание разового платежа СБП;
 - `POST /api/payments/webhook` — уведомления ЮKassa `payment.succeeded` и
   `payment.canceled`;
+- `POST /api/maintenance/payments/reconcile` — защищённая сверка зависших
+  платежей по текущему статусу в ЮKassa;
 - `/donation/result` — проверка результата, страница не индексируется.
 
 Webhook не доверяет телу уведомления: сервер запрашивает платёж в ЮKassa и только
@@ -305,6 +308,7 @@ PostgreSQL — кластер Timeweb в той же зоне. Включите 
 | `PAYMENTS_ENABLED` | `false`, пока оферта не утверждена |
 | `PAYMENTS_OFFER_VERSION` | пусто, пока оферта не утверждена |
 | `PAYMENTS_RATE_LIMIT_SECRET` | случайная строка не короче 32 символов |
+| `PAYMENTS_RECONCILE_SECRET` | случайная строка не короче 32 символов для планировщика сверки |
 | `PAYMENTS_TRUST_PROXY` | `true` |
 | `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` | пусто, пока платежи выключены |
 | `YOOKASSA_RETURN_URL` | `https://fond-bit-dobru.ru/donation/result` |
@@ -319,6 +323,19 @@ Webhook ЮKassa, когда платежи включат:
 ```text
 https://fond-bit-dobru.ru/api/payments/webhook
 ```
+
+Для автоматической сверки зависших платежей настройте планировщик Timeweb или
+один согласованный внешний scheduler на `POST`:
+
+```text
+https://fond-bit-dobru.ru/api/maintenance/payments/reconcile
+```
+
+Передайте заголовок `x-reconcile-secret` со значением `PAYMENTS_RECONCILE_SECRET`.
+Сервис обрабатывает ограниченную пачку платежей, безопасен при повторном запуске
+и не меняет статус без подтверждения от API ЮKassa. Если scheduler недоступен в
+Timeweb, используйте внешний scheduler только с этим секретом и без передачи
+данных плательщиков.
 
 Секреты в git не коммитятся.
 

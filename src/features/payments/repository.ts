@@ -38,6 +38,16 @@ type PendingTransition =
   | [status: "SUCCEEDED", paidAt: Date]
   | [status: "CANCELED", paidAt: null];
 
+export type ReconciliationCandidate = Donation;
+
+export type ReconciliationUpdate = {
+  providerStatus: string | null;
+  errorCode: string | null;
+  nextReconcileAt: Date | null;
+  attempts: number;
+  manualReviewRequired?: boolean;
+};
+
 export type PaymentRepository = {
   beginAttempt(input: BeginAttemptInput): Promise<BeginAttemptResult>;
   findById(id: string): Promise<Donation | null>;
@@ -50,6 +60,14 @@ export type PaymentRepository = {
     id: string,
     ...transition: PendingTransition
   ): Promise<Donation>;
+  listPendingForReconciliation(input: {
+    now: Date;
+    limit: number;
+    olderThan?: Date;
+  }): Promise<ReconciliationCandidate[]>;
+  claimForReconciliation(id: string, token: string, expiresAt: Date, now: Date): Promise<boolean>;
+  updateReconciliation(id: string, token: string, update: ReconciliationUpdate): Promise<void>;
+  clearManualReview(id: string): Promise<void>;
   deleteUnboundPending(id: string): Promise<boolean>;
 };
 
@@ -200,6 +218,61 @@ export function createPaymentRepository(
         data: { status, paidAt },
       });
       return client.donation.findUniqueOrThrow({ where: { id } });
+    },
+
+    listPendingForReconciliation({ now, limit, olderThan }) {
+      return client.donation.findMany({
+        where: {
+          status: "PENDING",
+          providerPaymentId: { not: null },
+          manualReviewRequired: false,
+          OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }],
+          ...(olderThan ? { createdAt: { gte: olderThan } } : {}),
+        },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        take: limit,
+      });
+    },
+
+    async claimForReconciliation(id, token, expiresAt, now) {
+      const result = await client.donation.updateMany({
+        where: {
+          id,
+          status: "PENDING",
+          manualReviewRequired: false,
+          OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }],
+        },
+        data: { claimToken: token, claimExpiresAt: expiresAt },
+      });
+      return result.count === 1;
+    },
+
+    async updateReconciliation(id, token, update) {
+      await client.donation.updateMany({
+        where: { id, claimToken: token },
+        data: {
+          lastProviderStatus: update.providerStatus,
+          lastReconciledAt: new Date(),
+          lastReconcileErrorCode: update.errorCode,
+          nextReconcileAt: update.nextReconcileAt,
+          reconcileAttempts: update.attempts,
+          manualReviewRequired: update.manualReviewRequired ?? false,
+          claimToken: null,
+          claimExpiresAt: null,
+        },
+      });
+    },
+
+    async clearManualReview(id) {
+      await client.donation.updateMany({
+        where: { id },
+        data: {
+          manualReviewRequired: false,
+          reconcileAttempts: 0,
+          lastReconcileErrorCode: null,
+          nextReconcileAt: null,
+        },
+      });
     },
 
     async deleteUnboundPending(id: string): Promise<boolean> {

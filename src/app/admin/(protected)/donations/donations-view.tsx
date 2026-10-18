@@ -22,6 +22,7 @@ import {
 } from "@/features/admin-donations/types";
 
 import styles from "../../admin.module.css";
+import { ReconcileDonationsAction } from "./reconcile-action";
 
 function donationsHref(filters: DonationPageFilters, page: number) {
   const query = buildDonationQuery({ ...filters, page });
@@ -79,6 +80,7 @@ export function DonationsView({
           <Download aria-hidden="true" size={18} />
           Скачать CSV
         </Link>
+        <ReconcileDonationsAction />
       </div>
 
       <form className={styles.filters} method="get" role="search">

@@ -271,6 +271,19 @@
   gap: 24px;
 }
 
+.donationsHeading > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inlineNotice {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .donationsHeading h1 {
   margin: 10px 0 0;
   font-family: Georgia, "Times New Roman", serif;

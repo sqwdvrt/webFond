@@ -63,11 +63,20 @@ model Donation {
   updatedAt         DateTime       @updatedAt
   projectId         String?
   project           Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  lastProviderStatus     String?
+  lastReconciledAt       DateTime?
+  lastReconcileErrorCode String?
+  nextReconcileAt        DateTime?
+  reconcileAttempts      Int            @default(0)
+  claimToken             String?
+  claimExpiresAt         DateTime?
+  manualReviewRequired   Boolean        @default(false)
 
   @@index([status, createdAt])
   @@index([status, paidAt])
   @@index([createdAt, id])
   @@index([status, projectId])
+  @@index([status, nextReconcileAt, createdAt])
 }
 
 model Project {
