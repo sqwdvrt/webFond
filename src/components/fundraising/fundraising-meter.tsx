@@ -8,16 +8,18 @@ import {
 export function FundraisingMeter({
   helpHref,
   progress,
+  variant,
 }: {
   helpHref: string;
   progress: FundraisingProgress;
+  variant: "card" | "detail";
 }) {
   const collected = formatFundraisingAmount(progress.collectedKopecks);
   const goal = formatFundraisingAmount(progress.goalKopecks);
   const label = `Собрано ${collected} из ${goal}`;
 
   return (
-    <div className="fundraising-meter">
+    <div className={`fundraising-meter fundraising-meter-${variant}`}>
       <div className="fundraising-meter-amounts">
         <div>
           <span className="fundraising-meter-label">собрали</span>
@@ -33,6 +35,7 @@ export function FundraisingMeter({
         aria-valuemax={100}
         aria-valuemin={0}
         aria-valuenow={Math.round(progress.fillPercent)}
+        aria-valuetext={`${collected} из ${goal}`}
         className="fundraising-meter-track"
         role="progressbar"
       >

@@ -44,6 +44,7 @@ export default async function ProjectPage({ params }: ProjectDetailProps) {
             <FundraisingMeter
               helpHref={`/help?project=${project.slug}`}
               progress={project.fundraising}
+              variant="detail"
             />
           </div>
         </section>

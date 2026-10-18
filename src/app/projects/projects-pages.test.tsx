@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { renderProjectsPage } from "@/app/projects/page";
 import { projects } from "@/content/projects";
 import type { PublicProjectCard } from "@/features/fundraising/public-projects";
+import { formatFundraisingAmount } from "@/features/fundraising/progress";
 
 const publishedProject: PublicProjectCard = {
   id: "project-1",
@@ -81,15 +82,32 @@ describe("projects page", () => {
         fillPercent: 20.98,
       },
     };
-    render(await renderProjectsPage(dependencies([withGoal, publishedProject])));
+    const withoutGoal: PublicProjectCard = {
+      ...publishedProject,
+      id: "project-2",
+      slug: "project-without-goal",
+      title: "Проект без цели",
+    };
+    render(await renderProjectsPage(dependencies([withGoal, withoutGoal])));
 
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+    expect(screen.getByRole("progressbar").closest(".fundraising-meter")).toHaveClass(
+      "fundraising-meter-card",
+    );
+    for (const amount of [125_887_500, 600_000_000]) {
+      const formatted = formatFundraisingAmount(amount);
+      expect(screen.getByText((_, node) =>
+        node?.tagName === "STRONG" && node.textContent === formatted,
+      )).toBeVisible();
+    }
     expect(screen.getByRole("link", { name: "Помочь" })).toHaveAttribute(
       "href",
       "/help?project=published-project",
     );
     expect(screen.getByText("собрали")).toBeVisible();
     expect(screen.getByText("нужно")).toBeVisible();
-    expect(screen.getAllByRole("link", { name: publishedProject.title })).toHaveLength(2);
+    expect(screen.getByRole("link", { name: publishedProject.title })).toBeVisible();
+    expect(screen.getByRole("link", { name: withoutGoal.title })).toBeVisible();
   });
 
   it("adds no project block when there are no published projects", async () => {

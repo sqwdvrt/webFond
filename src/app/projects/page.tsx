@@ -88,6 +88,7 @@ export async function renderProjectsPage(
                     <FundraisingMeter
                       helpHref={`/help?project=${project.slug}`}
                       progress={project.fundraising}
+                      variant="card"
                     />
                   ) : null}
                 </PublishedCard>

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PublicProjectDetail } from "@/features/fundraising/public-projects";
+import { formatFundraisingAmount } from "@/features/fundraising/progress";
 
 const mocks = vi.hoisted(() => ({
   getPublishedProjectForRequest: vi.fn(),
@@ -62,6 +63,15 @@ describe("published project detail", () => {
 
     render(await ProjectPage({ params: Promise.resolve({ slug: project.slug }) }));
 
+    expect(screen.getByRole("progressbar").closest(".fundraising-meter")).toHaveClass(
+      "fundraising-meter-detail",
+    );
+    for (const amount of [125_887_500, 600_000_000]) {
+      const formatted = formatFundraisingAmount(amount);
+      expect(screen.getByText((_, node) =>
+        node?.tagName === "STRONG" && node.textContent === formatted,
+      )).toBeVisible();
+    }
     expect(screen.getByRole("link", { name: "Помочь" })).toHaveAttribute(
       "href",
       "/help?project=published-project",
