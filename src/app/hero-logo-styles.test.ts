@@ -35,13 +35,13 @@ describe("hero logo styles", () => {
     });
   });
 
-  it("does not override the logo at the mobile breakpoint", () => {
+  it("keeps the mobile logo compact", () => {
     const mobileStart = css.indexOf("@media (max-width: 720px)");
     const mobileEnd = css.indexOf("@media", mobileStart + 1);
     const mobileStyles = css.slice(mobileStart, mobileEnd);
 
     expect(mobileStart).toBeGreaterThan(-1);
-    expect(mobileStyles).not.toMatch(/\.hero-logo\s*\{/);
+    expect(mobileStyles).toMatch(/\.hero-logo\s*\{[^}]*width:\s*180px/);
     expect(mobileStyles).not.toContain("width: min(100%, 330px)");
     expect(mobileStyles).not.toContain("justify-self: start");
   });

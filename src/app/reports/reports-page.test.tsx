@@ -8,9 +8,9 @@ import { generateReportsMetadata, renderReportsPage } from "@/app/reports/page";
 import type { PublicDocumentRow } from "@/features/content-admin/repository";
 
 const publishedDocuments: PublicDocumentRow[] = [
-  { id: "document-1", title: "Годовой отчет за 2025 год", category: "Отчетность", fileUrl: "/documents/annual-2025.pdf", publishedAt: new Date("2026-08-23T10:00:00.000Z") },
-  { id: "document-2", title: "Устав фонда", category: "Учредительные документы", fileUrl: "https://documents.example.org/charter", publishedAt: new Date("2026-08-22T10:00:00.000Z") },
-  { id: "document-3", title: "Аудиторское заключение", category: "Отчетность", fileUrl: "/documents/audit", publishedAt: new Date("2026-08-21T10:00:00.000Z") },
+  { id: "document-1", title: "Годовой отчет за 2025 год", category: "Отчетность", fileUrl: "/documents/annual-2025.pdf", publishedAt: new Date("2026-08-23T10:00:00.000Z"), updatedAt: new Date("2026-08-23T10:00:00.000Z") },
+  { id: "document-2", title: "Устав фонда", category: "Учредительные документы", fileUrl: "https://documents.example.org/charter", publishedAt: new Date("2026-08-22T10:00:00.000Z"), updatedAt: new Date("2026-08-22T10:00:00.000Z") },
+  { id: "document-3", title: "Аудиторское заключение", category: "Отчетность", fileUrl: "/documents/audit", publishedAt: new Date("2026-08-21T10:00:00.000Z"), updatedAt: new Date("2026-08-21T10:00:00.000Z") },
 ];
 
 function dependencies(result: PublicDocumentRow[] | Error) {

@@ -78,6 +78,7 @@ const publicDocumentSelect = {
   category: true,
   fileUrl: true,
   publishedAt: true,
+  updatedAt: true,
 } satisfies Prisma.DocumentSelect;
 
 const editorialMutationSelect = {

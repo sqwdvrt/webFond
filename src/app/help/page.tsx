@@ -26,13 +26,11 @@ const defaultDependencies: HelpPageDependencies = {
   paymentsEnabled: () => readPaymentsAvailability().enabled,
 };
 
-function trustNote(paymentsEnabled: boolean) {
+function trustNote() {
   const facts = [
     {
       title: "Платежные данные",
-      text: paymentsEnabled
-        ? "Реквизиты карты обрабатывает платежный сервис. Фонд их не хранит."
-        : "Реквизиты карты будет обрабатывать платежный сервис. Фонд их не хранит.",
+      text: "Реквизиты карты обрабатывает платежный сервис. Фонд их не хранит.",
     },
     {
       title: "Разовый перевод",
@@ -48,9 +46,7 @@ function trustNote(paymentsEnabled: boolean) {
 
   return {
     heading: "Как устроена оплата",
-    lead: paymentsEnabled
-      ? "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице. Email нужен для кассового чека и передаётся в ЮKassa."
-      : "Форма онлайн-оплаты появится после подключения платежного сервиса.",
+    lead: "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице. Email нужен для кассового чека и передаётся в ЮKassa.",
     facts,
   };
 }
@@ -69,7 +65,7 @@ export function renderHelpPage(
     enabled = false;
   }
 
-  const note = trustNote(enabled);
+  const note = trustNote();
 
   return (
     <>
@@ -79,74 +75,72 @@ export function renderHelpPage(
         description={
           enabled
             ? "Пожертвование через ЮKassa. Платеж разовый, без подписки."
-            : "Онлайн-пожертвования скоро будут доступны. Пока можно помочь по реквизитам или написать фонду."
+            : "Поддержать фонд можно банковским переводом. Выберите банк или воспользуйтесь реквизитами."
         }
       />
-      <section className="page-section">
-        <div className="container">
-          <div className="section-heading">
-            <span className="section-number">01</span>
-            <div>
-              <h2>Пожертвование</h2>
-              <p>
-                {enabled
-                  ? "Выберите сумму и перейдите к оплате на стороне ЮKassa. Платеж разовый, без подписки."
-                  : "Когда оплата будет подключена, здесь появится форма: сумма, согласие, оферта и кнопка оплаты."}
-              </p>
+      {enabled ? (
+        <section className="page-section">
+          <div className="container">
+            <div className="section-heading">
+              <span className="section-number">01</span>
+              <div>
+                <h2>Пожертвование</h2>
+                <p>
+                  Выберите сумму и перейдите к оплате на стороне ЮKassa. Платеж разовый, без подписки.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="help-layout">
-            {enabled ? (
+            <div className="help-layout">
               <DonationForm
                 initialProjectSlug={initialProjectSlug}
                 projects={projects}
               />
-            ) : (
-              <DonationPreview />
-            )}
-            <aside className="trust-note">
-              <h3>{note.heading}</h3>
-              <p>{note.lead}</p>
-              <ul>
-                {note.facts.map((item) => (
-                  <li key={item.title}>
-                    <strong>{item.title}</strong>
-                    <span>
-                      {item.text}
-                      {"href" in item ? (
-                        <>
-                          {" "}
-                          <Link href={item.href}>{item.linkLabel}</Link>
-                        </>
-                      ) : null}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </aside>
+              <aside className="trust-note">
+                <h3>{note.heading}</h3>
+                <p>{note.lead}</p>
+                <ul>
+                  {note.facts.map((item) => (
+                    <li key={item.title}>
+                      <strong>{item.title}</strong>
+                      <span>
+                        {item.text}
+                        {"href" in item ? (
+                          <>
+                            {" "}
+                            <Link href={item.href}>{item.linkLabel}</Link>
+                          </>
+                        ) : null}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
       <section className="page-section">
         <div className="container">
           <div className="section-heading">
-            <span className="section-number">02</span>
+            <span className="section-number">{enabled ? "02" : "01"}</span>
             <div>
               <h2>Перевод в приложении банка</h2>
               <p>
-                Выберите свой банк. Откройте приложение, наведите камеру на код и укажите сумму.
+                Выберите свой банк. С компьютера отсканируйте код телефоном,
+                с телефона сохраните QR и откройте его в приложении банка. Укажите сумму перевода.
                 Если вашего банка нет в списке,{" "}
                 <Link href="/requisites">переведите по реквизитам</Link>.
               </p>
             </div>
           </div>
+          {!enabled ? <DonationPreview /> : null}
           <BankQrTransfer />
         </div>
       </section>
       <section className="page-section surface-band">
         <div className="container text-grid">
           <div>
-            <span className="section-number">03</span>
+            <span className="section-number">{enabled ? "03" : "02"}</span>
           </div>
           <div className="prose">
             <h2>Другие формы участия</h2>

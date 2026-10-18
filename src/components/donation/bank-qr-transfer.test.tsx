@@ -52,8 +52,12 @@ describe("BankQrTransfer", () => {
     expect(screen.getByRole("link", { name: "оферты" })).toHaveAttribute("href", "/donation-offer");
     expect(screen.queryByText(vtb.checkingAccount)).not.toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: "Скопировать реквизиты" }));
+    expect(screen.getByRole("button", { name: "Скопировано" })).toBeVisible();
+
     await user.click(screen.getByRole("radio", { name: "ВТБ" }));
 
+    expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
     expect(screen.getByRole("img", { name: vtb.alt })).toHaveAttribute("src", vtb.src);
     expect(screen.getByText(vtb.checkingAccount)).toBeVisible();
     expect(screen.queryByText(alfa.checkingAccount)).not.toBeInTheDocument();

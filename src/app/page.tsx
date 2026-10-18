@@ -3,9 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SectionHeading } from "@/components/content/section-heading";
+import { HomeEvidence } from "@/components/content/home-evidence";
 import { siteConfig } from "@/config/site";
 import { homepageHelpGroups } from "@/content/projects";
 import { readPaymentsAvailability } from "@/features/payments/config";
+import { loadHomeEvidence, type HomeEvidenceData } from "@/features/homepage/evidence";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,7 @@ export const metadata: Metadata = {
 
 type HomePageDependencies = {
   paymentsEnabled: () => boolean;
+  evidence?: HomeEvidenceData;
 };
 
 const defaultDependencies: HomePageDependencies = {
@@ -54,8 +57,8 @@ function trustItems(paymentsEnabled: boolean) {
           text: "Перевод доступен на странице помощи. Реквизиты карты обрабатывает платежный сервис, фонд их не хранит.",
         }
       : {
-          title: "Честный статус платежей",
-          text: "Онлайн-оплата еще подключается. Пока фонд принимает поддержку по реквизитам и через обращение.",
+          title: "Банковский перевод",
+          text: "На странице помощи доступны QR-коды банков, реквизиты фонда и их копирование.",
         },
   ] as const;
 }
@@ -84,7 +87,7 @@ export function renderHomePage(
           <div>
             <span className="eyebrow">Благотворительный фонд</span>
             <h1>{siteConfig.headline}</h1>
-            <p className="hero-lead">{siteConfig.description}</p>
+            <p className="hero-lead">Помогаем людям в трудной ситуации. Поддержите фонд или обратитесь за помощью</p>
             <div className="hero-actions">
               <Link className="button button-primary" href="/help">
                 Помочь фонду
@@ -99,7 +102,7 @@ export function renderHomePage(
               src="/brand/mark.jpg"
               width={880}
               height={880}
-              sizes="(max-width: 720px) 70vw, 360px"
+              sizes="(max-width: 720px) 180px, (max-width: 980px) 300px, 360px"
               priority
               alt="Знак фонда «Быть Добру»: руки, росток и птица"
             />
@@ -161,6 +164,27 @@ export function renderHomePage(
               </article>
             ))}
           </div>
+          <div className="home-legal-details">
+            <dl>
+              <div><dt>ОГРН</dt><dd>{siteConfig.legal.ogrn}</dd></div>
+              <div><dt>ИНН</dt><dd>{siteConfig.legal.inn}</dd></div>
+            </dl>
+            <p className="quiet-row">
+              <Link href="/requisites">Полные реквизиты фонда</Link>
+              <Link href="/reports">Отчёты фонда</Link>
+            </p>
+          </div>
+          <section className="home-donation-purpose" aria-labelledby="donation-purpose-heading">
+            <h3 id="donation-purpose-heading">На что идут пожертвования</h3>
+            <p>Пожертвования используются на уставную деятельность фонда:</p>
+            <ul>
+              <li>Помощь людям в трудной жизненной ситуации, пожилым людям, детям и другим нуждающимся.</li>
+              <li>Сохранение и восстановление объектов и территорий исторического, культурного и природоохранного значения, благотворительные акции и социальные проекты.</li>
+              <li>Организационные и административные расходы, связанные с благотворительной деятельностью, в установленных законом пределах.</li>
+            </ul>
+            <p className="quiet-row"><Link href="/donation-offer">Цели использования пожертвований в оферте</Link></p>
+          </section>
+          <HomeEvidence data={dependencies.evidence ?? { documents: [], projects: [] }} />
         </div>
       </section>
 
@@ -177,10 +201,10 @@ export function renderHomePage(
               <p>
                 {paymentsEnabled
                   ? "Можно поддержать фонд онлайн или по банковским реквизитам."
-                  : "Онлайн-оплата еще подключается. Реквизиты уже на сайте, туда же можно написать."}
+                  : "Поддержать фонд можно банковским переводом."}
               </p>
               <Link href="/help">
-                {paymentsEnabled ? "Перейти к оплате" : "Перейти к помощи"}
+                {paymentsEnabled ? "Перейти к оплате" : "Перейти к переводу"}
               </Link>
             </article>
             <div className="help-note">
@@ -227,6 +251,7 @@ export function renderHomePage(
   );
 }
 
-export default function HomePage() {
-  return renderHomePage();
+export default async function HomePage() {
+  const evidence = await loadHomeEvidence();
+  return renderHomePage({ ...defaultDependencies, evidence });
 }

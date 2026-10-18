@@ -53,19 +53,21 @@ describe("information pages", () => {
     expect(screen.queryByText(/Гуманизм|Взаимопомощь|Уважение/)).not.toBeInTheDocument();
   });
 
-  it("keeps help payments disabled", () => {
-    render(renderHelpPage());
+  it("prioritizes bank transfer when online payments are disabled", () => {
+    render(renderHelpPage({ paymentsEnabled: () => false }));
     expect(
-      screen.getByRole("heading", { name: "Онлайн-пожертвования скоро будут доступны" }),
+      screen.getByText("Онлайн-оплата пока недоступна. Вы можете сделать пожертвование банковским переводом."),
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "ЮKassa" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Как устроена оплата" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Как устроена оплата" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Посмотреть реквизиты" })).toHaveAttribute(
       "href",
       "/requisites",
     );
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
+    expect(screen.getAllByRole("heading", { level: 2 })[0]).toHaveTextContent("Перевод в приложении банка");
+    expect(screen.queryByText(/будет обрабатывать|появится форма|скоро будут доступны/)).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
@@ -132,7 +134,7 @@ describe("information pages", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("fails closed to the preview when availability throws", () => {
+  it("falls back to bank transfer when availability throws", () => {
     render(
       renderHelpPage({
         paymentsEnabled: () => {
@@ -141,8 +143,16 @@ describe("information pages", () => {
       }),
     );
     expect(
-      screen.getByRole("heading", { name: "Онлайн-пожертвования скоро будут доступны" }),
+      screen.getByText("Онлайн-оплата пока недоступна. Вы можете сделать пожертвование банковским переводом."),
     ).toBeVisible();
+  });
+
+  it("shows a single unavailable notice and working bank choices on configuration failure", () => {
+    const { container } = render(renderHelpPage({ paymentsEnabled: () => { throw new Error("private config"); } }));
+    expect(container.textContent?.match(/Онлайн-оплата пока недоступна/g)).toHaveLength(1);
+    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/private config/)).not.toBeInTheDocument();
   });
 
   it("shows confirmed contacts and a message form that is not a help application", () => {

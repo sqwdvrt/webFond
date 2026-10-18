@@ -21,6 +21,27 @@ const edits = {
 } as const;
 
 describe("ProjectForm React action integration", () => {
+  it("generates the address from the title and preserves a manually chosen address", async () => {
+    const user = userEvent.setup();
+    render(<ProjectForm mode="create" saveAction={async (state) => state} />);
+
+    await user.type(screen.getByLabelText("Название"), "Помощь детям");
+    expect(screen.getByLabelText("Адрес страницы")).toHaveValue("pomoshch-detyam");
+    expect(screen.getByText(/\/projects\/pomoshch-detyam/)).toBeVisible();
+    await user.clear(screen.getByLabelText("Адрес страницы"));
+    await user.type(screen.getByLabelText("Адрес страницы"), "deti-2026");
+    await user.type(screen.getByLabelText("Название"), " Москвы");
+    expect(screen.getByLabelText("Адрес страницы")).toHaveValue("deti-2026");
+  });
+
+  it("keeps an existing address when the project title changes", async () => {
+    const user = userEvent.setup();
+    render(<ProjectForm mode="edit" saveAction={async (state) => state} />);
+    await user.type(screen.getByLabelText("Адрес страницы"), "existing-project");
+    await user.type(screen.getByLabelText("Название"), "Новое название");
+    expect(screen.getByLabelText("Адрес страницы")).toHaveValue("existing-project");
+  });
+
   it("preserves every submitted edit after a duplicate repository error", async () => {
     const user = userEvent.setup();
     const create = vi.fn(async (): Promise<CreateEditorialResult> => ({
@@ -42,6 +63,7 @@ describe("ProjectForm React action integration", () => {
     render(<ProjectForm mode="create" saveAction={action} />);
 
     await user.type(screen.getByLabelText("Название"), edits.title);
+    await user.clear(screen.getByLabelText("Адрес страницы"));
     await user.type(screen.getByLabelText("Адрес страницы"), edits.slug);
     await user.type(screen.getByLabelText("Краткое описание"), edits.summary);
     await user.type(screen.getByLabelText("Содержание"), edits.content);

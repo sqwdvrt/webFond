@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import HomePage from "@/app/page";
+import { renderHomePage } from "@/app/page";
 import { renderProjectsPage } from "@/app/projects/page";
 import { DonationPreview } from "@/components/donation/donation-preview";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -56,7 +56,7 @@ function color(css: string, value: string) {
 
 describe("public accessibility", () => {
   it("has no serious or critical violations on the homepage shell", async () => {
-    const { container } = render(<><SiteHeader /><main><HomePage /></main><SiteFooter /></>);
+    const { container } = render(<><SiteHeader /><main>{renderHomePage({ paymentsEnabled: () => false })}</main><SiteFooter /></>);
     await expectNoHighImpactViolations(container);
   });
 

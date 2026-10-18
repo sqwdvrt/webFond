@@ -2,22 +2,14 @@ import { siteConfig } from "@/config/site";
 
 export function DonationPreview() {
   return (
-    <section className="donation-preview" aria-labelledby="donation-preview-title">
-      <div className="status-note">
-        <h2 id="donation-preview-title">Онлайн-пожертвования скоро будут доступны</h2>
-        <p>
-          Мы не показываем форму оплаты, пока платежный сценарий не подключен. Так меньше риска
-          отправить человека в тупик.
-        </p>
-      </div>
-      <p>
-        Пока фонд можно поддержать по банковским реквизитам или написать нам.
-        Ниже на странице можно перевести в приложении банка по QR-коду.
+    <div className="donation-preview">
+      <p className="status-note">
+        Онлайн-оплата пока недоступна. Вы можете сделать пожертвование банковским переводом.
       </p>
       <p className="quiet-row">
-        <a href="/requisites">Посмотреть реквизиты</a>
+        <a className="button button-primary" href="/requisites">Посмотреть реквизиты</a>
         <a href={`mailto:${siteConfig.legal.emailLabel}`}>Написать на почту</a>
       </p>
-    </section>
+    </div>
   );
 }

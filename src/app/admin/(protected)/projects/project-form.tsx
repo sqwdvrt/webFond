@@ -1,6 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+
+import { siteConfig } from "@/config/site";
+import { projectSlug } from "@/features/content-admin/project-slug";
 
 import type { ContentFormState } from "@/features/content-admin/mutations";
 import type { AdminProjectRow } from "@/features/content-admin/repository";
@@ -63,6 +66,21 @@ export function ProjectForm({
     return initialValues?.[name] ?? (name === "status" ? "DRAFT" : "");
   }
 
+  const formRef = useRef<HTMLFormElement>(null);
+  const customSlug = useRef(mode === "edit" || Boolean(value("slug")));
+  const [slugPreview, setSlugPreview] = useState(String(value("slug")));
+  const [lengths, setLengths] = useState({
+    title: String(value("title")).length,
+    summary: String(value("summary")).length,
+    content: String(value("content")).length,
+  });
+
+  useEffect(() => {
+    if (state.status === "error") {
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    }
+  }, [state]);
+
   function roubleValue(name: "goalAmountRoubles" | "manualRaisedRoubles") {
     if (state.values && Object.hasOwn(state.values, name)) {
       return String(state.values[name] ?? "");
@@ -97,7 +115,7 @@ export function ProjectForm({
       | "goalAmountRoubles"
       | "manualRaisedRoubles",
   ) => ({
-    "aria-describedby": `${name}-error`,
+    "aria-describedby": `${name}-hint ${name}-error`,
     "aria-invalid": Boolean(state.errors?.[name]),
   });
 
@@ -121,7 +139,7 @@ export function ProjectForm({
         </p>
       ) : null}
 
-      <form action={formAction} className={styles.loginForm}>
+      <form ref={formRef} action={formAction} className={styles.loginForm}>
         {mode === "edit" && initialValues ? (
           <input
             name="updatedAt"
@@ -130,27 +148,53 @@ export function ProjectForm({
           />
         ) : null}
 
+        <fieldset className={styles.projectFormSection}>
+          <legend>Основная информация</legend>
+          <p className={styles.fieldHint}>Название и адрес обязательны. Остальные поля можно заполнить позже в черновике.</p>
         <div className={styles.field}>
           <label htmlFor="title">Название</label>
-          <input {...field("title")} defaultValue={String(value("title"))} id="title" maxLength={160} name="title" required />
+          <input {...field("title")} defaultValue={String(value("title"))} id="title" maxLength={160} name="title" required onChange={(event) => {
+            const title = event.currentTarget.value;
+            setLengths((current) => ({ ...current, title: title.length }));
+            if (!customSlug.current) {
+              const slug = projectSlug(title);
+              const input = formRef.current?.elements.namedItem("slug") as HTMLInputElement | null;
+              if (input) input.value = slug;
+              setSlugPreview(slug);
+            }
+          }} />
+          <p id="title-hint" className={styles.fieldHint}>Например: «Помощь детям». {lengths.title} / 160</p>
           <FieldError id="title-error">{state.errors?.title}</FieldError>
         </div>
 
         <div className={styles.field}>
           <label htmlFor="slug">Адрес страницы</label>
-          <input {...field("slug")} defaultValue={String(value("slug"))} id="slug" maxLength={120} name="slug" required />
+          <input {...field("slug")} defaultValue={String(value("slug"))} id="slug" maxLength={120} name="slug" required autoCapitalize="none" spellCheck={false} onChange={(event) => {
+            customSlug.current = true;
+            setSlugPreview(event.currentTarget.value);
+          }} />
+          <p id="slug-hint" className={styles.fieldHint}>
+            {mode === "create" ? "Заполняется из названия. Можно изменить: строчные латинские буквы, цифры и дефисы." : "Изменение адреса сделает старую ссылку недоступной."}
+            <span className={styles.projectUrl}>{siteConfig.siteUrl.origin}/projects/{slugPreview || "adres-proekta"}</span>
+          </p>
           <FieldError id="slug-error">{state.errors?.slug}</FieldError>
         </div>
 
+        </fieldset>
+        <fieldset className={styles.projectFormSection}>
+          <legend>Описание и фото</legend>
+
         <div className={styles.field}>
           <label htmlFor="summary">Краткое описание</label>
-          <textarea {...field("summary")} defaultValue={String(value("summary"))} id="summary" maxLength={500} name="summary" rows={4} />
+          <textarea {...field("summary")} defaultValue={String(value("summary"))} id="summary" maxLength={500} name="summary" rows={4} onChange={(event) => setLengths((current) => ({ ...current, summary: event.target.value.length }))} />
+          <p id="summary-hint" className={styles.fieldHint}>Текст для карточки проекта. Для публикации: от 10 символов. {lengths.summary} / 500</p>
           <FieldError id="summary-error">{state.errors?.summary}</FieldError>
         </div>
 
         <div className={styles.field}>
           <label htmlFor="content">Содержание</label>
-          <textarea {...field("content")} defaultValue={String(value("content"))} id="content" maxLength={20_000} name="content" rows={12} />
+          <textarea {...field("content")} defaultValue={String(value("content"))} id="content" maxLength={20_000} name="content" rows={8} onChange={(event) => setLengths((current) => ({ ...current, content: event.target.value.length }))} />
+          <p id="content-hint" className={styles.fieldHint}>Кому нужна помощь, на что пойдут средства и какой результат ожидается. Для публикации: от 20 символов. {lengths.content} / 20 000</p>
           <FieldError id="content-error">{state.errors?.content}</FieldError>
         </div>
 
@@ -168,6 +212,10 @@ export function ProjectForm({
           value={String(value("imageUrl"))}
         />
 
+        </fieldset>
+        <fieldset className={styles.projectFormSection}>
+          <legend>Сбор средств</legend>
+
         <div className={styles.field}>
           <label htmlFor="goalAmountRoubles">Цель сбора, ₽</label>
           <input
@@ -178,7 +226,7 @@ export function ProjectForm({
             maxLength={8}
             name="goalAmountRoubles"
           />
-          <p className={styles.fieldHint}>
+          <p id="goalAmountRoubles-hint" className={styles.fieldHint}>
             Необязательно. Если цель не задана, шкала на сайте не показывается.
           </p>
           <FieldError id="goalAmountRoubles-error">{state.errors?.goalAmountRoubles}</FieldError>
@@ -194,11 +242,16 @@ export function ProjectForm({
             maxLength={8}
             name="manualRaisedRoubles"
           />
-          <p className={styles.fieldHint}>
-            Банковский перевод, наличные и другие суммы вне ЮKassa.
+          <p id="manualRaisedRoubles-hint" className={styles.fieldHint}>
+            Необязательно. Банковский перевод, наличные и другие суммы вне ЮKassa.
+            Успешные онлайн-пожертвования добавляются автоматически.
           </p>
           <FieldError id="manualRaisedRoubles-error">{state.errors?.manualRaisedRoubles}</FieldError>
         </div>
+
+        </fieldset>
+        <fieldset className={styles.projectFormSection}>
+          <legend>Публикация</legend>
 
         <div className={styles.field}>
           <label htmlFor="status">Статус</label>
@@ -213,8 +266,10 @@ export function ProjectForm({
               <option key={status} value={status}>{label}</option>
             ))}
           </select>
+          <p id="status-hint" className={styles.fieldHint}>Черновик виден только в админке. Опубликованный проект доступен посетителям. Архив скрывает проект из публичного списка.</p>
           <FieldError id="status-error">{state.errors?.status}</FieldError>
         </div>
+        </fieldset>
 
         <SubmitButton pendingLabel="Сохранение...">
           {mode === "create" ? "Создать проект" : "Сохранить"}

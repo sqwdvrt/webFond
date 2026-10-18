@@ -47,7 +47,7 @@ describe("SEO routes", () => {
         { id: "news-1", title: "News", slug: "published-news", summary: null, imageUrl: null, publishedAt: new Date("2026-08-23") },
       ],
       listDocuments: async () => [
-        { id: "document-1", title: "Report", category: "Reports", fileUrl: "https://files.example.org/private-document", publishedAt: new Date("2026-08-23") },
+        { id: "document-1", title: "Report", category: "Reports", fileUrl: "https://files.example.org/private-document", publishedAt: new Date("2026-08-23"), updatedAt: new Date("2026-08-23") },
       ],
     });
     const origin = metadata.metadataBase as URL;
@@ -176,7 +176,7 @@ describe("SEO routes", () => {
       { id: "news-1", title: "News", slug: "news", summary: null, imageUrl: null, publishedAt: new Date("2026-08-23") },
     ] });
     const reportsMetadata = await generateReportsMetadata({ listDocuments: async () => [
-      { id: "document-1", title: "Report", category: "Reports", fileUrl: "/document", publishedAt: new Date("2026-08-23") },
+      { id: "document-1", title: "Report", category: "Reports", fileUrl: "/document", publishedAt: new Date("2026-08-23"), updatedAt: new Date("2026-08-23") },
     ] });
 
     expect(newsMetadata).toMatchObject({

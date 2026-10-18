@@ -86,6 +86,7 @@ const publicDocumentRow = {
   category: adminDocumentRow.category,
   fileUrl: adminDocumentRow.fileUrl,
   publishedAt: adminDocumentRow.publishedAt,
+  updatedAt: adminDocumentRow.updatedAt,
 };
 
 const validPublishedRequisites = {
@@ -192,6 +193,7 @@ const publicDocumentSelect = {
   category: true,
   fileUrl: true,
   publishedAt: true,
+  updatedAt: true,
 };
 
 describe("content repository admin reads", () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import { CopyRequisitesButton } from "@/components/requisites/copy-button";
@@ -36,11 +37,13 @@ export function BankQrTransfer() {
       {selected ? (
         <div className="bank-qr-details">
           <figure className="bank-qr-code">
-            <img
+            <Image
               alt={selected.alt}
               height={240}
               src={selected.src}
               width={240}
+              // Keep the original QR pixels; Timeweb has no image optimizer.
+              unoptimized
             />
             <figcaption>
               <a download={`qr-${selected.id}.png`} href={selected.src}>
@@ -57,7 +60,7 @@ export function BankQrTransfer() {
                 </div>
               ))}
             </dl>
-            <CopyRequisitesButton text={formatBankQrCopy(selected)} />
+            <CopyRequisitesButton key={selected.id} text={formatBankQrCopy(selected)} />
           </div>
         </div>
       ) : (

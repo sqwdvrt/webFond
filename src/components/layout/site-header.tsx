@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 
 import { siteConfig } from "@/config/site";
 
@@ -16,18 +16,44 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeMenu = (returnFocus = true) => {
+    dialogRef.current?.close();
+    setIsMenuOpen(false);
+    if (returnFocus) menuButtonRef.current?.focus();
+    else menuButtonRef.current?.blur();
+  };
+
+  const navigateFromMenu = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const isSamePage = pathname === event.currentTarget.pathname;
+    if (isSamePage) event.preventDefault();
+    closeMenu(isSamePage);
+  };
+
+  const openMenu = () => {
+    dialogRef.current?.showModal();
+    setIsMenuOpen(true);
+    closeButtonRef.current?.focus();
+  };
 
   useEffect(() => {
     if (!isMenuOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsMenuOpen(false);
+    const desktop = window.matchMedia("(min-width: 981px)");
+    const closeOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        dialogRef.current?.close();
+        setIsMenuOpen(false);
+      }
     };
-    window.addEventListener("keydown", closeOnEscape);
+    desktop.addEventListener("change", closeOnDesktop);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", closeOnEscape);
+      desktop.removeEventListener("change", closeOnDesktop);
       document.body.style.overflow = previousOverflow;
     };
   }, [isMenuOpen]);
@@ -69,49 +95,76 @@ export function SiteHeader() {
             Помочь
           </Link>
           <button
+            ref={menuButtonRef}
             className="menu-button"
             type="button"
-            aria-label={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-label="Открыть меню"
+            aria-haspopup="dialog"
             aria-expanded={isMenuOpen}
-            aria-controls="mobile-navigation"
-            title={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
-            onClick={() => setIsMenuOpen((current) => !current)}
+            aria-controls="mobile-menu"
+            title="Открыть меню"
+            onClick={openMenu}
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <Menu size={24} />
           </button>
         </div>
       </div>
 
-      {isMenuOpen ? (
-        <>
-          <div className="menu-backdrop" onClick={closeMenu} />
-          <nav
-            className="mobile-navigation"
-            id="mobile-navigation"
-            aria-label="Мобильная"
-          >
-            <div className="container mobile-navigation-inner">
-              {siteConfig.navigation.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={isCurrentPath(pathname, item.href) ? "page" : undefined}
-                  onClick={closeMenu}
-                >
-                  {item.label}
-                </Link>
-              ))}
+      <dialog
+        ref={dialogRef}
+        className="mobile-menu"
+        id="mobile-menu"
+        aria-label="Меню сайта"
+        onKeyDown={(event) => {
+          if (event.key !== "Tab") return;
+          const controls = event.currentTarget.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]");
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeMenu();
+        }}
+        onClick={(event) => {
+          if (event.target !== event.currentTarget) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (event.clientX < bounds.left || event.clientX > bounds.right ||
+              event.clientY < bounds.top || event.clientY > bounds.bottom) closeMenu();
+        }}
+      >
+        <div className="container mobile-menu-heading">
+          <strong>Меню сайта</strong>
+          <button ref={closeButtonRef} className="menu-button" type="button"
+            aria-label="Закрыть меню" onClick={() => closeMenu()}>
+            <X size={24} />
+          </button>
+        </div>
+        <nav className="mobile-navigation" aria-label="Мобильная">
+          <div className="container mobile-navigation-inner">
+            {siteConfig.navigation.map((item) => (
               <Link
-                className="button button-primary mobile-help"
-                href={siteConfig.helpHref}
-                onClick={closeMenu}
+                key={item.href}
+                href={item.href}
+                aria-current={isCurrentPath(pathname, item.href) ? "page" : undefined}
+                onClick={navigateFromMenu}
               >
-                Помочь
+                {item.label}
               </Link>
-            </div>
-          </nav>
-        </>
-      ) : null}
+            ))}
+            <Link className="button button-primary mobile-help" href={siteConfig.helpHref}
+              onClick={navigateFromMenu}>
+              Помочь
+            </Link>
+          </div>
+        </nav>
+      </dialog>
     </header>
   );
 }

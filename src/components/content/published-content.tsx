@@ -13,7 +13,7 @@ type PublishedCardProps = {
   publishedAt: Date | null;
   summary: string | null;
   title: string;
-  headingLevel?: 2 | 3;
+  headingLevel?: 2 | 3 | 4;
   children?: ReactNode;
 };
 
@@ -50,7 +50,7 @@ export function PublishedCard({
   headingLevel = 2,
   children,
 }: PublishedCardProps) {
-  const Heading = `h${headingLevel}` as "h2" | "h3";
+  const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
 
   return (
     <article className="published-card">
