@@ -696,12 +696,145 @@
   box-shadow: inset 0 -3px 0 var(--accent);
 }
 
+.adminNavBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  color: var(--ink);
+  background: var(--accent);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+}
+
 .workspaceMain {
   min-width: 0;
 }
 
 .overviewNavigation {
   margin-top: 30px;
+  border-top: 1px solid var(--line);
+}
+
+.dashboardSection {
+  margin-top: 30px;
+}
+
+.dashboardSection h2 {
+  margin: 0 0 16px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.dashboardMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+}
+
+.dashboardMetric {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  min-height: 144px;
+  padding: 20px;
+  overflow-wrap: anywhere;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.dashboardMetric dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dashboardMetric dd {
+  display: grid;
+  align-content: end;
+  gap: 5px;
+  margin: 0;
+}
+
+.dashboardMetric dd span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dashboardMetric dd strong {
+  font-size: 24px;
+}
+
+.dashboardColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  min-width: 0;
+}
+
+.dashboardAlerts,
+.dashboardActivity {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.dashboardAlerts li,
+.dashboardActivity li,
+.dashboardEmpty {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dashboardAlerts li {
+  min-width: 0;
+  color: #6f4f00;
+}
+
+.dashboardAlerts a {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 44px;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+.dashboardAlerts a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.dashboardActivity li {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboardActivityEntity {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dashboardActivity time,
+.dashboardEmpty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.dashboardEmpty {
+  margin: 0;
   border-top: 1px solid var(--line);
 }
 
@@ -902,6 +1035,51 @@
   color: var(--muted);
 }
 
+.adminLoading {
+  display: grid;
+  gap: 14px;
+  width: min(100% - 40px, 1240px);
+  min-width: 0;
+  margin-inline: auto;
+  padding: 44px 0 88px;
+  overflow-wrap: anywhere;
+}
+
+.adminLoadingContent {
+  display: grid;
+  gap: 14px;
+}
+
+.adminLoading h1,
+.adminLoadingStatus {
+  margin: 0;
+}
+
+.adminLoading h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.adminLoadingStatus {
+  color: var(--muted);
+}
+
+.adminLoadingBlocks {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+  margin-top: 12px;
+}
+
+.adminLoadingBlocks span {
+  min-height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;
@@ -913,42 +1091,401 @@
   border: 0;
 }
 
-.messageList {
-  display: grid;
-  gap: 16px;
+.messagesPage {
+  width: min(100% - 40px, 1240px);
+  margin-inline: auto;
+  padding: 0 0 88px;
 }
 
-.messageCard {
-  padding: 22px 24px;
+.messageHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 24px;
+}
+
+.messageHeading h1 {
+  margin: 10px 0 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.messageFilters {
+  grid-template-columns: 170px 160px 160px minmax(220px, 1fr) auto;
+}
+
+.contactTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--surface);
+  border-block: 1px solid var(--line);
+}
+
+.contactTable th,
+.contactTable td {
+  min-width: 0;
+  padding: 15px 12px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+}
+
+.contactTable th {
+  color: var(--muted);
+  background: #f7f9f6;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.contactTable th:nth-child(1) {
+  width: 15%;
+}
+
+.contactTable th:nth-child(2) {
+  width: 18%;
+}
+
+.contactTable th:nth-child(3) {
+  width: 14%;
+}
+
+.contactTable th:nth-child(4) {
+  width: 12%;
+}
+
+.contactTable th:nth-child(6) {
+  width: 17%;
+}
+
+.contactExcerpt {
+  overflow-wrap: anywhere;
+}
+
+.contactEmail,
+.contactDetailLink {
+  min-width: 0;
+  color: var(--brand-dark);
+  overflow-wrap: anywhere;
+}
+
+.contactDetailLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.messageFilters input:focus-visible,
+.messageFilters select:focus-visible,
+.filterActions a:focus-visible,
+.filterActions button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.contactEmail:focus-visible,
+.contactDetailLink:focus-visible,
+.pagination a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.paginationPages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.paginationPages > span {
+  display: inline-grid;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  padding: 0 10px;
+}
+
+.paginationPages > span[aria-current="page"] {
+  color: var(--surface);
+  background: var(--brand);
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.paginationPlaceholder {
+  width: 100px;
+}
+
+.messageDetail a {
+  color: var(--brand-dark);
+  overflow-wrap: anywhere;
+}
+
+.statusNEW {
+  color: #1c5270;
+  background: #dcecf4;
+}
+
+.statusIN_PROGRESS {
+  color: #6f4f00;
+  background: #fff3c4;
+}
+
+.statusCLOSED {
+  color: #1c6031;
+  background: #dcefe1;
+}
+
+.statusSPAM {
+  color: #6b2d52;
+  background: #f2ddea;
+}
+
+.contactStatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.contactStatusNEW {
+  color: #174761;
+  background: #dcecf4;
+  border-color: #174761;
+}
+
+.contactStatusIN_PROGRESS {
+  color: #614500;
+  background: #fff3c4;
+  border-color: #614500;
+}
+
+.contactStatusCLOSED {
+  color: #174f29;
+  background: #dcefe1;
+  border-color: #174f29;
+}
+
+.contactStatusSPAM {
+  color: #602849;
+  background: #f2ddea;
+  border-color: #602849;
+}
+
+@media (forced-colors: active) {
+  .contactStatus {
+    border-color: CanvasText;
+    forced-color-adjust: auto;
+  }
+}
+
+.messageDetail {
+  display: grid;
+  gap: 28px;
+  margin-top: 34px;
+  padding: 26px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
 }
 
-.messageCard header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  margin-bottom: 12px;
-}
-
-.messageCard a {
-  color: var(--brand-dark);
-  font-weight: 700;
-}
-
-.messageCard time {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.messageCard p {
+.messageDetailMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
   margin: 0;
-  white-space: pre-wrap;
+}
+
+.messageDetailMeta div {
+  min-width: 0;
+}
+
+.messageDetailMeta dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.messageDetailMeta dd {
+  margin: 5px 0 0;
   overflow-wrap: anywhere;
 }
 
+.messageDetailActions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.messageDetailActions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 16px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.messageDetailActions a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.messageDetailBody {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.messageDetailBody h2,
+.messageEdit h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.messageDetailBody p {
+  margin: 14px 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.messageEdit {
+  margin-top: 28px;
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.messageEdit > .formMessage,
+.messageEdit > .formSuccess {
+  margin-top: 14px;
+}
+
+.messageEditForm {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.messageEditForm .primaryButton {
+  justify-self: start;
+}
+
+@media (max-width: 1040px) {
+  .messageFilters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
+  .adminLoading {
+    width: min(100% - 32px, 1240px);
+    padding: 36px 0 64px;
+  }
+
+  .messagesPage {
+    width: min(100% - 32px, 1240px);
+    padding: 0 0 64px;
+  }
+
+  .messageHeading h1 {
+    font-size: 34px;
+  }
+
+  .messageFilters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contactTable {
+    display: block;
+  }
+
+  .contactTable thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .contactTable tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  .contactTable tr {
+    display: grid;
+    min-width: 0;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .contactTable td {
+    display: grid;
+    grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr);
+    min-width: 0;
+    gap: 12px;
+    padding: 10px 0;
+    overflow-wrap: anywhere;
+  }
+
+  .contactTable td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .pagination {
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .paginationPages {
+    order: 3;
+    width: 100%;
+  }
+
+  .paginationPlaceholder {
+    width: 44px;
+  }
+
+  .messageDetail,
+  .messageEdit {
+    padding: 20px;
+  }
+
+  .messageDetailMeta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .messageEditForm .primaryButton {
+    width: 100%;
+  }
+
   .adminNavFrame::before,
   .adminNavFrame::after {
     content: "";
@@ -1016,6 +1553,11 @@
 
   .overviewNavigation small {
     line-height: 1.35;
+  }
+
+  .dashboardMetrics,
+  .dashboardColumns {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .adminError {

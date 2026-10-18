@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { submitContact, type ContactFormState, type SubmitContactDependencies } from "./submit";
+import {
+  defaultSaveContact,
+  submitContact,
+  type ContactFormState,
+  type SubmitContactDependencies,
+} from "./submit";
 
 const idle: ContactFormState = { status: "idle", message: "" };
 
@@ -82,5 +87,43 @@ describe("submitContact", () => {
 
     expect(result.status).toBe("error");
     expect(result.message).toMatch(/подождите/i);
+  });
+});
+
+describe("defaultSaveContact", () => {
+  it("creates a public contact without writing an admin audit event", async () => {
+    const bucket = vi.fn(async () => [{ count: 1 }]);
+    const createContact = vi.fn(async () => ({ id: "contact-1" }));
+    const createAudit = vi.fn(async () => {
+      throw new Error("public submissions must not create admin audit events");
+    });
+    const transaction = vi.fn(async (callback: (tx: {
+      $queryRaw: typeof bucket;
+      contactRequest: { create: typeof createContact };
+      adminAuditEvent: { createMany: typeof createAudit };
+    }) => Promise<void>) => callback({
+      $queryRaw: bucket,
+      contactRequest: { create: createContact },
+      adminAuditEvent: { createMany: createAudit },
+    }));
+    const client = { $transaction: transaction };
+    const input = {
+      name: valid.name,
+      email: valid.email,
+      message: valid.message,
+    };
+    const savedAt = new Date("2026-10-16T09:00:00.000Z");
+
+    await expect(defaultSaveContact(
+      input,
+      "safe-client-key",
+      savedAt,
+      client,
+    )).resolves.toBe("ok");
+
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(bucket).toHaveBeenCalledTimes(2);
+    expect(createContact).toHaveBeenCalledWith({ data: input });
+    expect(createAudit).not.toHaveBeenCalled();
   });
 });

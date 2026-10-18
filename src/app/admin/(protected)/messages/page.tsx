@@ -1,67 +1,57 @@
-import { listContactRequests } from "@/features/contact/repository";
+import { redirect } from "next/navigation";
+
+import {
+  buildContactQuery,
+  parseContactPageFilters,
+} from "@/features/admin-messages/filters";
+import { getContactRequestPage } from "@/features/admin-messages/repository";
+import type {
+  ContactPageFilters,
+  ParseResult,
+  SearchParamsInput,
+} from "@/features/admin-messages/types";
 import { requireAdminSession } from "@/lib/admin-auth/session";
 
-import styles from "../../admin.module.css";
+import { InvalidMessageFilters, MessagesView } from "./messages-view";
 
 export const dynamic = "force-dynamic";
 
-const createdAtFormatter = new Intl.DateTimeFormat("ru-RU", {
-  dateStyle: "short",
-  timeStyle: "short",
-  timeZone: "Europe/Moscow",
-});
-
 type MessagesPageDependencies = {
   requireSession: () => Promise<unknown>;
-  listRequests: typeof listContactRequests;
+  parseFilters: (input: SearchParamsInput) => ParseResult<ContactPageFilters>;
+  getPage: typeof getContactRequestPage;
+  navigate: (path: string) => never;
 };
 
 const defaultDependencies: MessagesPageDependencies = {
   requireSession: requireAdminSession,
-  listRequests: listContactRequests,
+  parseFilters: parseContactPageFilters,
+  getPage: getContactRequestPage,
+  navigate: redirect,
 };
 
 export async function renderMessagesPage(
+  searchParams: SearchParamsInput,
   dependencies: MessagesPageDependencies = defaultDependencies,
 ) {
   await dependencies.requireSession();
-  const messages = await dependencies.listRequests();
+  const parsed = dependencies.parseFilters(searchParams);
 
-  return (
-    <section className={styles.dashboard} aria-labelledby="messages-title">
-      <div className={styles.dashboardHeader}>
-        <div>
-          <span className={styles.eyebrow}>Обращения</span>
-          <h1 id="messages-title">Письма</h1>
-        </div>
-      </div>
+  if (!parsed.ok) return <InvalidMessageFilters />;
 
-      <div className={styles.dashboardContent}>
-        {messages.length === 0 ? (
-          <div className={styles.contentEmptyState} role="status">
-            <p>Писем пока нет</p>
-          </div>
-        ) : (
-          <div className={styles.messageList}>
-            {messages.map((message) => (
-              <article className={styles.messageCard} key={message.id}>
-                <header>
-                  <strong>{message.name}</strong>
-                  <a href={`mailto:${message.email}`}>{message.email}</a>
-                  <time dateTime={message.createdAt.toISOString()}>
-                    {createdAtFormatter.format(message.createdAt)}
-                  </time>
-                </header>
-                <p>{message.message}</p>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
+  const result = await dependencies.getPage(parsed.value);
+  if (result.page !== parsed.value.page) {
+    const query = buildContactQuery({ ...parsed.value, page: result.page });
+    dependencies.navigate(`/admin/messages${query.size ? `?${query}` : ""}`);
+  }
+
+  return <MessagesView filters={parsed.value} result={result} />;
 }
 
-export default async function MessagesPage() {
-  return renderMessagesPage();
+export default async function MessagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return renderMessagesPage(await searchParams);
 }

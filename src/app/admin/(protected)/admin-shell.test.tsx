@@ -5,11 +5,16 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  countNewContactRequests: vi.fn(),
   requireAdminSession: vi.fn(),
 }));
 
 vi.mock("@/lib/admin-auth/session", () => ({
   requireAdminSession: mocks.requireAdminSession,
+}));
+
+vi.mock("@/features/admin-messages/repository", () => ({
+  countNewContactRequests: mocks.countNewContactRequests,
 }));
 
 import { AdminShell } from "./admin-shell";
@@ -49,6 +54,7 @@ describe("AdminShell", () => {
     );
     expect(css).toContain(".submitButtonLabel");
     expect(css).toContain('a[aria-current="page"]');
+    expect(css).toMatch(/\.adminNavBadge\s*\{[^}]*color:\s*var\(--ink\)/);
 
     const stickyOffsets = [
       ...css.matchAll(/\.workspaceHeader\s*\{[^}]*top:\s*([^;]+);/g),
@@ -63,7 +69,7 @@ describe("AdminShell", () => {
 
   it("shows one account header and all protected sections", async () => {
     const { container } = render(
-      <AdminShell username="fixture-operator">
+      <AdminShell newContactRequestCount={0} username="fixture-operator">
         <h1>Содержимое раздела</h1>
       </AdminShell>,
     );
@@ -107,7 +113,7 @@ describe("AdminShell", () => {
   it("marks the open section as the current page", () => {
     vi.mocked(usePathname).mockReturnValue("/admin/news");
     render(
-      <AdminShell username="fixture-operator">
+      <AdminShell newContactRequestCount={0} username="fixture-operator">
         <h1>Содержимое раздела</h1>
       </AdminShell>,
     );
@@ -124,6 +130,8 @@ describe("AdminShell", () => {
 
 describe("ProtectedAdminLayout", () => {
   beforeEach(() => {
+    mocks.countNewContactRequests.mockReset();
+    mocks.countNewContactRequests.mockResolvedValue(0);
     mocks.requireAdminSession.mockReset();
     mocks.requireAdminSession.mockResolvedValue({
       username: "fixture-operator",
@@ -138,16 +146,60 @@ describe("ProtectedAdminLayout", () => {
       ProtectedAdminLayout({ children: <p>Закрытые данные</p> }),
     ).rejects.toBe(denied);
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
+    expect(mocks.countNewContactRequests).not.toHaveBeenCalled();
     expect(screen.queryByText("Закрытые данные")).not.toBeInTheDocument();
   });
 
-  it("passes the authenticated account to the shared shell", async () => {
+  it("loads the aggregate after authentication and passes it through the shared shell", async () => {
+    const calls: string[] = [];
+    mocks.requireAdminSession.mockImplementation(async () => {
+      calls.push("session");
+      return { username: "fixture-operator" };
+    });
+    mocks.countNewContactRequests.mockImplementation(async () => {
+      calls.push("count");
+      return 3;
+    });
+
     render(
       await ProtectedAdminLayout({ children: <p>Закрытые данные</p> }),
     );
 
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
+    expect(mocks.countNewContactRequests).toHaveBeenCalledOnce();
+    expect(calls).toEqual(["session", "count"]);
     expect(screen.getByText("fixture-operator")).toBeVisible();
     expect(screen.getByText("Закрытые данные")).toBeVisible();
+    const messagesLink = screen.getByRole("link", {
+      name: "Письма 3 новых обращения",
+    });
+    expect(messagesLink).toHaveAttribute(
+      "aria-label",
+      "Письма 3 новых обращения",
+    );
+    expect(messagesLink.querySelector("[class*='adminNavBadge']")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+  });
+
+  it("does not add a client fetch or API endpoint for the aggregate", () => {
+    const layoutSource = readFileSync(
+      resolve(process.cwd(), "src/app/admin/(protected)/layout.tsx"),
+      "utf8",
+    );
+    const shellSource = readFileSync(
+      resolve(process.cwd(), "src/app/admin/(protected)/admin-shell.tsx"),
+      "utf8",
+    );
+    const navSource = readFileSync(
+      resolve(process.cwd(), "src/app/admin/(protected)/admin-nav.tsx"),
+      "utf8",
+    );
+
+    expect(layoutSource).toContain("countNewContactRequests");
+    expect(shellSource).not.toMatch(/fetch\s*\(/);
+    expect(navSource).not.toMatch(/fetch\s*\(/);
+    expect(navSource).not.toContain("/api/");
   });
 });

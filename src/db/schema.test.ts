@@ -160,4 +160,54 @@ describe("Prisma schema", () => {
     );
     expect(projectFundraisingMigration).not.toMatch(/\bDROP\b/);
   });
+
+  it("supports the admin contact-request workflow and stable list ordering", () => {
+    const contactStatus =
+      schema.match(/enum ContactRequestStatus \{[\s\S]*?\n\}/)?.[0] ?? "";
+    const contactRequest =
+      schema.match(/model ContactRequest \{[\s\S]*?\n\}/)?.[0] ?? "";
+    const donation = schema.match(/model Donation \{[\s\S]*?\n\}/)?.[0] ?? "";
+
+    expect(contactStatus).toContain("SPAM");
+    expect(contactRequest).toContain("internalNote String?");
+    expect(contactRequest).toContain("@@index([status, createdAt, id])");
+    expect(contactRequest).toContain("@@index([createdAt, id])");
+    expect(donation).toContain("@@index([status, paidAt])");
+  });
+
+  it("defines the privacy-safe admin audit event model", () => {
+    expect(schema).toContain("model AdminAuditEvent {");
+    expect(schema).toContain(`enum AdminAuditActorKind {
+  ADMIN
+}`);
+    expect(schema).toContain(`enum AdminAuditAction {
+  CONTENT_CREATED
+  CONTENT_PUBLISHED
+  CONTENT_ARCHIVED
+  CONTENT_STATUS_CHANGED
+  CONTENT_DELETED
+  CONTACT_STATUS_CHANGED
+  CONTACT_NOTE_CHANGED
+}`);
+    expect(schema).toContain(`enum AdminAuditEntityType {
+  PROJECT
+  NEWS_POST
+  DOCUMENT
+  CONTACT_REQUEST
+}`);
+
+    const auditEvent =
+      schema.match(/model AdminAuditEvent \{[\s\S]*?\n\}/)?.[0] ?? "";
+
+    expect(auditEvent).toMatch(/\bactorKind\s+AdminAuditActorKind\b/);
+    expect(auditEvent).toMatch(/\baction\s+AdminAuditAction\b/);
+    expect(auditEvent).toMatch(/\bentityType\s+AdminAuditEntityType\b/);
+    expect(auditEvent).toMatch(/\bentityId\s+String\b/);
+    expect(auditEvent).toMatch(/\bpreviousStatus\s+String\?/);
+    expect(auditEvent).toMatch(/\bnextStatus\s+String\?/);
+    expect(auditEvent).toContain("@@index([createdAt, id])");
+    expect(auditEvent).toContain(
+      "@@index([entityType, entityId, createdAt])",
+    );
+  });
 });

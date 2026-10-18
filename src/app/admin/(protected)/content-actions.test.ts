@@ -17,6 +17,15 @@ const mocks = vi.hoisted(() => ({
   deleteDocumentMutation: vi.fn(),
   saveRequisitesMutation: vi.fn(),
   replaceInvalidRequisitesMutation: vi.fn(),
+  createAuditedProject: vi.fn(),
+  updateAuditedProject: vi.fn(),
+  deleteAuditedProject: vi.fn(),
+  createAuditedNews: vi.fn(),
+  updateAuditedNews: vi.fn(),
+  deleteAuditedNews: vi.fn(),
+  createAuditedDocument: vi.fn(),
+  updateAuditedDocument: vi.fn(),
+  deleteAuditedDocument: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
@@ -40,6 +49,17 @@ vi.mock("@/features/content-admin/mutations", async (importOriginal) => {
     replaceInvalidRequisitesMutation: mocks.replaceInvalidRequisitesMutation,
   };
 });
+vi.mock("@/features/admin-audit/content-repository", () => ({
+  createAuditedProject: mocks.createAuditedProject,
+  updateAuditedProject: mocks.updateAuditedProject,
+  deleteAuditedProject: mocks.deleteAuditedProject,
+  createAuditedNews: mocks.createAuditedNews,
+  updateAuditedNews: mocks.updateAuditedNews,
+  deleteAuditedNews: mocks.deleteAuditedNews,
+  createAuditedDocument: mocks.createAuditedDocument,
+  updateAuditedDocument: mocks.updateAuditedDocument,
+  deleteAuditedDocument: mocks.deleteAuditedDocument,
+}));
 
 import {
   createDocumentAction,
@@ -136,5 +156,32 @@ describe("content server actions", () => {
 
     expect(source).toMatch(/^['"]use server['"];\s/);
     expect(source).not.toMatch(/console\s*\.|JSON\.stringify\s*\(\s*formData|FormData\.entries/);
+  });
+
+  it.each([
+    ["project create", mocks.createProjectMutation, mocks.createAuditedProject, "create", (data: FormData) => createProjectAction(idle, data)],
+    ["project update", mocks.updateProjectMutation, mocks.updateAuditedProject, "update", (data: FormData) => updateProjectAction("project-1", idle, data)],
+    ["project delete", mocks.deleteProjectMutation, mocks.deleteAuditedProject, "remove", (data: FormData) => deleteProjectAction("project-1", "project-slug", idle, data)],
+    ["news create", mocks.createNewsMutation, mocks.createAuditedNews, "create", (data: FormData) => createNewsAction(idle, data)],
+    ["news update", mocks.updateNewsMutation, mocks.updateAuditedNews, "update", (data: FormData) => updateNewsAction("news-1", idle, data)],
+    ["news delete", mocks.deleteNewsMutation, mocks.deleteAuditedNews, "remove", (data: FormData) => deleteNewsAction("news-1", "news-slug", idle, data)],
+    ["document create", mocks.createDocumentMutation, mocks.createAuditedDocument, "create", (data: FormData) => createDocumentAction(idle, data)],
+    ["document update", mocks.updateDocumentMutation, mocks.updateAuditedDocument, "update", (data: FormData) => updateDocumentAction("document-1", idle, data)],
+    ["document delete", mocks.deleteDocumentMutation, mocks.deleteAuditedDocument, "remove", (data: FormData) => deleteDocumentAction("document-1", idle, data)],
+  ])("wires %s to its audited repository", async (
+    _label,
+    mutation,
+    auditedRepository,
+    dependencyName,
+    invoke,
+  ) => {
+    const state = { status: "error" as const, message: "stop" };
+    mutation.mockResolvedValue({ ok: false, state });
+
+    await invoke(new FormData());
+
+    expect(mutation.mock.calls[0]?.at(-1)).toEqual(
+      expect.objectContaining({ [dependencyName]: auditedRepository }),
+    );
   });
 });

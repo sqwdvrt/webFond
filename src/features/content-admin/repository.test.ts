@@ -440,6 +440,8 @@ describe("content repository creates", () => {
       await expect(create(input as never, client as never)).resolves.toEqual({
         status: "ok",
         id,
+        previousStatus: null,
+        publicationStatus: "DRAFT",
         previousSlug: null,
         slug,
         wasPublished: false,
@@ -497,6 +499,8 @@ describe("content repository creates", () => {
     ).resolves.toEqual({
       status: "ok",
       id: "document-1",
+      previousStatus: null,
+      publicationStatus: "DRAFT",
       wasPublished: false,
       isPublished: false,
       publishedAt: null,
@@ -575,6 +579,8 @@ describe("content repository updates", () => {
       ).resolves.toEqual({
         status: "ok",
         id,
+        previousStatus: "PUBLISHED",
+        publicationStatus: "ARCHIVED",
         previousSlug,
         slug,
         wasPublished: true,
@@ -612,6 +618,8 @@ describe("content repository updates", () => {
     ).resolves.toEqual({
       status: "ok",
       id: "document-1",
+      previousStatus: "PUBLISHED",
+      publicationStatus: "DRAFT",
       wasPublished: true,
       isPublished: false,
       publishedAt,

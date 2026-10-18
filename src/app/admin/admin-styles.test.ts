@@ -79,9 +79,13 @@ describe("admin navigation accessibility styles", () => {
   });
 
   it("keeps mobile scroll affordances pinned to a non-scrolling frame", () => {
-    expect(css).toMatch(
-      /@media \(max-width: 720px\) \{\s*\.adminNavFrame::before,\s*\.adminNavFrame::after\s*\{/,
-    );
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    expect(
+      mobileRules.some(
+        ({ selectors }) =>
+          selectors === ".adminNavFrame::before, .adminNavFrame::after",
+      ),
+    ).toBe(true);
     expect(declarationsFor(".adminNavFrame")).toMatchObject({
       position: "relative",
     });
@@ -177,6 +181,223 @@ describe("admin form control styles", () => {
       padding: "8px 0",
       background: "transparent",
       border: "0",
+    });
+  });
+});
+
+describe("admin dashboard styles", () => {
+  it("keeps dashboard grids and metric cards width-safe and collapses them on mobile", () => {
+    expect(declarationsFor(".dashboardMetrics")).toMatchObject({
+      "min-width": "0",
+    });
+    expect(declarationsFor(".dashboardColumns")).toMatchObject({
+      "min-width": "0",
+    });
+    expect(declarationsFor(".dashboardMetric")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    const gridRule = mobileRules.find(
+      ({ selectors }) => selectors === ".dashboardMetrics, .dashboardColumns",
+    );
+
+    expect(gridRule?.declarations).toMatchObject({
+      "grid-template-columns": "minmax(0, 1fr)",
+    });
+  });
+
+  it("makes the full warning message a safe keyboard target", () => {
+    expect(declarationsFor(".dashboardAlerts li")).toMatchObject({
+      "min-width": "0",
+    });
+    expect(declarationsFor(".dashboardAlerts a")).toMatchObject({
+      display: "flex",
+      "align-items": "center",
+      "min-height": "44px",
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".dashboardAlerts a:focus-visible")).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+  });
+
+  it("keeps activity text width-safe and distinguishes entity labels", () => {
+    expect(declarationsFor(".dashboardActivity li")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".dashboardActivityEntity")).toMatchObject({
+      color: "var(--muted)",
+      "font-size": "12px",
+      "font-weight": "700",
+      "text-transform": "uppercase",
+    });
+  });
+});
+
+describe("admin contact table styles", () => {
+  it("reduces the message filter grid before desktop columns overflow", () => {
+    const tabletRules = parseRules(mediaContentsFor("(max-width: 1040px)"));
+    const filterRule = tabletRules.find(
+      ({ selectors }) => selectors === ".messageFilters",
+    );
+
+    expect(filterRule?.declarations).toMatchObject({
+      "grid-template-columns": "repeat(3, minmax(0, 1fr))",
+    });
+  });
+
+  it("renders a width-safe semantic table and wraps long contact data", () => {
+    expect(declarationsFor(".messagesPage")).not.toHaveProperty("overflow-x");
+    expect(declarationsFor(".contactTable")).toMatchObject({
+      width: "100%",
+      "border-collapse": "collapse",
+      "table-layout": "fixed",
+    });
+    expect(declarationsFor(".contactTable")).not.toHaveProperty("min-width");
+    expect(declarationsFor(".contactTable th", ".contactTable td")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".contactExcerpt")).toMatchObject({
+      "overflow-wrap": "anywhere",
+    });
+    expect(declarationsFor(".contactEmail", ".contactDetailLink")).toMatchObject({
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+  });
+
+  it("exposes visible focus states for filters, contact links and pagination", () => {
+    expect(
+      declarationsFor(
+        ".messageFilters input:focus-visible",
+        ".messageFilters select:focus-visible",
+        ".filterActions a:focus-visible",
+        ".filterActions button:focus-visible",
+      ),
+    ).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+    expect(
+      declarationsFor(
+        ".contactEmail:focus-visible",
+        ".contactDetailLink:focus-visible",
+        ".pagination a:focus-visible",
+      ),
+    ).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+    expect(declarationsFor(".messageDetailActions a:focus-visible")).toMatchObject({
+      outline: "2px solid var(--brand)",
+      "outline-offset": "2px",
+    });
+  });
+
+  it("keeps filter, detail, pagination and alert actions large enough to target", () => {
+    expect(declarationsFor(".compactField input", ".compactField select")).toMatchObject({
+      "min-height": "44px",
+    });
+    expect(
+      declarationsFor(
+        ".exportButton",
+        ".primaryLink",
+        ".clearButton",
+        ".pagination a",
+      ),
+    ).toMatchObject({ "min-height": "44px" });
+    expect(declarationsFor(".messageDetailActions a")).toMatchObject({
+      "min-height": "44px",
+    });
+    expect(declarationsFor(".dashboardAlerts a")).toMatchObject({
+      "min-height": "44px",
+    });
+  });
+
+  it("pins the four contact status palettes and preserves them in forced colors", () => {
+    expect(declarationsFor(".contactStatusNEW")).toMatchObject({
+      color: "#174761",
+      background: "#dcecf4",
+      "border-color": "#174761",
+    });
+    expect(declarationsFor(".contactStatusIN_PROGRESS")).toMatchObject({
+      color: "#614500",
+      background: "#fff3c4",
+      "border-color": "#614500",
+    });
+    expect(declarationsFor(".contactStatusCLOSED")).toMatchObject({
+      color: "#174f29",
+      background: "#dcefe1",
+      "border-color": "#174f29",
+    });
+    expect(declarationsFor(".contactStatusSPAM")).toMatchObject({
+      color: "#602849",
+      background: "#f2ddea",
+      "border-color": "#602849",
+    });
+
+    const forcedColorRules = parseRules(mediaContentsFor("(forced-colors: active)"));
+    const statusRule = forcedColorRules.find(
+      ({ selectors }) => selectors === ".contactStatus",
+    );
+
+    expect(statusRule?.declarations).toMatchObject({
+      "border-color": "CanvasText",
+      "forced-color-adjust": "auto",
+    });
+  });
+
+  it("turns the same table DOM into cards without horizontal overflow on mobile", () => {
+    const mobileRules = parseRules(mediaContentsFor("(max-width: 720px)"));
+    const pageRule = mobileRules.find(({ selectors }) => selectors === ".messagesPage");
+    const filterRule = mobileRules.find(({ selectors }) => selectors === ".messageFilters");
+    const tableRule = mobileRules.find(({ selectors }) => selectors === ".contactTable");
+    const headRule = mobileRules.find(({ selectors }) => selectors === ".contactTable thead");
+    const bodyRule = mobileRules.find(({ selectors }) => selectors === ".contactTable tbody");
+    const rowRule = mobileRules.find(({ selectors }) => selectors === ".contactTable tr");
+    const cellRule = mobileRules.find(({ selectors }) => selectors === ".contactTable td");
+
+    expect(pageRule?.declarations).toMatchObject({
+      width: "min(100% - 32px, 1240px)",
+    });
+    expect(pageRule?.declarations).not.toHaveProperty("overflow-x");
+    expect(filterRule?.declarations).toMatchObject({
+      "grid-template-columns": "minmax(0, 1fr)",
+    });
+    expect(tableRule?.declarations).toMatchObject({ display: "block" });
+    expect(headRule?.declarations).toMatchObject({
+      position: "absolute",
+      width: "1px",
+      overflow: "hidden",
+    });
+    expect(headRule?.declarations.display).not.toBe("none");
+    expect(bodyRule?.declarations).toMatchObject({ display: "grid" });
+    expect(rowRule?.declarations).toMatchObject({ display: "grid" });
+    expect(cellRule?.declarations).toMatchObject({
+      display: "grid",
+      "grid-template-columns": "minmax(88px, 0.35fr) minmax(0, 1fr)",
+      "min-width": "0",
+      "overflow-wrap": "anywhere",
+    });
+
+    const dashboardRule = mobileRules.find(
+      ({ selectors }) => selectors === ".dashboard",
+    );
+    const workspaceRule = mobileRules.find(
+      ({ selectors }) =>
+        selectors === ".workspaceHeaderInner, .adminNav, .workspaceMain",
+    );
+    expect(dashboardRule?.declarations).toMatchObject({
+      width: "min(100% - 32px, 1040px)",
+    });
+    expect(workspaceRule?.declarations).toMatchObject({
+      width: "min(100% - 32px, 1240px)",
     });
   });
 });

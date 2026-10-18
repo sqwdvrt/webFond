@@ -19,17 +19,19 @@ import {
   type MutationOutcome,
 } from "@/features/content-admin/mutations";
 import {
-  createDocument,
-  createNews,
-  createProject,
-  deleteDocument,
-  deleteNews,
-  deleteProject,
+  createAuditedDocument,
+  createAuditedNews,
+  createAuditedProject,
+  deleteAuditedDocument,
+  deleteAuditedNews,
+  deleteAuditedProject,
+  updateAuditedDocument,
+  updateAuditedNews,
+  updateAuditedProject,
+} from "@/features/admin-audit/content-repository";
+import {
   replaceInvalidRequisites,
   saveRequisites,
-  updateDocument,
-  updateNews,
-  updateProject,
 } from "@/features/content-admin/repository";
 import {
   parseDocumentForm,
@@ -60,7 +62,7 @@ export async function createProjectAction(
   return applyMutation(createProjectMutation(formData, {
     requireSession: requireAdminSession,
     parse: parseProjectForm,
-    create: createProject,
+    create: createAuditedProject,
   }));
 }
 
@@ -72,7 +74,7 @@ export async function updateProjectAction(
   return applyMutation(updateProjectMutation(id, formData, {
     requireSession: requireAdminSession,
     parse: parseProjectForm,
-    update: updateProject,
+    update: updateAuditedProject,
     now,
   }));
 }
@@ -85,7 +87,7 @@ export async function deleteProjectAction(
 ): Promise<ContentFormState> {
   return applyMutation(deleteProjectMutation(id, slug, formData, {
     requireSession: requireAdminSession,
-    remove: deleteProject,
+    remove: deleteAuditedProject,
     now,
   }));
 }
@@ -97,7 +99,7 @@ export async function createNewsAction(
   return applyMutation(createNewsMutation(formData, {
     requireSession: requireAdminSession,
     parse: parseEditorialForm,
-    create: createNews,
+    create: createAuditedNews,
   }));
 }
 
@@ -109,7 +111,7 @@ export async function updateNewsAction(
   return applyMutation(updateNewsMutation(id, formData, {
     requireSession: requireAdminSession,
     parse: parseEditorialForm,
-    update: updateNews,
+    update: updateAuditedNews,
     now,
   }));
 }
@@ -122,7 +124,7 @@ export async function deleteNewsAction(
 ): Promise<ContentFormState> {
   return applyMutation(deleteNewsMutation(id, slug, formData, {
     requireSession: requireAdminSession,
-    remove: deleteNews,
+    remove: deleteAuditedNews,
     now,
   }));
 }
@@ -134,7 +136,7 @@ export async function createDocumentAction(
   return applyMutation(createDocumentMutation(formData, {
     requireSession: requireAdminSession,
     parse: parseDocumentForm,
-    create: createDocument,
+    create: createAuditedDocument,
   }));
 }
 
@@ -146,7 +148,7 @@ export async function updateDocumentAction(
   return applyMutation(updateDocumentMutation(id, formData, {
     requireSession: requireAdminSession,
     parse: parseDocumentForm,
-    update: updateDocument,
+    update: updateAuditedDocument,
     now,
   }));
 }
@@ -158,7 +160,7 @@ export async function deleteDocumentAction(
 ): Promise<ContentFormState> {
   return applyMutation(deleteDocumentMutation(id, formData, {
     requireSession: requireAdminSession,
-    remove: deleteDocument,
+    remove: deleteAuditedDocument,
     now,
   }));
 }

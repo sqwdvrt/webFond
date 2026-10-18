@@ -2,10 +2,15 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  countNewContactRequests: vi.fn(),
   getAdminSession: vi.fn(),
   redirect: vi.fn(),
   requireAdminSession: vi.fn(),
   usePathname: vi.fn(() => "/admin"),
+}));
+
+vi.mock("@/features/admin-messages/repository", () => ({
+  countNewContactRequests: mocks.countNewContactRequests,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -18,12 +23,15 @@ vi.mock("@/lib/admin-auth/session", () => ({
   setAdminSession: vi.fn(),
 }));
 
-import ProtectedAdminLayout from "./(protected)/layout";
+import ProtectedAdminLayout, {
+  dynamic as protectedAdminRendering,
+} from "./(protected)/layout";
 import AdminLoginPage from "./login/page";
 
 describe("admin route boundaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.countNewContactRequests.mockResolvedValue(0);
     mocks.getAdminSession.mockResolvedValue(null);
     mocks.requireAdminSession.mockResolvedValue({
       username: "fixture-operator",
@@ -41,6 +49,10 @@ describe("admin route boundaries", () => {
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
   });
 
+  it("forces every protected child route to render per request", () => {
+    expect(protectedAdminRendering).toBe("force-dynamic");
+  });
+
   it("renders protected content for an active session", async () => {
     const children = <p>Protected content</p>;
 
@@ -48,6 +60,7 @@ describe("admin route boundaries", () => {
 
     expect(screen.getByText("fixture-operator")).toBeVisible();
     expect(screen.getByText("Protected content")).toBeVisible();
+    expect(mocks.countNewContactRequests).toHaveBeenCalledOnce();
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
   });
 
