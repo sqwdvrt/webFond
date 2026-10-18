@@ -91,8 +91,10 @@
 
 ### Проверки релиза
 
-- `npm test`: 120 файлов passed, 4 DB-gated suites skipped; 1251 тест
-  passed, 12 skipped.
+- Финальная проверка выполнена 18 октября 2026 года на commit `9da5985`.
+- Focused UI/domain suite: 14 файлов и 91 тест passed, 0 skipped/failed.
+- `npm run verify`: exit 0. Входящий в него `npm test` завершил 124 файла
+  passed и 4 DB-gated suites skipped; 1289 тестов passed, 12 skipped.
 - `npm run lint`: 0 errors; остается одно существующее предупреждение
   `@next/next/no-img-element` для QR в `bank-qr-transfer.tsx`.
 - `npm run typecheck`: passed.
@@ -100,19 +102,18 @@
   команда не выполняет.
 - `npm run build`: passed на Next.js 16.4.2; все защищенные `/admin` маршруты,
   включая страницы создания, подтверждены как dynamic.
-- `npm audit --omit=dev`: 0 vulnerabilities после обычного `npm audit fix` без
-  `--force`.
+- `npm audit --omit=dev`: exit 0, 0 vulnerabilities.
 - Полный `npm audit`: 5 high в dev-only цепочке
   `eslint-config-next → fast-glob → micromatch → braces`. Предлагаемое
   автоматическое исправление требует `--force` и ломающего downgrade до
   `eslint-config-next@14.2.35`, поэтому оно не применялось; production dependency
   tree чист.
 - `ADMIN_OPERATIONS_TEST_DATABASE_URL`, `CONTENT_MIGRATION_TEST_DATABASE_URL`,
-  `CONTENT_REPOSITORY_TEST_DATABASE_URL` и `PAYMENTS_TEST_DATABASE_URL` в среде
-  отсутствовали. Соответствующие PostgreSQL suites не запускались и не считаются
-  прошедшими.
-- Authenticated browser smoke на 1440/390 и реальные `EXPLAIN` не выполнялись:
-  безопасная локальная БД и тестовые admin credentials не предоставлены.
+  `CONTENT_REPOSITORY_TEST_DATABASE_URL`, `PAYMENTS_TEST_DATABASE_URL` и
+  `DATABASE_URL` в среде отсутствовали. Соответствующие PostgreSQL suites не
+  запускались и не считаются прошедшими.
+- Authenticated browser smoke на 1440×900 и 390×844 и реальные `EXPLAIN` не выполнялись:
+  безопасная локальная БД, `ADMIN_USERNAME` и `ADMIN_PASSWORD` не предоставлены.
   Responsive/a11y поведение покрыто component, CSS-contract и axe тестами, но не
   выдается за браузерную приемку.
 
