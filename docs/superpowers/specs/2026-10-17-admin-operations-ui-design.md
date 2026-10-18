@@ -1,7 +1,7 @@
 # Admin Operations UI Design
 
-**Date:** 17 October 2026  
-**Status:** Approved for planning  
+**Date:** 17 October 2026
+**Status:** Approved for planning
 **Scope:** L1–L13 on top of the completed T1–T10 admin operations release
 
 ## Goal

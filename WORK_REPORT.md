@@ -91,23 +91,27 @@
 
 ### Проверки релиза
 
-- Финальная проверка выполнена 18 октября 2026 года на commit `9da5985`.
+- Финальная проверка выполнена 18 октября 2026 года на итоговом состоянии ветки
+  после `npm ci`; `package-lock.json` восстановлен точно к base `1d480ed`.
+- `npm ci`: exit 0, установлено 495 пакетов из восстановленного lockfile.
 - Focused UI/domain suite: 14 файлов и 91 тест passed, 0 skipped/failed.
 - `npm run verify`: exit 0. Входящий в него `npm test` завершил 124 файла
-  passed и 4 DB-gated suites skipped; 1289 тестов passed, 12 skipped.
+  passed и 4 DB-gated suites skipped; 1290 тестов passed, 12 skipped.
 - `npm run lint`: 0 errors; остается одно существующее предупреждение
   `@next/next/no-img-element` для QR в `bank-qr-transfer.tsx`.
 - `npm run typecheck`: passed.
 - `npm run db:validate` с безопасным placeholder URL: passed, подключения к БД
   команда не выполняет.
-- `npm run build`: passed на Next.js 16.4.2; все защищенные `/admin` маршруты,
+- `npm run build`: passed на Next.js 16.3.1; все защищенные `/admin` маршруты,
   включая страницы создания, подтверждены как dynamic.
-- `npm audit --omit=dev`: exit 0, 0 vulnerabilities.
-- Полный `npm audit`: 5 high в dev-only цепочке
-  `eslint-config-next → fast-glob → micromatch → braces`. Предлагаемое
-  автоматическое исправление требует `--force` и ломающего downgrade до
-  `eslint-config-next@14.2.35`, поэтому оно не применялось; production dependency
-  tree чист.
+- `npm audit --omit=dev`: exit 1, 4 production vulnerabilities — 3 high и
+  1 critical (`next`, `sharp`, `source-map-js`, вложенный в `@vercel/blob`
+  `undici`).
+- Полный `npm audit`: exit 1, 11 vulnerabilities — 10 high и 1 critical;
+  дополнительно затронуты dev-зависимости `brace-expansion`, `braces`, `js-yaml`
+  и `undici`. `npm audit fix` не применялся, поскольку он изменил бы
+  восстановленный baseline lock; вариант с `--force` также предлагает ломающий
+  downgrade `eslint-config-next`.
 - `ADMIN_OPERATIONS_TEST_DATABASE_URL`, `CONTENT_MIGRATION_TEST_DATABASE_URL`,
   `CONTENT_REPOSITORY_TEST_DATABASE_URL`, `PAYMENTS_TEST_DATABASE_URL` и
   `DATABASE_URL` в среде отсутствовали. Соответствующие PostgreSQL suites не
