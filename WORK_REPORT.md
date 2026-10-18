@@ -67,7 +67,7 @@
 | T2 — API списка | `admin-messages/filters.ts` и `repository.ts`: строгие query-параметры, поиск по имени/email/тексту, статус/даты, `RepeatableRead`, count и страницы по 25; repository/filter tests. |
 | T3 — изменение обращения | `admin-messages/mutation.ts`: auth-first, canonical `updatedAt`, optimistic `updateMany`, понятный conflict, сохранение безопасных значений; mutation/action/form tests. |
 | T4 — журнал действий | `admin-audit/events.ts`, audited content/contact repositories: allow-list событий без PII/текстов/секретов, atomic audit и no-op/error правила; unit tests и DB-gated rollback test. |
-| T5 — read model | `admin-dashboard/read-model.ts`: одна `RepeatableRead`-транзакция для счетчиков, alerts и 20 последних безопасных действий; query-shape/page tests. |
+| T5 — read model | `admin-dashboard/read-model.ts`: одна `RepeatableRead`-транзакция для счетчиков, alerts и 10 последних безопасных действий; query-shape/page tests. |
 | T6 — пожертвования | `moscow.ts` и dashboard aggregates: `SUCCEEDED`, `paidAt`, московские day/month `[start,end)`, null sum → 0; boundary tests и DB-gated integration. |
 | T7 — предупреждения | `admin-dashboard/alerts.ts`, `readiness/evaluate.ts`: строгие 48ч/1ч cutoff и безопасный `ADMIN_AUTH`; unit/route tests. |
 | T8 — badge | protected layout → `AdminShell` → `AdminNav`: после сессии передается только число `NEW`, без API/fetch; shell/nav/a11y tests. |

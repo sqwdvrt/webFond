@@ -170,4 +170,18 @@ describe("admin operations operator documentation", () => {
       /(?:additive|аддитивн|добавленн[а-яё]*)[^.]{0,140}(?:схем[а-яё]*)[^.]{0,100}(?:оста[её]тся|сохраняется|in place)/i,
     );
   });
+
+  it("explains why removing a PostgreSQL enum value is unsafe for emergency rollback", () => {
+    const documentation = normalize(rollbackSection);
+
+    expect(documentation).toMatch(
+      /PostgreSQL[^.]{0,180}enum[^.]{0,180}(?:нельзя|не поддерживает)[^.]{0,120}DROP VALUE/i,
+    );
+    expect(documentation).toMatch(
+      /(?:замен[а-яё]*|создани[а-яё]*)[^.]{0,120}(?:enum|тип)[^.]{0,180}перепис[а-яё]*[^.]{0,180}(?:зависим[а-яё]* данн|данн[а-яё]* зависим)/i,
+    );
+    expect(documentation).toMatch(
+      /(?:перепис[а-яё]*|замен[а-яё]*)[^.]{0,220}блокиров[а-яё]*[^.]{0,180}(?:неприемлем|недопустим)[^.]{0,120}(?:аварийн[а-яё]* откат|emergency rollback)/i,
+    );
+  });
 });
