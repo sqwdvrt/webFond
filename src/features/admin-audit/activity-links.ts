@@ -15,7 +15,7 @@ export async function resolveAuditLinks(events: AuditEventWithEntity[], tx: Audi
   } as const;
   const existing = new Map<string, Set<string>>();
   await Promise.all(Object.entries(targets).map(async ([type, [reader]]) => {
-    const ids = events.filter((event) => event.entityType === type && event.entityId).map((event) => event.entityId);
+    const ids = [...new Set(events.filter((event) => event.entityType === type && event.entityId).map((event) => event.entityId))];
     if (ids.length) existing.set(type, new Set((await reader.findMany({ where: { id: { in: ids } }, select: { id: true } })).map((row) => row.id)));
   }));
   const hasRequisites = events.some((event) => event.entityType === "REQUISITES" && event.entityId)

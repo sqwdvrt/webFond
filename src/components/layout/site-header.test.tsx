@@ -25,8 +25,8 @@ describe("SiteHeader", () => {
       screen.getByRole("link", { name: "Фонд «Быть Добру»" }),
     ).toHaveAttribute("href", "/");
     expect(
-      screen.getByRole("img", { name: "Знак фонда «Быть Добру»: руки, росток и птица" }),
-    ).toBeVisible();
+      screen.getByRole("img", { name: "Знак фонда «Быть Добру»: руки, росток и птица" }).getAttribute("src"),
+    ).toContain("mark-small.webp");
     expect(screen.getByRole("navigation", { name: "Основная" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Нужна помощь" })).toHaveAttribute(
       "href",

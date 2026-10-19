@@ -184,6 +184,7 @@ type AdminDocumentDelegate = {
 
 type PublicDocumentDelegate = {
   findMany(args: {
+    take?: number;
     where: { status: "PUBLISHED" };
     select: typeof publicDocumentSelect;
     orderBy: typeof publicOrder;
@@ -618,6 +619,17 @@ export function listPublishedDocuments(
     where: { status: "PUBLISHED" },
     select: publicDocumentSelect,
     orderBy: publicOrder,
+  });
+}
+
+export function listHomeDocuments(
+  client: { document: Pick<PublicDocumentDelegate, "findMany"> } = prisma,
+) {
+  return client.document.findMany({
+    where: { status: "PUBLISHED" },
+    select: publicDocumentSelect,
+    orderBy: publicOrder,
+    take: 3,
   });
 }
 

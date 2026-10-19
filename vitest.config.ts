@@ -18,6 +18,7 @@ export default defineConfig({
       paymentIntegrationPath,
       "src/features/payments/reconciliation-repository.integration.test.ts",
       ".worktrees/**",
+      "scripts/performance/**",
     ],
     setupFiles: ["./vitest.setup.ts"],
   },

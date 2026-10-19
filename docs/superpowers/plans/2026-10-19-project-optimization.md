@@ -12,6 +12,8 @@
 
 **Корень проекта:** `/Users/sqwdvrt/VS Code/projects/webFond`. Пути ниже относительно этого корня; команды выполняются в нём либо в согласованном checkout с тем же состоянием.
 
+**Примечание исполнения 19 октября:** оптимизации совмещены с пользовательским обновлением `52aac51` (папки обращений и полный журнал изменений). Поэтому пакетное разрешение ссылок выполняется в общем `admin-audit/activity-links.ts`, а обзор сохраняет новый лимит **5** событий и фильтрацию INBOX. Повторные ID дедуплицируются также для полного журнала. Оптимизация не добавляет миграций; пользовательское обновление имеет собственную миграцию `20261019100000_contact_folders`, которую нельзя потерять при выпуске или откате. Пустой POST от Next.js проверяется чтением потока до EOF с лимитом 0, а не наличием объекта body. По замеру памяти добавлен лимит двух параллельных декодирований фото с 503/Retry-After без очереди. Фактические результаты и оставшиеся внешние действия записываются в `docs/performance/2026-10-19-results.md`.
+
 ---
 
 ## 0. Порядок, ограничения и результат
@@ -81,13 +83,13 @@
 
 **Изменить:** `src/features/homepage/evidence.ts`, `src/features/homepage/evidence.test.ts`, `src/features/fundraising/public-projects.ts`, `src/features/fundraising/public-projects.test.ts`, `src/features/content-admin/repository.ts`, `src/features/content-admin/repository.test.ts`.
 
-- [ ] Добавить отдельные функции `listHomeProjectsForDisplay(client = prisma)` и `listHomeDocuments(client = prisma)` с фиксированным лимитом 3. Существующие `listPublishedProjectsForDisplay(client)` и `listPublishedDocuments(client)` сохраняют параметры и семантику для других страниц.
-- [ ] До реализации проверить тестами `where: {status: 'PUBLISHED'}`, `take: 3`, прежний стабильный порядок `publishedAt DESC, id DESC` и безопасный select без полного content.
-- [ ] Для проектов написать сценарий: в БД >3 проектов; groupBy получает только ID отобранных трёх, причём только с положительной целью. При отсутствии таких целей groupBy не вызывается. Расчёты SUCCEEDED/копейки/ручная сумма остаются прежними.
-- [ ] Запустить целевые тесты и зафиксировать ожидаемое падение. Вынести минимальный общий внутренний query-builder, если нужно избежать дублирования select/order; не вводить универсальный repository framework.
-- [ ] Переключить зависимости `loadHomeEvidence` на ограниченные функции. Сохранить Promise.allSettled и разницу `[]`/`null`; defensive slice допустим, но не считается заменой SQL LIMIT.
-- [ ] Проверить целевые тесты, `src/app/page.test.tsx`, `src/components/content/home-evidence.test.tsx`, `src/features/fundraising/totals.test.ts` и typecheck.
-- [ ] На локальной БД сверить реальные LIMIT/число строк и `EXPLAIN (ANALYZE, BUFFERS)` без production-данных. Ожидается максимум 3 строки каждой основной выборки и один groupBy для отобранных проектов; новые индексы не добавлять без доказательства.
+- [x] Добавить отдельные функции `listHomeProjectsForDisplay(client = prisma)` и `listHomeDocuments(client = prisma)` с фиксированным лимитом 3. Существующие `listPublishedProjectsForDisplay(client)` и `listPublishedDocuments(client)` сохраняют параметры и семантику для других страниц.
+- [x] До реализации проверить тестами `where: {status: 'PUBLISHED'}`, `take: 3`, прежний стабильный порядок `publishedAt DESC, id DESC` и безопасный select без полного content.
+- [x] Для проектов написать сценарий: в БД >3 проектов; groupBy получает только ID отобранных трёх, причём только с положительной целью. При отсутствии таких целей groupBy не вызывается. Расчёты SUCCEEDED/копейки/ручная сумма остаются прежними.
+- [x] Запустить целевые тесты и зафиксировать ожидаемое падение. Вынести минимальный общий внутренний query-builder, если нужно избежать дублирования select/order; не вводить универсальный repository framework.
+- [x] Переключить зависимости `loadHomeEvidence` на ограниченные функции. Сохранить Promise.allSettled и разницу `[]`/`null`; defensive slice допустим, но не считается заменой SQL LIMIT.
+- [x] Проверить целевые тесты, `src/app/page.test.tsx`, `src/components/content/home-evidence.test.tsx`, `src/features/fundraising/totals.test.ts` и typecheck.
+- [x] На локальной БД сверить реальные LIMIT/число строк и `EXPLAIN (ANALYZE, BUFFERS)` без production-данных. Ожидается максимум 3 строки каждой основной выборки и один groupBy для отобранных проектов; новые индексы не добавлять без доказательства.
 
 **Готово:** размер выдачи главной не растёт с размером коллекций; полные разделы и суммы не изменились.
 **Коммит:** `perf(home): limit evidence queries before fundraising aggregation`.
@@ -96,12 +98,12 @@
 
 **Изменить:** `src/features/admin-dashboard/read-model.ts`, `src/features/admin-dashboard/read-model.test.ts`, `src/features/admin-operations.integration.test.ts`.
 
-- [ ] Написать тест с десятью событиями одного типа, повторными ID, отсутствующей сущностью и событием REQUISITES. Проверить один findMany на тип, дедупликацию ID, порядок/количество событий и `href: null` для удалённой сущности.
-- [ ] Проверить смешанные PROJECT, NEWS_POST, DOCUMENT, CONTACT_REQUEST, DONATION и REQUISITES; не запрашивать делегаты отсутствующих типов. Существующие mock-делегаты дополнить findMany там, где потребуется.
-- [ ] Внутри существующей RepeatableRead-транзакции собрать `Map<entityType, Set<id>>`; выполнить `findMany({where:{id:{in:[...] }},select:{id:true}})` для каждого присутствующего типа. Наличие requisites проверить один раз с select key.
-- [ ] Построить события из исходного массива и таблиц существования. DONATION сохраняет `/admin/donations?donationId=...`, другие типы — текущие адреса. Ничего из contact/email/note/content не выбирать.
-- [ ] Не убирать транзакцию ради обещания параллельности Promise.all: согласованный snapshot важнее. Не объединять все счётчики и агрегаты в большой raw SQL без отдельного профилирования.
-- [ ] Прогнать unit и локальную admin-operations интеграцию. Проверить 0–6 запросов разрешения ссылок вместо 0–10 и отсутствие дубликатов запросов для одной сущности; это предел только блока ссылок, а не всего dashboard.
+- [x] Написать тест с десятью событиями одного типа, повторными ID, отсутствующей сущностью и событием REQUISITES. Проверить один findMany на тип, дедупликацию ID, порядок/количество событий и `href: null` для удалённой сущности.
+- [x] Проверить смешанные PROJECT, NEWS_POST, DOCUMENT, CONTACT_REQUEST, DONATION и REQUISITES; не запрашивать делегаты отсутствующих типов. Существующие mock-делегаты дополнить findMany там, где потребуется.
+- [x] Внутри существующей RepeatableRead-транзакции собрать `Map<entityType, Set<id>>`; выполнить `findMany({where:{id:{in:[...] }},select:{id:true}})` для каждого присутствующего типа. Наличие requisites проверить один раз с select key.
+- [x] Построить события из исходного массива и таблиц существования. DONATION сохраняет `/admin/donations?donationId=...`, другие типы — текущие адреса. Ничего из contact/email/note/content не выбирать.
+- [x] Не убирать транзакцию ради обещания параллельности Promise.all: согласованный snapshot важнее. Не объединять все счётчики и агрегаты в большой raw SQL без отдельного профилирования.
+- [x] Прогнать unit и локальную admin-operations интеграцию. Проверить 0–6 запросов разрешения ссылок вместо 0–10 и отсутствие дубликатов запросов для одной сущности; это предел только блока ссылок, а не всего dashboard.
 
 **Готово:** число запросов блока зависит от числа типов сущностей, а не числа событий; атомарность и прежние href сохранены.
 **Коммит:** `perf(admin): resolve audit entity links in batches`.
@@ -151,10 +153,10 @@
 
 **Изменить:** `src/app/sitemap.ts`, `src/app/seo-routes.test.ts`, `src/features/fundraising/public-projects.ts`, `public-projects.test.ts`; создать `src/features/content-admin/sitemap-repository.ts`, `.test.ts`.
 
-- [ ] Для `listPublishedProjectDonationOptions` выбрать только slug/title с прежним where/order. Отдельный узкий delegate, без полного project list select, fundraising и изменений ответа.
-- [ ] Для sitemap создать запросы только slug опубликованных Project/NewsPost и проверку существования опубликованного Document через findFirst с select id. Не читать summary, imageUrl, fileUrl и content ради URL.
-- [ ] Сохранить набор публичных маршрутов, порядок и текущий fallback staticEntries при отказе БД. Дополнительную оптимизацию lastModified не смешивать с этим изменением.
-- [ ] Написать тесты на сохранение sitemap-поведения и отсутствие лишних полей в запросе; прогнать SEO-route тесты, fundraising тесты, help-page тесты и typecheck.
+- [x] Для `listPublishedProjectDonationOptions` выбрать только slug/title с прежним where/order. Отдельный узкий delegate, без полного project list select, fundraising и изменений ответа.
+- [x] Для sitemap создать запросы только slug опубликованных Project/NewsPost и проверку существования опубликованного Document через findFirst с select id. Не читать summary, imageUrl, fileUrl и content ради URL.
+- [x] Сохранить набор публичных маршрутов, порядок и текущий fallback staticEntries при отказе БД. Дополнительную оптимизацию lastModified не смешивать с этим изменением.
+- [x] Написать тесты на сохранение sitemap-поведения и отсутствие лишних полей в запросе; прогнать SEO-route тесты, fundraising тесты, help-page тесты и typecheck.
 
 **Готово:** sitemap и список назначения получают только необходимые данные; SEO и форма оплаты не меняют наблюдаемое поведение.
 **Коммит:** `perf(content): narrow sitemap and donation option queries`.

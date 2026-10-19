@@ -1,0 +1,71 @@
+{
+  "results": [
+    {
+      "path": "/",
+      "width": 1440,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/help",
+      "width": 1440,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/contacts",
+      "width": 1440,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/need-help",
+      "width": 1440,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/help",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/contacts",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    },
+    {
+      "path": "/need-help",
+      "width": 390,
+      "overflow": false,
+      "h1": 1,
+      "logo": "/brand/mark-small.webp"
+    }
+  ],
+  "errors": [],
+  "adminLogin": true,
+  "upload": {
+    "status": 200,
+    "bytes": 11800,
+    "decoded": {
+      "width": 880,
+      "height": 880
+    },
+    "store": "local S3-compatible test stub"
+  }
+}

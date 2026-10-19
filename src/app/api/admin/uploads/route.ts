@@ -1,3 +1,6 @@
+import { readLimitedBody } from "@/features/payments/read-limited-body";
+import { UPLOAD_MAX_BYTES } from "@/features/uploads/limits";
+import { ImageProcessingBusyError } from "@/features/uploads/prepare-image";
 import { getAdminSession } from "@/lib/admin-auth/session";
 import {
   inspectUpload,
@@ -80,8 +83,17 @@ export async function handleAdminUpload(
 
   let formData: FormData;
   try {
+    const body = await readLimitedBody(request, BODY_LIMIT);
+    if (body.kind === "too-large") {
+      return jsonResponse(413, { error: "too_large" });
+    }
+    const boundedRequest = new Request(request.url, {
+      method: "POST",
+      headers: { "Content-Type": request.headers.get("Content-Type") ?? "" },
+      body: Buffer.from(body.bytes),
+    });
     formData = await (dependencies.readFormData ?? ((current) => current.formData()))(
-      request,
+      boundedRequest,
     );
   } catch {
     return jsonResponse(400, { error: "invalid" });
@@ -94,6 +106,10 @@ export async function handleAdminUpload(
     return jsonResponse(400, { error: "invalid" });
   }
 
+  if (file.size > UPLOAD_MAX_BYTES) {
+    return jsonResponse(413, { error: "too_large" });
+  }
+
   const bytes = new Uint8Array(await file.arrayBuffer());
 
   try {
@@ -101,6 +117,9 @@ export async function handleAdminUpload(
     const stored = await dependencies.store({ bytes, detected, kind });
     return jsonResponse(200, { url: stored.url });
   } catch (error) {
+    if (error instanceof ImageProcessingBusyError) {
+      return jsonResponse(503, { error: "busy", message: "Загрузка занята. Повторите через несколько секунд." }, { "Retry-After": "1" });
+    }
     if (error instanceof UploadValidationError) {
       return jsonResponse(400, { error: "invalid", message: error.message });
     }

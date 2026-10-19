@@ -1,0 +1,79 @@
+name: quality
+
+on:
+  pull_request:
+  push:
+    branches: [develop, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: foundation_quality_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      PAYMENTS_ENABLED: "false"
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      SITE_URL: http://localhost:3000
+      AUTH_SECRET: ci-only-dummy-auth-secret-32-characters
+      ADMIN_USERNAME: ci-operator
+      ADMIN_PASSWORD: ci-only-dummy-password
+      ADMIN_TRUST_PROXY: "false"
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+      - run: npx prisma migrate deploy
+      - run: npm run verify
+      # Keep database suites in separate steps: the migration suite relocates pg_trgm.
+      - name: Test content migrations
+        run: npx vitest run src/db/content-migration.integration.test.ts
+        env:
+          CONTENT_MIGRATION_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      - name: Test admin operations migrations
+        run: npx vitest run src/db/admin-operations-migration.integration.test.ts
+        env:
+          ADMIN_OPERATIONS_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      - name: Test content repository
+        run: npx vitest run src/features/content-admin/repository.integration.test.ts
+        env:
+          CONTENT_REPOSITORY_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      - name: Test admin operations
+        run: npx vitest run src/features/admin-operations.integration.test.ts
+        env:
+          ADMIN_OPERATIONS_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      - name: Test bounded rate limit cleanup
+        run: npx vitest run src/features/maintenance/rate-limit-cleanup.integration.test.ts
+        env:
+          ADMIN_OPERATIONS_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/foundation_quality_test
+      - run: npm audit --omit=dev --audit-level=high

@@ -58,6 +58,7 @@ type PublicProjectClient = {
       where: { status: "PUBLISHED" };
       select: typeof publicProjectListSelect;
       orderBy: typeof publicOrder;
+      take?: number;
     }): Promise<ProjectListRow[]>;
     findFirst(args: {
       where: { slug: string; status: "PUBLISHED" };
@@ -116,10 +117,21 @@ async function onlineTotals(
 export async function listPublishedProjectsForDisplay(
   client: PublicProjectClient = prisma as unknown as PublicProjectClient,
 ): Promise<PublicProjectCard[]> {
+  return listProjectCards(client);
+}
+
+export async function listHomeProjectsForDisplay(
+  client: PublicProjectClient = prisma as unknown as PublicProjectClient,
+): Promise<PublicProjectCard[]> {
+  return listProjectCards(client, 3);
+}
+
+async function listProjectCards(client: PublicProjectClient, take?: number): Promise<PublicProjectCard[]> {
   const rows = await client.project.findMany({
     where: { status: "PUBLISHED" },
     select: publicProjectListSelect,
     orderBy: publicOrder,
+    ...(take === undefined ? {} : { take }),
   });
   const sums = await onlineTotals(rows, client);
 
@@ -157,11 +169,17 @@ export async function findPublishedProjectIdBySlug(
 }
 
 export async function listPublishedProjectDonationOptions(
-  client: PublicProjectClient = prisma as unknown as PublicProjectClient,
+  client: { project: {
+    findMany(args: {
+      where: { status: "PUBLISHED" };
+      select: { slug: true; title: true };
+      orderBy: typeof publicOrder;
+    }): Promise<Array<{ slug: string; title: string }>>;
+  } } = prisma,
 ): Promise<Array<{ slug: string; title: string }>> {
   const rows = await client.project.findMany({
     where: { status: "PUBLISHED" },
-    select: publicProjectListSelect,
+    select: { slug: true, title: true },
     orderBy: publicOrder,
   });
 

@@ -2,25 +2,23 @@ import type { MetadataRoute } from "next";
 
 import { siteConfig } from "@/config/site";
 import {
-  listPublishedDocuments,
-  listPublishedNews,
-  listPublishedProjects,
-  type PublicDocumentRow,
-  type PublicEditorialListRow,
-} from "@/features/content-admin/repository";
+  listSitemapDocuments,
+  listSitemapNews,
+  listSitemapProjects,
+} from "@/features/content-admin/sitemap-repository";
 
 export const dynamic = "force-dynamic";
 
 type SitemapDependencies = {
-  listProjects: () => Promise<PublicEditorialListRow[]>;
-  listNews: () => Promise<PublicEditorialListRow[]>;
-  listDocuments: () => Promise<PublicDocumentRow[]>;
+  listProjects: () => Promise<Array<{ slug: string }>>;
+  listNews: () => Promise<Array<{ slug: string }>>;
+  listDocuments: () => Promise<Array<{ id: string }>>;
 };
 
 const defaultDependencies: SitemapDependencies = {
-  listProjects: listPublishedProjects,
-  listNews: listPublishedNews,
-  listDocuments: listPublishedDocuments,
+  listProjects: listSitemapProjects,
+  listNews: listSitemapNews,
+  listDocuments: listSitemapDocuments,
 };
 
 function sitemapEntry(route: string): MetadataRoute.Sitemap[number] {
@@ -38,9 +36,9 @@ function staticEntries() {
 export default async function sitemap(
   dependencies: SitemapDependencies = defaultDependencies,
 ): Promise<MetadataRoute.Sitemap> {
-  let projects: PublicEditorialListRow[];
-  let news: PublicEditorialListRow[];
-  let documents: PublicDocumentRow[];
+  let projects: Array<{ slug: string }>;
+  let news: Array<{ slug: string }>;
+  let documents: Array<{ id: string }>;
 
   try {
     [projects, news, documents] = await Promise.all([

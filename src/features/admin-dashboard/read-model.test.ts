@@ -22,6 +22,7 @@ function createDatabase(overrides: {
 } = {}) {
   const tx = {
     contactRequest: {
+      findMany: vi.fn().mockResolvedValue([] as { id: string }[]),
       count: vi.fn()
         .mockResolvedValueOnce(overrides.contactCounts?.[0] ?? 7)
         .mockResolvedValueOnce(overrides.contactCounts?.[1] ?? 5)
@@ -34,12 +35,15 @@ function createDatabase(overrides: {
         .mockResolvedValueOnce(overrides.projectCounts?.[1] ?? 3),
     },
     newsPost: {
+      findMany: vi.fn().mockResolvedValue([] as { id: string }[]),
       count: vi.fn().mockResolvedValue(overrides.newsPostCount ?? 4),
     },
     document: {
+      findMany: vi.fn().mockResolvedValue([] as { id: string }[]),
       count: vi.fn().mockResolvedValue(overrides.documentCount ?? 5),
     },
     donation: {
+      findMany: vi.fn().mockResolvedValue([] as { id: string }[]),
       count: vi.fn().mockResolvedValue(overrides.donationCount ?? 3),
       aggregate: vi.fn()
         .mockResolvedValueOnce(overrides.donationAggregates?.[0] ?? {
@@ -64,6 +68,7 @@ function createDatabase(overrides: {
       ]),
     },
     siteSetting: {
+      findMany: vi.fn().mockResolvedValue([] as { key: string }[]),
       findUnique: vi.fn().mockResolvedValue(overrides.heartbeat === undefined ? null : { value: overrides.heartbeat }),
     },
   };
@@ -78,6 +83,32 @@ function createDatabase(overrides: {
 }
 
 describe("getAdminDashboardReadModel", () => {
+  it("resolves repeated audit targets once per entity type and preserves missing links and event order", async () => {
+    const types = ["PROJECT", "PROJECT", "PROJECT", "DOCUMENT", "NEWS_POST", "CONTACT_REQUEST", "DONATION", "REQUISITES", "REQUISITES", "PROJECT"];
+    const ids = ["p", "p", "missing", "d", "n", "c", "payment", "requisites", "requisites", ""];
+    const activity = types.map((entityType, i) => ({ id: `event-${i}`, entityType, entityId: ids[i], action: "CONTENT_UPDATED", previousStatus: null, nextStatus: null, createdAt: new Date("2026-10-19") }));
+    const { database, tx } = createDatabase({ activity, existingProjects: [{ id: "p" }] });
+    tx.document.findMany.mockResolvedValue([{ id: "d" }]);
+    tx.newsPost.findMany.mockResolvedValue([{ id: "n" }]);
+    tx.contactRequest.findMany.mockResolvedValue([{ id: "c" }]);
+    tx.donation.findMany.mockResolvedValue([{ id: "payment" }]);
+    tx.siteSetting.findMany.mockResolvedValue([{ key: "requisites" }]);
+    const model = await getAdminDashboardReadModel(new Date(), { database, evaluateReadiness: () => ({ ok: true, issues: [] }), paymentsEnabled: () => false });
+    expect(tx.project.findMany).toHaveBeenCalledExactlyOnceWith({ where: { id: { in: ["p", "missing"] } }, select: { id: true } });
+    for (const [delegate, id] of [[tx.document, "d"], [tx.newsPost, "n"], [tx.contactRequest, "c"], [tx.donation, "payment"]] as const) {
+      expect(delegate.findMany).toHaveBeenCalledExactlyOnceWith({ where: { id: { in: [id] } }, select: { id: true } });
+    }
+    expect(tx.siteSetting.findMany).toHaveBeenCalledExactlyOnceWith({ where: { key: "requisites" }, select: { key: true } });
+    expect(model.recentActivity.map(event => event.id)).toEqual(activity.map(event => event.id));
+    expect(model.recentActivity.map(event => event.href)).toEqual(["/admin/projects/p", "/admin/projects/p", null, "/admin/documents/d", "/admin/news/n", "/admin/messages/c", "/admin/donations?donationId=payment", "/admin/requisites", "/admin/requisites", undefined]);
+    expect(model.recentActivity.every(event => !("entityId" in event))).toBe(true);
+  });
+
+  it("does not resolve audit entity types absent from the activity", async () => {
+    const { database, tx } = createDatabase({ activity: [] });
+    await getAdminDashboardReadModel(new Date(), { database, evaluateReadiness: () => ({ ok: true, issues: [] }), paymentsEnabled: () => false });
+    for (const delegate of [tx.project, tx.newsPost, tx.document, tx.donation, tx.contactRequest, tx.siteSetting]) expect(delegate.findMany).not.toHaveBeenCalled();
+  });
   it.each([undefined, { completedAt: "invalid", failed: 0 }, { completedAt: "2026-10-20T12:00:00.000Z", failed: 0 }, { completedAt: "2026-10-19T11:50:00.000Z", failed: "secret" }])("warns safely for an absent or malformed enabled heartbeat: %j", async (heartbeat) => {
     const { database, tx } = createDatabase({ heartbeat });
     const model = await getAdminDashboardReadModel(new Date("2026-10-19T12:00:00.000Z"), { database, evaluateReadiness: () => ({ ok: true, issues: [] }), paymentsEnabled: () => true });

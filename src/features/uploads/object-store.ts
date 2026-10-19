@@ -13,6 +13,7 @@ export type PutObjectInput = {
   pathname: string;
   bytes: Uint8Array;
   contentType: string;
+  cacheControl?: string;
 };
 
 export class ObjectStoreRequestError extends Error {
@@ -63,13 +64,14 @@ export async function putS3Object(
   const url = new URL(`/${config.bucket}/${key.split("/").map(encodeURIComponent).join("/")}`, config.endpoint);
   const payloadHash = sha256Hex(input.bytes);
   const canonicalHeaders = [
+    ...(input.cacheControl ? [`cache-control:${input.cacheControl}`] : []),
     `content-type:${input.contentType}`,
     `host:${url.host}`,
     `x-amz-content-sha256:${payloadHash}`,
     `x-amz-date:${amzDate}`,
     "",
   ].join("\n");
-  const signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date";
+  const signedHeaders = `${input.cacheControl ? "cache-control;" : ""}content-type;host;x-amz-content-sha256;x-amz-date`;
   const canonicalRequest = [
     "PUT",
     url.pathname,
@@ -94,6 +96,7 @@ export async function putS3Object(
   const response = await fetchImpl(url, {
     method: "PUT",
     headers: {
+      ...(input.cacheControl ? { "Cache-Control": input.cacheControl } : {}),
       "Content-Type": input.contentType,
       Host: url.host,
       "x-amz-content-sha256": payloadHash,

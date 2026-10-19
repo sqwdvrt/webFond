@@ -50,6 +50,7 @@ describe("putS3Object", () => {
         pathname: "uploads/image/a.jpg",
         bytes: new Uint8Array([0xff, 0xd8, 0xff]),
         contentType: "image/jpeg",
+        cacheControl: "public,max-age=31536000,immutable",
       },
       { fetchImpl: fetchImpl as typeof fetch, now: () => new Date("2026-09-05T20:00:00.000Z") },
     );
@@ -64,6 +65,8 @@ describe("putS3Object", () => {
     expect(headers.get("Authorization")).toMatch(
       /^AWS4-HMAC-SHA256 Credential=AKIA\/20260905\/ru-1\/s3\/aws4_request,/,
     );
+    expect(headers.get("cache-control")).toBe("public,max-age=31536000,immutable");
+    expect(headers.get("Authorization")).toContain("SignedHeaders=cache-control;content-type;host;x-amz-content-sha256;x-amz-date");
     expect(headers.get("x-amz-date")).toBe("20260905T200000Z");
   });
 });

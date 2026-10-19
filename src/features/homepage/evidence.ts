@@ -1,5 +1,5 @@
-import { listPublishedDocuments, type PublicDocumentRow } from "@/features/content-admin/repository";
-import { listPublishedProjectsForDisplay, type PublicProjectCard } from "@/features/fundraising/public-projects";
+import { listHomeDocuments, type PublicDocumentRow } from "@/features/content-admin/repository";
+import { listHomeProjectsForDisplay, type PublicProjectCard } from "@/features/fundraising/public-projects";
 
 export type HomeEvidenceData = {
   documents: PublicDocumentRow[] | null;
@@ -13,8 +13,8 @@ type EvidenceDependencies = {
 
 export async function loadHomeEvidence(
   dependencies: EvidenceDependencies = {
-    listDocuments: listPublishedDocuments,
-    listProjects: listPublishedProjectsForDisplay,
+    listDocuments: listHomeDocuments,
+    listProjects: listHomeProjectsForDisplay,
   },
 ): Promise<HomeEvidenceData> {
   const [documents, projects] = await Promise.allSettled([

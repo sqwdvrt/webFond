@@ -10,6 +10,7 @@ import {
   type ObjectStoreConfig,
   type PutObjectInput,
 } from "./object-store";
+import { prepareImage } from "./prepare-image";
 import type { DetectedUpload, UploadKind } from "./validate";
 
 export class UploadStorageUnavailableError extends Error {
@@ -49,8 +50,6 @@ export async function storeUpload(
   { bytes, detected, kind }: StoreUploadInput,
   dependencies: StoreUploadDependencies = {},
 ): Promise<StoredUpload> {
-  const filename = `${randomUUID()}.${detected.extension}`;
-  const pathname = `uploads/${kind}/${filename}`;
   const blobToken = dependencies.blobToken ?? process.env.BLOB_READ_WRITE_TOKEN;
   const onVercel = dependencies.onVercel ?? process.env.VERCEL === "1";
   const isProduction =
@@ -66,12 +65,22 @@ export async function storeUpload(
       return putS3Object(objectStore, input);
     });
 
+  if (!objectStore && !blobToken && (onVercel || isProduction)) {
+    throw new UploadStorageUnavailableError();
+  }
+
+  const storedBytes = kind === "image" ? await prepareImage(bytes) : bytes;
+  const extension = kind === "image" ? "webp" : detected.extension;
+  const contentType = kind === "image" ? "image/webp" : detected.contentType;
+  const pathname = `uploads/${kind}/${randomUUID()}.${extension}`;
+
   if (objectStore) {
     try {
       return await putObject({
         pathname,
-        bytes,
-        contentType: detected.contentType,
+        bytes: storedBytes,
+        contentType,
+        cacheControl: "public,max-age=31536000,immutable",
       });
     } catch {
       throw new UploadStorageUnavailableError();
@@ -79,24 +88,21 @@ export async function storeUpload(
   }
 
   if (blobToken) {
-    const blob = await putBlob(pathname, Buffer.from(bytes), {
+    const blob = await putBlob(pathname, Buffer.from(storedBytes), {
       access: "public",
       addRandomSuffix: false,
-      contentType: detected.contentType,
+      contentType,
+      cacheControlMaxAge: 31536000,
       token: blobToken,
     });
 
     return { url: blob.url };
   }
 
-  if (onVercel || isProduction) {
-    throw new UploadStorageUnavailableError();
-  }
-
   const cwd = dependencies.cwd ?? process.cwd();
   const absolutePath = join(cwd, "public", pathname);
   const writeLocal = dependencies.writeLocal ?? writeLocalFile;
-  await writeLocal(absolutePath, bytes);
+  await writeLocal(absolutePath, storedBytes);
 
   return { url: `/${pathname}` };
 }

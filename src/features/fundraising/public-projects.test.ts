@@ -5,6 +5,7 @@ import {
   getPublishedProjectForDisplay,
   listPublishedProjectDonationOptions,
   listPublishedProjectsForDisplay,
+  listHomeProjectsForDisplay,
 } from "./public-projects";
 
 const publishedAt = new Date("2026-08-22T10:00:00.000Z");
@@ -22,6 +23,26 @@ const row = {
 };
 
 describe("published project fundraising loaders", () => {
+  it("limits homepage projects in the database before aggregating their donations", async () => {
+    const rows = Array.from({ length: 4 }, (_, i) => ({ ...row, id: `project-${i}`, goalAmountKopecks: i === 1 ? null : row.goalAmountKopecks }));
+    const findMany = vi.fn(async (args: { take?: number }) => rows.slice(0, args.take));
+    const groupBy = vi.fn(async () => []);
+    const result = await listHomeProjectsForDisplay({ project: { findMany, findFirst: vi.fn() }, donation: { groupBy } });
+    expect(result).toHaveLength(3);
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { status: "PUBLISHED" }, take: 3,
+      orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+    }));
+    expect(findMany.mock.calls[0][0]).not.toHaveProperty("select.content");
+    expect(groupBy).toHaveBeenCalledExactlyOnceWith({ by: ["projectId"], where: { status: "SUCCEEDED", projectId: { in: ["project-0", "project-2"] } }, _sum: { amountKopecks: true } });
+  });
+
+  it("skips fundraising queries for homepage projects without goals", async () => {
+    const groupBy = vi.fn();
+    await listHomeProjectsForDisplay({ project: { findMany: vi.fn(async () => [{ ...row, goalAmountKopecks: null }]), findFirst: vi.fn() }, donation: { groupBy } });
+    expect(groupBy).not.toHaveBeenCalled();
+  });
+
   it("lists cards with fundraising from succeeded donations and the manual amount", async () => {
     const findMany = vi.fn(async () => [row]);
     const groupBy = vi.fn(async () => [
@@ -118,9 +139,13 @@ describe("published project fundraising loaders", () => {
 
     await expect(
       listPublishedProjectDonationOptions({
-        project: { findMany, findFirst: vi.fn() },
-        donation: { groupBy: vi.fn() },
+        project: { findMany },
       }),
     ).resolves.toEqual([{ slug: "published-project", title: row.title }]);
+    expect(findMany).toHaveBeenCalledExactlyOnceWith({
+      where: { status: "PUBLISHED" },
+      select: { slug: true, title: true },
+      orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+    });
   });
 });

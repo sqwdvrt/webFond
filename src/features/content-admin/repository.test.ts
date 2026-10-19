@@ -23,6 +23,7 @@ import {
   listAdminNewsPage,
   listAdminDocumentsPage,
   listPublishedDocuments,
+  listHomeDocuments,
   listPublishedNews,
   listPublishedProjects,
   replaceInvalidRequisites,
@@ -34,6 +35,16 @@ import {
 
 const updatedAt = new Date("2026-08-23T10:00:00.000Z");
 const publishedAt = new Date("2026-08-22T10:00:00.000Z");
+
+it("limits homepage documents at the database boundary with stable published order", async () => {
+  const findMany = vi.fn(async () => []);
+  await expect(listHomeDocuments({ document: { findMany } })).resolves.toEqual([]);
+  expect(findMany).toHaveBeenCalledExactlyOnceWith({
+    where: { status: "PUBLISHED" }, take: 3,
+    select: { id: true, title: true, category: true, fileUrl: true, publishedAt: true, updatedAt: true },
+    orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+  });
+});
 
 const adminEditorialRow = {
   id: "entry-1",

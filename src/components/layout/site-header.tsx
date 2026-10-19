@@ -64,9 +64,9 @@ export function SiteHeader() {
         <Link className="brand-link" href="/" aria-label={siteConfig.name}>
           <span className="brand-mark">
             <Image
-              src="/brand/mark.jpg"
-              width={880}
-              height={880}
+              src="/brand/mark-small.webp"
+              width={104}
+              height={104}
               sizes="52px"
               alt="Знак фонда «Быть Добру»: руки, росток и птица"
               priority

@@ -1,0 +1,153 @@
+[
+  {
+    "name": "home-before",
+    "operations": [
+      {
+        "model": "Project",
+        "operation": "findMany",
+        "rows": 1000
+      },
+      {
+        "model": "Donation",
+        "operation": "groupBy",
+        "rows": 1000
+      },
+      {
+        "model": "Document",
+        "operation": "findMany",
+        "rows": 1000
+      }
+    ]
+  },
+  {
+    "name": "home-after",
+    "operations": [
+      {
+        "model": "Project",
+        "operation": "findMany",
+        "rows": 3
+      },
+      {
+        "model": "Donation",
+        "operation": "groupBy",
+        "rows": 3
+      },
+      {
+        "model": "Document",
+        "operation": "findMany",
+        "rows": 3
+      }
+    ]
+  },
+  {
+    "name": "dashboard-after",
+    "operations": [
+      {
+        "model": "ContactRequest",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "ContactRequest",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "ContactRequest",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "Project",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "Project",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "NewsPost",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "Document",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "Donation",
+        "operation": "count",
+        "rows": 1
+      },
+      {
+        "model": "Donation",
+        "operation": "aggregate",
+        "rows": 1
+      },
+      {
+        "model": "Donation",
+        "operation": "aggregate",
+        "rows": 1
+      },
+      {
+        "model": "AdminAuditEvent",
+        "operation": "findMany",
+        "rows": 5
+      },
+      {
+        "model": "Project",
+        "operation": "findMany",
+        "rows": 3
+      }
+    ]
+  },
+  {
+    "name": "sitemap-after",
+    "operations": [
+      {
+        "model": "Document",
+        "operation": "findFirst",
+        "rows": 1
+      },
+      {
+        "model": "Project",
+        "operation": "findMany",
+        "rows": 1000
+      },
+      {
+        "model": "NewsPost",
+        "operation": "findMany",
+        "rows": 1000
+      }
+    ]
+  },
+  {
+    "name": "home-project-explain",
+    "plan": [
+      "Limit  (cost=0.28..0.64 rows=3 width=24) (actual time=0.011..0.011 rows=3 loops=1)",
+      "  Buffers: shared hit=3",
+      "  ->  Index Only Scan Backward using \"Project_status_publishedAt_id_idx\" on \"Project\"  (cost=0.28..122.53 rows=1000 width=24) (actual time=0.010..0.011 rows=3 loops=1)",
+      "        Index Cond: (status = 'PUBLISHED'::\"PublicationStatus\")",
+      "        Heap Fetches: 3",
+      "        Buffers: shared hit=3",
+      "Planning:",
+      "  Buffers: shared hit=84",
+      "Planning Time: 0.153 ms",
+      "Execution Time: 0.017 ms"
+    ]
+  },
+  {
+    "name": "five-upload-memory",
+    "inputBytes": 499258,
+    "outputBytes": 3896,
+    "accepted": 2,
+    "busy": 3,
+    "initialRssBytes": 124502016,
+    "sampledPeakRssBytes": 403062784,
+    "durationMs": 169,
+    "runtime": "v22.23.3"
+  }
+]
