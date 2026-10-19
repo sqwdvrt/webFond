@@ -3,14 +3,13 @@ import type { Donation } from "@prisma/client";
 import {
   defaultPaymentAlertReporter,
   paymentAlertCodes,
+  reportPaymentReconciliationFailure,
   type PaymentAlertCode,
   type PaymentAlertReporter,
+  type PaymentDiagnosticReporter,
 } from "./alerts";
 import type { PaymentRepository } from "./repository";
-import {
-  isSupportedYooKassaPaymentMethod,
-  type SupportedWebhookEvent,
-} from "./types";
+import type { SupportedWebhookEvent } from "./types";
 import {
   YooKassaHttpError,
   YooKassaProtocolError,
@@ -67,6 +66,7 @@ type ReconcilePaymentByIdInput = {
 export type ReconcilePaymentByIdDependencies =
   ReconcileVerifiedPaymentDependencies & {
     client: Pick<YooKassaClient, "getPayment">;
+    diagnose?: PaymentDiagnosticReporter;
   };
 
 function permanentRejection(
@@ -114,20 +114,8 @@ export async function reconcileVerifiedPayment(
   if (payment.amount.currency !== "RUB" || donation.currency !== "RUB") {
     return permanentRejection(paymentAlertCodes.currencyMismatch, report);
   }
-  const paymentMethodType = payment.paymentMethod?.type;
-  if (paymentMethodType !== undefined) {
-    if (!isSupportedYooKassaPaymentMethod(paymentMethodType)) {
-      return permanentRejection(
-        paymentAlertCodes.paymentMethodMismatch,
-        report,
-      );
-    }
-  } else if (payment.status !== "pending") {
-    return permanentRejection(
-      paymentAlertCodes.paymentMethodMismatch,
-      report,
-    );
-  }
+  // The authenticated API response, identity, amount and captured status verify
+  // the payment. Optional payment-method metadata is not proof of settlement.
   if (
     donation.providerPaymentId !== null &&
     donation.providerPaymentId !== payment.id
@@ -164,23 +152,38 @@ export async function reconcilePaymentById(
     client,
     repository,
     report = defaultPaymentAlertReporter,
+    diagnose = reportPaymentReconciliationFailure,
   }: ReconcilePaymentByIdDependencies,
 ): Promise<ReconcileOutcome> {
   let payment: YooKassaPayment;
 
+  function finish(outcome: ReconcileOutcome, observed?: YooKassaPayment): ReconcileOutcome {
+    if (outcome.kind === "retry" || outcome.kind === "permanent-rejection") {
+      diagnose({
+        paymentId,
+        donationId: expectedDonationId ?? observed?.metadata.donationId,
+        providerStatus: observed?.status,
+        paymentMethod: observed?.paymentMethod?.type,
+        outcome: outcome.kind,
+        code: outcome.kind === "retry" ? outcome.code : outcome.alertCode,
+      });
+    }
+    return outcome;
+  }
+
   try {
     payment = await client.getPayment(paymentId);
   } catch (error) {
-    return mapProviderGetError(error, report);
+    return finish(mapProviderGetError(error, report));
   }
 
   if (expectedDonationId && payment.metadata?.donationId !== expectedDonationId) {
-    return permanentRejection(paymentAlertCodes.metadataMismatch, report);
+    return finish(permanentRejection(paymentAlertCodes.metadataMismatch, report), payment);
   }
-  return reconcileVerifiedPayment(
+  return finish(await reconcileVerifiedPayment(
     { payment, terminalEvent, expectedPaymentId: paymentId },
     { repository, report },
-  );
+  ), payment);
 }
 
 function parseCapturedAt(value: string | undefined): Date | null {

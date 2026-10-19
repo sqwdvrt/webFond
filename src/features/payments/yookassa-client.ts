@@ -1,7 +1,4 @@
-import {
-  isSupportedYooKassaPaymentMethod,
-  type YooKassaConfig,
-} from "./types";
+import type { YooKassaConfig } from "./types";
 
 const PAYMENTS_ENDPOINT = "https://api.yookassa.ru/v3/payments";
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -139,10 +136,6 @@ function parsePaymentMethod(
   }
 
   const type = readNonblankString(value.type);
-  if (!isSupportedYooKassaPaymentMethod(type)) {
-    throw protocolError();
-  }
-
   return { type };
 }
 

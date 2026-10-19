@@ -144,7 +144,7 @@ describe("createPayment", () => {
     });
   });
 
-  it.each(["sbp", "bank_card", "yoo_money"] as const)(
+  it.each(["sbp", "bank_card", "yoo_money", "sberbank", "future_payment_method"] as const)(
     "accepts a pending create response with payment method %s",
     async (type) => {
       const { client, fetch } = clientFixture();
@@ -183,7 +183,6 @@ describe("createPayment", () => {
     ["amount", { amount: { value: "300.01", currency: "RUB" } }],
     ["currency", { amount: { value: "300.00", currency: "USD" } }],
     ["metadata", { metadata: { donationId: "another-donation" } }],
-    ["payment method", { payment_method: { type: "sberbank" } }],
     ["confirmation type", { confirmation: { type: "embedded" } }],
     ["pending confirmation", { confirmation: undefined }],
   ])("rejects a create response with mismatched %s", async (_, replacement) => {

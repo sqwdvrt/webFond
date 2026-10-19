@@ -151,6 +151,52 @@ async function expectPermanentRejection({
 }
 
 describe("reconcileVerifiedPayment", () => {
+  it.each([
+    { paid: false, capturedAt: NOW.toISOString() },
+    { paid: true, capturedAt: undefined },
+    { paid: true, capturedAt: "not-a-date" },
+  ])("does not confirm an unfamiliar method without valid settlement evidence %j", async (evidence) => {
+    const fixture = repositoryFixture();
+    await expect(reconcileVerifiedPayment({
+      payment: payment({ status: "succeeded", paymentMethod: { type: "future_method" }, ...evidence }),
+      terminalEvent: null,
+    }, { repository: fixture.repository })).resolves.toEqual({ kind: "retry", code: reconcileRetryCodes.providerProtocol });
+    expect(fixture.repository.transitionPending).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { paymentMethod: undefined }, { paymentMethod: { type: "sberbank" } },
+  ])("still rejects the wrong amount with optional method %j", async (method) => {
+    await expectPermanentRejection({
+      alertCode: paymentAlertCodes.amountMismatch,
+      providerPayment: payment({ status: "succeeded", paid: true, capturedAt: NOW.toISOString(), amount: { kopecks: 1, currency: "RUB" }, ...method }),
+    });
+  });
+
+  it.each([undefined, { type: "sberbank" }, { type: "future_payment_method" }])(
+    "reconciles a verified canceled payment with optional or unfamiliar method %j",
+    async (paymentMethod) => {
+      const fixture = repositoryFixture();
+      await expect(reconcileVerifiedPayment({
+        payment: payment({ status: "canceled", paymentMethod, confirmation: undefined }),
+        terminalEvent: "payment.canceled",
+      }, { repository: fixture.repository })).resolves.toMatchObject({ kind: "canceled" });
+      expect(fixture.repository.transitionPending).toHaveBeenCalledWith(DONATION_ID, "CANCELED", null);
+    },
+  );
+
+  it.each([undefined, { type: "sberbank" }, { type: "future_payment_method" }])(
+    "reconciles verified captured funds independently of method %j",
+    async (paymentMethod) => {
+      const fixture = repositoryFixture();
+      await expect(reconcileVerifiedPayment({
+        payment: payment({ status: "succeeded", paid: true, capturedAt: NOW.toISOString(), paymentMethod }),
+        terminalEvent: "payment.succeeded",
+      }, { repository: fixture.repository })).resolves.toMatchObject({ kind: "succeeded" });
+      expect(fixture.repository.transitionPending).toHaveBeenCalledWith(DONATION_ID, "SUCCEEDED", NOW);
+    },
+  );
+
   it("permanently rejects a payment whose local donation is missing", async () => {
     await expectPermanentRejection({
       alertCode: paymentAlertCodes.localDonationMissing,
@@ -186,22 +232,6 @@ describe("reconcileVerifiedPayment", () => {
         amount: { kopecks: 30_000, currency: "USD" },
       }),
       alertCode: paymentAlertCodes.currencyMismatch,
-    },
-    {
-      name: "payment method",
-      providerPayment: payment({ paymentMethod: { type: "sberbank" } }),
-      alertCode: paymentAlertCodes.paymentMethodMismatch,
-    },
-    {
-      name: "missing terminal payment method",
-      providerPayment: payment({
-        status: "succeeded",
-        paid: true,
-        capturedAt: "2026-08-24T18:05:04.321Z",
-        paymentMethod: undefined,
-        confirmation: undefined,
-      }),
-      alertCode: paymentAlertCodes.paymentMethodMismatch,
     },
   ])(
     "permanently rejects a $name mismatch before binding",
@@ -610,6 +640,21 @@ describe("reconcilePaymentById retryable provider errors", () => {
 });
 
 describe("payment alerts", () => {
+  it("correlates a failed API check with the expected payment without leaking provider metadata", async () => {
+    const fixture = repositoryFixture();
+    const diagnose = vi.fn();
+    const provider = payment({ status: "succeeded", paid: false, paymentMethod: undefined });
+    await reconcilePaymentById({ paymentId: PAYMENT_ID, expectedDonationId: DONATION_ID, terminalEvent: null }, {
+      client: { getPayment: vi.fn(async () => provider) },
+      repository: fixture.repository, diagnose,
+    });
+    expect(diagnose).toHaveBeenCalledExactlyOnceWith({
+      paymentId: PAYMENT_ID, donationId: DONATION_ID, providerStatus: "succeeded",
+      paymentMethod: undefined, outcome: "retry", code: "payment_provider_protocol",
+    });
+    expect(fixture.repository.transitionPending).not.toHaveBeenCalled();
+  });
+
   it("logs only the fixed alert code", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
