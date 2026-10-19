@@ -6,11 +6,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   countNewContactRequests: vi.fn(),
+  getAdminNotifications: vi.fn(),
   requireAdminSession: vi.fn(),
 }));
 
 vi.mock("@/lib/admin-auth/session", () => ({
   requireAdminSession: mocks.requireAdminSession,
+}));
+
+vi.mock("@/features/admin-dashboard/notifications", () => ({
+  getAdminNotifications: mocks.getAdminNotifications,
 }));
 
 vi.mock("@/features/admin-messages/repository", () => ({
@@ -132,6 +137,7 @@ describe("ProtectedAdminLayout", () => {
   beforeEach(() => {
     mocks.countNewContactRequests.mockReset();
     mocks.countNewContactRequests.mockResolvedValue(0);
+    mocks.getAdminNotifications.mockReset().mockResolvedValue({ alerts: [] });
     mocks.requireAdminSession.mockReset();
     mocks.requireAdminSession.mockResolvedValue({
       username: "fixture-operator",
@@ -147,10 +153,12 @@ describe("ProtectedAdminLayout", () => {
     ).rejects.toBe(denied);
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
     expect(mocks.countNewContactRequests).not.toHaveBeenCalled();
+    expect(mocks.getAdminNotifications).not.toHaveBeenCalled();
     expect(screen.queryByText("Закрытые данные")).not.toBeInTheDocument();
   });
 
   it("loads the aggregate after authentication and passes it through the shared shell", async () => {
+    mocks.getAdminNotifications.mockResolvedValue({ alerts: [{ code: "STALE_NEW_CONTACTS" }, { code: "PAYMENTS_RECONCILIATION_STALE" }] });
     const calls: string[] = [];
     mocks.requireAdminSession.mockImplementation(async () => {
       calls.push("session");
@@ -168,6 +176,7 @@ describe("ProtectedAdminLayout", () => {
     expect(mocks.requireAdminSession).toHaveBeenCalledOnce();
     expect(mocks.countNewContactRequests).toHaveBeenCalledOnce();
     expect(calls).toEqual(["session", "count"]);
+    expect(screen.getByRole("link", { name: "Уведомления: 2" })).toHaveAttribute("href", "/admin/notifications");
     expect(screen.getByText("fixture-operator")).toBeVisible();
     expect(screen.getByText("Закрытые данные")).toBeVisible();
     const messagesLink = screen.getByRole("link", {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import {
+  Bell,
   FileText,
   FolderKanban,
   HandCoins,
@@ -18,6 +19,7 @@ import styles from "../admin.module.css";
 
 const adminSections = [
   { href: "/admin", label: "Обзор", icon: LayoutDashboard },
+  { href: "/admin/notifications", label: "Уведомления", icon: Bell },
   { href: "/admin/messages", label: "Письма", icon: Mail },
   { href: "/admin/projects", label: "Проекты", icon: FolderKanban },
   { href: "/admin/news", label: "Новости", icon: Newspaper },
@@ -56,7 +58,8 @@ function newContactRequestsLabel(count: number) {
 
 export function AdminNav({
   newContactRequestCount,
-}: Readonly<{ newContactRequestCount: number }>) {
+  notificationCount = 0,
+}: Readonly<{ newContactRequestCount: number; notificationCount?: number }>) {
   const pathname = usePathname();
   const currentLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -71,23 +74,27 @@ export function AdminNav({
     <nav className={styles.adminNav} aria-label="Разделы административной части">
       {adminSections.map(({ href, icon: Icon, label }) => {
         const isCurrent = isAdminSectionCurrent(pathname, href);
-        const countLabel = href === "/admin/messages" && newContactRequestCount > 0
-          ? newContactRequestsLabel(newContactRequestCount)
+        const count = href === "/admin/messages" ? newContactRequestCount
+          : href === "/admin/notifications" ? notificationCount : 0;
+        const accessibleLabel = count > 0
+          ? href === "/admin/messages"
+            ? `${label} ${newContactRequestsLabel(count)}`
+            : `${label}: ${count}`
           : undefined;
 
         return (
           <Link
             aria-current={isCurrent ? "page" : undefined}
-            aria-label={countLabel ? `${label} ${countLabel}` : undefined}
+            aria-label={accessibleLabel}
             href={href}
             key={href}
             ref={isCurrent ? currentLinkRef : undefined}
           >
             <Icon aria-hidden="true" size={17} />
             {label}
-            {countLabel ? (
+            {count > 0 ? (
               <span aria-hidden="true" className={styles.adminNavBadge}>
-                {newContactRequestCount}
+                {count}
               </span>
             ) : null}
           </Link>

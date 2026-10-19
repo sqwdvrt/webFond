@@ -122,13 +122,12 @@ describe("admin dashboard", () => {
     expect(within(metrics).getByRole("link", { name: /18 успешных/ })).toHaveAttribute("href", model.donationLinks.month);
   });
 
-  it("displays heartbeat completion and distinguishes a command from payment success", async () => {
+  it("distinguishes a command from payment success in the activity list", () => {
     const model: AdminDashboardReadModel = { ...dashboard, reconciliation: { enabled: true, completedAt: new Date("2026-10-19T11:55:00.000Z"), failed: 2 }, recentActivity: [
       { id: "reconcile", action: "PAYMENT_RECONCILE_REQUESTED", entityType: "DONATION", previousStatus: null, nextStatus: null, createdAt: new Date("2026-10-19T11:50:00.000Z"), href: "/admin/donations?donationId=donation-1" },
       { id: "requisites", action: "REQUISITES_CHANGED", entityType: "REQUISITES", previousStatus: null, nextStatus: null, createdAt: new Date("2026-10-19T11:50:00.000Z"), href: null },
     ] };
-    render(await renderAdminDashboard(dependencies(model)));
-    expect(screen.getByText(/Последняя автоматическая сверка:/)).toHaveTextContent("Ошибок в последнем запуске: 2");
+    render(<ActivityList events={model.recentActivity} />);
     expect(screen.getByText("Запрошена проверка платежа в ЮKassa")).toBeVisible();
     expect(screen.getByText("Реквизиты изменены")).toBeVisible();
     expect(screen.getByRole("link", { name: "Открыть объект" })).toHaveAttribute("href", "/admin/donations?donationId=donation-1");
@@ -173,33 +172,12 @@ describe("admin dashboard", () => {
     expect(deps.loadDashboard).not.toHaveBeenCalled();
   });
 
-  it("links prioritized operational alerts in model order", async () => {
+  it("keeps warnings and the activity feed out of Overview", async () => {
     render(await renderAdminDashboard(dependencies()));
-
-    const alerts = screen.getByRole("list", { name: "Требует внимания" });
-    const alertLinks = within(alerts).getAllByRole("link");
-
-    expect(alertLinks.map((link) => link.textContent)).toEqual([
-      "Обнаружена проблема конфигурации административной части.",
-      "Ожидающих пожертвований старше часа: 3.",
-      "Новых обращений старше 48 часов: 2.",
-    ]);
-    expect(alertLinks.map((link) => link.getAttribute("href"))).toEqual([
-      "/api/ready",
-      "/admin/donations?status=PENDING",
-      "/admin/messages?status=NEW",
-    ]);
-  });
-
-  it("disables route prefetching for operational alert links", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "src/app/admin/(protected)/page.tsx"),
-      "utf8",
-    );
-
-    expect(source).toMatch(
-      /<Link\s+href=\{alert\.href\}\s+prefetch=\{false\}>/,
-    );
+    expect(screen.queryByRole("heading", { name: "Предупреждения" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Требует внимания" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Последние действия" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Доступ к админке общий/)).not.toBeInTheDocument();
   });
 
   it("renders safe entity labels and descriptions without audit details", () => {
@@ -226,12 +204,6 @@ describe("admin dashboard", () => {
     expect(container).not.toHaveTextContent("PRIVATE-OLD");
     expect(container).not.toHaveTextContent("PRIVATE-NEW");
     expect(container).not.toHaveTextContent("PRIVATE-INCOMPATIBLE");
-  });
-
-  it("shows only five recent actions and links to the complete journal", async () => {
-    const { container } = render(await renderAdminDashboard(dependencies()));
-    expect(container.querySelectorAll("ol > li")).toHaveLength(5);
-    expect(screen.getByRole("link", { name: "Все изменения" })).toHaveAttribute("href", "/admin/changes");
   });
 
   it("loads once and renders six operational metric groups accessibly", async () => {
@@ -323,8 +295,8 @@ describe("admin dashboard", () => {
       await renderAdminDashboard(dependencies(empty)),
     );
 
-    expect(screen.getByText("Требующих внимания предупреждений нет.")).toBeVisible();
-    expect(screen.getByText("Действий пока нет.")).toBeVisible();
+    expect(screen.queryByText("Требующих внимания предупреждений нет.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Действий пока нет.")).not.toBeInTheDocument();
     const results = await axe.run(container, {
       rules: { "color-contrast": { enabled: false } },
     });

@@ -1,5 +1,4 @@
 import { render, screen, cleanup } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import ContactsPage from "@/app/contacts/page";
@@ -27,25 +26,21 @@ describe("public journeys", () => {
     expect(screen.queryByText("Как расходуются пожертвования?")).not.toBeInTheDocument();
   });
 
-  it("discloses alternative bank transfer without losing the selected donation project", async () => {
-    const user = userEvent.setup();
+  it("shows bank choices directly without losing the selected donation project", () => {
     const { container } = render(renderHelpPage({ paymentsEnabled: () => true, projects: [{ slug: "published", title: "Проект" }], initialProjectSlug: "published" }));
-    const transfer = container.querySelector("details.bank-transfer-disclosure") as HTMLDetailsElement;
-    expect(transfer).not.toBeNull();
-    expect(transfer.open).toBe(false);
-    expect(screen.getByRole("link", { name: "Полные банковские реквизиты" })).toBeVisible();
-    await user.click(screen.getByText("Перевести через приложение банка"));
+    expect(container.querySelector("details.bank-transfer-disclosure")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Полные банковские реквизиты" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByLabelText("Назначение пожертвования")).toHaveValue("published");
     expect(container.querySelector("#donation-faq")).toContainElement(screen.getByText("Как расходуются пожертвования?"));
   });
 
-  it.each([false, "error"])("keeps bank transfer expanded when payment availability is %s", (availability) => {
+  it.each([false, "error"])("keeps bank choices visible when payment availability is %s", (availability) => {
     const { container } = render(renderHelpPage({ paymentsEnabled: () => {
       if (availability === "error") throw new Error("private config");
       return false;
     } }));
-    expect((container.querySelector("details.bank-transfer-disclosure") as HTMLDetailsElement)?.open).toBe(true);
+    expect(container.querySelector("details.bank-transfer-disclosure")).toBeNull();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Оплатить онлайн" })).not.toBeInTheDocument();
   });

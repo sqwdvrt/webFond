@@ -22,7 +22,8 @@ export async function updateContactRequestAction(
   if (!outcome.ok) return outcome.state;
 
   for (const path of new Set([...outcome.effect.revalidate, "/admin/changes"])) {
-    revalidatePath(path);
+    if (path === "/admin") revalidatePath(path, "layout");
+    else revalidatePath(path);
   }
   redirect(outcome.effect.redirectTo);
 }
@@ -51,6 +52,9 @@ export async function moveContactSelectionAction(
       ? "Письма изменились. Обновите страницу и выберите их заново. Ни одно письмо не перемещено."
       : "Не удалось переместить письма. Повторите попытку." };
   }
-  for (const path of ["/admin", "/admin/messages", "/admin/changes", ...parsed.rows.map((row) => `/admin/messages/${row.id}`)]) revalidatePath(path);
+  for (const path of ["/admin", "/admin/messages", "/admin/changes", ...parsed.rows.map((row) => `/admin/messages/${row.id}`)]) {
+    if (path === "/admin") revalidatePath(path, "layout");
+    else revalidatePath(path);
+  }
   redirect(safeMessagesReturnTo(formData.get("returnTo")));
 }

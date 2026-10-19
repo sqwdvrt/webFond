@@ -82,6 +82,7 @@ describe("contact-request server action", () => {
     await expect(
       updateContactRequestAction("contact-1", idle, new FormData()),
     ).rejects.toBe(redirected);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin", "layout");
     expect(events).toEqual([
       "revalidate:/admin",
       "revalidate:/admin/messages",

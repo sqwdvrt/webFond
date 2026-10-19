@@ -32,6 +32,7 @@ describe("bulk server action", () => {
     const redirected = new Error("redirect"); mocks.redirect.mockImplementation(() => { throw redirected; });
     await expect(moveContactSelectionAction(idle, data())).rejects.toBe(redirected);
     expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/admin", "/admin/messages", "/admin/changes", "/admin/messages/contact-1"]);
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin", "layout");
     expect(mocks.redirect).toHaveBeenCalledWith("/admin/messages");
   });
 });

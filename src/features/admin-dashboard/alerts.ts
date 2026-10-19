@@ -82,3 +82,13 @@ export function buildOperationalAlerts({
 
   return alerts;
 }
+
+export function parseReconciliationHeartbeat(value: unknown, now: Date) {
+  const invalid = { enabled: true, completedAt: null, failed: null };
+  if (!value || typeof value !== "object" || Array.isArray(value)) return invalid;
+  const { completedAt, failed } = value as Record<string, unknown>;
+  if (typeof completedAt !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(completedAt)) return invalid;
+  const completion = new Date(completedAt);
+  if (!Number.isFinite(completion.getTime()) || completion.toISOString() !== completedAt || completion > now || typeof failed !== "number" || !Number.isSafeInteger(failed) || failed < 0) return invalid;
+  return { enabled: true, completedAt: completion, failed };
+}

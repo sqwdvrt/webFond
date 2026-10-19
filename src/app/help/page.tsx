@@ -65,17 +65,11 @@ export function renderHelpPage(
             сохранение значимых мест и организацию благотворительной работы.{" "}
             <Link href="/donation-offer">Цели использования пожертвований в оферте</Link>
           </p>
-          <details className="bank-transfer-disclosure" open={!enabled}>
-            <summary>Перевести через приложение банка</summary>
-            <div className="bank-transfer-content">
-              <h2>Перевод в приложении банка</h2>
-              <p>Выберите свой банк, откройте QR-код и укажите сумму пожертвования.</p>
-              <BankQrTransfer />
-            </div>
-          </details>
-          <p className="quiet-row">
-            <Link href="/requisites">Полные банковские реквизиты</Link>
-          </p>
+          <section className="bank-transfer-content" aria-labelledby="bank-transfer-title">
+            <h2 id="bank-transfer-title">Перевод в приложении банка</h2>
+            <p>Выберите свой банк, откройте QR-код и укажите сумму пожертвования.</p>
+            <BankQrTransfer />
+          </section>
         </div>
       </section>
       <section className="page-section" id="donation-faq">

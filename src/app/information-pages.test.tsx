@@ -1,4 +1,3 @@
-import userEvent from "@testing-library/user-event";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -79,15 +78,12 @@ describe("information pages", () => {
     ).toBeVisible();
   });
 
-  it("renders online payment first and reveals bank transfer on request", async () => {
-    const user = userEvent.setup();
+  it("renders online payment first with visible bank choices", () => {
     render(renderHelpPage({ paymentsEnabled: () => true }));
     expect(screen.getByRole("heading", { level: 1, name: "Поддержать фонд" })).toBeVisible();
     expect(screen.getByText(/Пожертвование через ЮKassa/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeEnabled();
-    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).not.toBeVisible();
-    expect(screen.getByRole("link", { name: "Полные банковские реквизиты" })).toHaveAttribute("href", "/requisites");
-    await user.click(screen.getByText("Перевести через приложение банка"));
+    expect(screen.queryByRole("link", { name: "Полные банковские реквизиты" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
     expect(screen.getByText("Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).")).toBeVisible();

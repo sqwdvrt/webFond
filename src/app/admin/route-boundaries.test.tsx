@@ -3,10 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   countNewContactRequests: vi.fn(),
+  getAdminNotifications: vi.fn(),
   getAdminSession: vi.fn(),
   redirect: vi.fn(),
   requireAdminSession: vi.fn(),
   usePathname: vi.fn(() => "/admin"),
+}));
+
+vi.mock("@/features/admin-dashboard/notifications", () => ({
+  getAdminNotifications: mocks.getAdminNotifications,
 }));
 
 vi.mock("@/features/admin-messages/repository", () => ({
@@ -32,6 +37,7 @@ describe("admin route boundaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.countNewContactRequests.mockResolvedValue(0);
+    mocks.getAdminNotifications.mockReset().mockResolvedValue({ alerts: [] });
     mocks.getAdminSession.mockResolvedValue(null);
     mocks.requireAdminSession.mockResolvedValue({
       username: "fixture-operator",

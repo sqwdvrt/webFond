@@ -114,7 +114,10 @@ export function renderHomePage(dependencies: HomePageDependencies = defaultDepen
           <ol className="help-steps" role="list">
             {helpSteps.map((step) => <li key={step.title}><h3>{step.title}</h3><p>{step.text}</p></li>)}
           </ol>
-          <p className="quiet-row"><Link href="/need-help">Как подать обращение</Link><Link href={siteConfig.contacts.formHref}>Написать через форму</Link></p>
+          <div className="help-actions">
+            <Link className="button button-secondary" href="/need-help">Как подать обращение</Link>
+            <Link className="button button-primary" href={siteConfig.contacts.formHref}>Написать через форму</Link>
+          </div>
         </div>
       </section>
 

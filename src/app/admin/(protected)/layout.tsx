@@ -1,3 +1,4 @@
+import { getAdminNotifications } from "@/features/admin-dashboard/notifications";
 import { countNewContactRequests } from "@/features/admin-messages/repository";
 import { requireAdminSession } from "@/lib/admin-auth/session";
 
@@ -7,11 +8,13 @@ export const dynamic = "force-dynamic";
 
 type ProtectedAdminLayoutDependencies = Readonly<{
   countNewContactRequests: typeof countNewContactRequests;
+  getAdminNotifications: typeof getAdminNotifications;
   requireAdminSession: typeof requireAdminSession;
 }>;
 
 const defaultDependencies: ProtectedAdminLayoutDependencies = {
   countNewContactRequests,
+  getAdminNotifications,
   requireAdminSession,
 };
 
@@ -20,11 +23,15 @@ export async function renderProtectedAdminLayout(
   dependencies: ProtectedAdminLayoutDependencies = defaultDependencies,
 ) {
   const session = await dependencies.requireAdminSession();
-  const newContactRequestCount = await dependencies.countNewContactRequests();
+  const [newContactRequestCount, notifications] = await Promise.all([
+    dependencies.countNewContactRequests(),
+    dependencies.getAdminNotifications(),
+  ]);
 
   return (
     <AdminShell
       newContactRequestCount={newContactRequestCount}
+      notificationCount={notifications.alerts.length}
       username={session.username}
     >
       {children}

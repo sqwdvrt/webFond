@@ -66,7 +66,6 @@ export function BankQrTransfer() {
         </div>
       ) : (
         <div className="bank-qr-placeholder">
-          <span className="bank-qr-placeholder-icon" aria-hidden="true">▦</span>
           <div><strong>Выберите банк, чтобы показать QR-код и реквизиты</strong>
           <p>С компьютера отсканируйте код телефоном. С телефона сохраните изображение и откройте его в приложении банка.</p></div>
         </div>

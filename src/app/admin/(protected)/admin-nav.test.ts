@@ -18,6 +18,22 @@ describe("isAdminSectionCurrent", () => {
 });
 
 describe("AdminNav", () => {
+  it("shows the active notification count and current section", () => {
+    vi.mocked(usePathname).mockReturnValue("/admin/notifications");
+    render(createElement(AdminNav, { newContactRequestCount: 3, notificationCount: 2 }));
+    const link = screen.getByRole("link", { name: "Уведомления: 2" });
+    expect(link).toHaveAttribute("href", "/admin/notifications");
+    expect(link).toHaveAttribute("aria-current", "page");
+    expect(link.querySelector("[class*='adminNavBadge']")).toHaveTextContent("2");
+    expect(screen.getByRole("link", { name: "Письма 3 новых обращения" })).toBeVisible();
+  });
+
+  it("hides the notification badge when there are no active warnings", () => {
+    render(createElement(AdminNav, { newContactRequestCount: 0, notificationCount: 0 }));
+    const link = screen.getByRole("link", { name: "Уведомления" });
+    expect(link.querySelector("[class*='adminNavBadge']")).toBeNull();
+  });
+
   it("owns the static section definitions without receiving icon components", () => {
     render(
       createElement(AdminNav as () => ReactElement, {

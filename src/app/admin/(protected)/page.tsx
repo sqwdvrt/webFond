@@ -9,14 +9,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { formatDonationAmount, formatDonationDateTime } from "@/features/admin-donations/format";
+import { formatDonationAmount } from "@/features/admin-donations/format";
 import {
   getAdminDashboardReadModel,
   type AdminDashboardReadModel,
 } from "@/features/admin-dashboard/read-model";
 import { requireAdminSession } from "@/lib/admin-auth/session";
-
-import { ActivityList } from "./activity-list";
 
 import styles from "../admin.module.css";
 
@@ -120,40 +118,6 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
           </div>
         </dl>
       </section>
-
-      <div className={styles.dashboardColumns}>
-        <section className={styles.dashboardSection} aria-labelledby="alerts-title">
-          <h2 id="alerts-title">Предупреждения</h2>
-          {model.reconciliation?.enabled ? <p>
-            Последняя автоматическая сверка: {model.reconciliation.completedAt
-              ? <time dateTime={model.reconciliation.completedAt.toISOString()}>{formatDonationDateTime(model.reconciliation.completedAt)} МСК</time>
-              : "нет данных"}.
-            {model.reconciliation.failed !== null ? ` Ошибок в последнем запуске: ${model.reconciliation.failed}.` : ""}
-          </p> : null}
-          {model.alerts.length ? (
-            <ul className={styles.dashboardAlerts} aria-label="Требует внимания">
-              {model.alerts.map((alert) => (
-                <li key={alert.code}>
-                  <Link href={alert.href} prefetch={false}>
-                    {alert.message}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.dashboardEmpty}>
-              Требующих внимания предупреждений нет.
-            </p>
-          )}
-        </section>
-
-        <section className={styles.dashboardSection} aria-labelledby="activity-title">
-          <h2 id="activity-title">Последние действия</h2>
-          <p>Доступ к админке общий; персональный автор действий не определяется.</p>
-          <ActivityList events={model.recentActivity.slice(0, 5)} />
-          <p className={styles.dashboardNote}><Link href="/admin/changes">Все изменения</Link></p>
-        </section>
-      </div>
 
       <nav
         className={styles.overviewNavigation}
