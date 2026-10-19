@@ -28,7 +28,7 @@ export function BankQrTransfer() {
                 checked={selectedId === option.id}
                 onChange={() => setSelectedId(option.id)}
               />
-              <span>{option.label}</span>
+              <span><i className={`bank-qr-mark bank-qr-mark-${option.id}`} aria-hidden="true">{option.label.slice(0, 1)}</i>{option.label}</span>
             </label>
           ))}
         </div>
@@ -50,6 +50,7 @@ export function BankQrTransfer() {
                 Сохранить QR
               </a>
             </figcaption>
+            <p className="bank-qr-instruction">Наведите камеру телефона на код или сохраните его и откройте в приложении банка.</p>
           </figure>
           <div className="bank-qr-account">
             <dl className="bank-qr-requisites">
@@ -64,23 +65,24 @@ export function BankQrTransfer() {
           </div>
         </div>
       ) : (
-        <p className="bank-qr-placeholder">
-          Выберите банк, чтобы показать QR-код и реквизиты
-        </p>
+        <div className="bank-qr-placeholder">
+          <span className="bank-qr-placeholder-icon" aria-hidden="true">▦</span>
+          <div><strong>Выберите банк, чтобы показать QR-код и реквизиты</strong>
+          <p>С компьютера отсканируйте код телефоном. С телефона сохраните изображение и откройте его в приложении банка.</p></div>
+        </div>
       )}
 
-      <p className="preview-note">
-        С компьютера отсканируйте код телефоном. С телефона сохраните изображение
-        и откройте его в приложении банка.
-      </p>
-      <p className="preview-note">
-        Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей
-        (СБП).
-      </p>
-      <p className="preview-note">
-        Перевод по QR является пожертвованием на уставную деятельность и принятием{" "}
-        <a href="/donation-offer">оферты</a>.
-      </p>
+      <a className="bank-qr-other" href="/requisites">Другой банк? Переведите по реквизитам фонда</a>
+      <div className="bank-qr-notes">
+        <p className="preview-note">
+          Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей
+          (СБП).
+        </p>
+        <p className="preview-note">
+          Перевод по QR является пожертвованием на уставную деятельность и принятием{" "}
+          <a href="/donation-offer">оферты</a>.
+        </p>
+      </div>
     </section>
   );
 }
