@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { siteConfig } from "@/config/site";
 
 describe("siteConfig", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
   it("contains the confirmed foundation identity", () => {
     expect(siteConfig.name).toBe("Фонд «Быть Добру»");
     expect(siteConfig.shortName).toBe("ФБД");
@@ -35,9 +39,19 @@ describe("siteConfig", () => {
     );
   });
 
-  it("uses a valid local site origin fallback", () => {
-    expect(siteConfig.siteUrl).toBeInstanceOf(URL);
-    expect(siteConfig.siteUrl.origin).toBe("https://fond-bit-dobru.ru");
-    expect(siteConfig.foundedAt).toBe("2025-07-17");
+  it("uses the production site origin fallback when no override is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", undefined);
+    vi.resetModules();
+    const { siteConfig: config } = await import("@/config/site");
+    expect(config.siteUrl).toBeInstanceOf(URL);
+    expect(config.siteUrl.origin).toBe("https://fond-bit-dobru.ru");
+    expect(config.foundedAt).toBe("2025-07-17");
+  });
+
+  it("uses the configured site origin", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
+    vi.resetModules();
+    const { siteConfig: config } = await import("@/config/site");
+    expect(config.siteUrl.origin).toBe("http://localhost:3000");
   });
 });
