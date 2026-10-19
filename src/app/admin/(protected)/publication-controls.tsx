@@ -2,6 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import styles from "./editorial.module.css";
+import admin from "../admin.module.css";
 
 export function PublicationControls({ status, uploading, missing = [] }: { status: string; uploading: boolean; missing?: string[] }) {
   const { pending } = useFormStatus();
@@ -11,8 +12,9 @@ export function PublicationControls({ status, uploading, missing = [] }: { statu
       ? [["ARCHIVED", "Сохранить изменения"], ["DRAFT", "В черновик"], ["PUBLISHED", "Опубликовать"]]
       : [["DRAFT", "Сохранить черновик"], ["PUBLISHED", "Опубликовать"]];
   return <section className={styles.section} aria-label="Публикация">
+    <h2 className={styles.sectionTitle}>Публикация</h2>
     <p>Публикация делает материал доступным посетителям. Черновик и архив скрыты с сайта.</p>
     {missing.length ? <p>Для публикации заполните: {missing.join(", ")}. Требования проверяются при сохранении.</p> : null}
-    <div className={styles.actions}>{actions.map(([value, label]) => <button key={value} type="submit" name="status" value={value} disabled={pending || uploading}>{pending ? "Сохранение..." : label}</button>)}</div>
+    <div className={styles.actions}>{actions.map(([value, label]) => <button className={value === "PUBLISHED" ? admin.primaryButton : admin.secondaryButton} key={value} type="submit" name="status" value={value} disabled={pending || uploading}>{pending ? "Сохранение..." : label}</button>)}</div>
   </section>;
 }

@@ -8,7 +8,7 @@ import { mediaPreviewUrl } from "@/features/content-admin/media-preview-url";
 export function EditorialPreview({ values }: { values: Record<string, string> }) {
   const [wide, setWide] = useState(false);
   const imageUrl = mediaPreviewUrl(values.imageUrl);
-  return <details>
+  return <details className={styles.previewDisclosure}>
     <summary>Предпросмотр</summary>
     <div className={styles.preview}>
       <div className={styles.actions}>

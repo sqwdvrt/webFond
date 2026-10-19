@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { safeContentReturnTo } from "@/features/content-admin/list-filters";
 
@@ -63,6 +63,10 @@ function DocumentFormEditor({
     initialState,
   );
 
+  useEffect(() => {
+    if (state.status === "error") formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
+
   function value(name: DocumentField) {
     if (state.values && Object.hasOwn(state.values, name)) {
       return state.values[name] ?? "";
@@ -71,7 +75,7 @@ function DocumentFormEditor({
   }
 
   const field = (name: DocumentField) => ({
-    "aria-describedby": `${name}-error`,
+    "aria-describedby": `${name}-help ${name}-error`,
     "aria-invalid": Boolean(state.errors?.[name]),
   });
 
@@ -102,18 +106,27 @@ function DocumentFormEditor({
           />
         ) : null}
 
+        <fieldset className={styles.projectFormSection}>
+          <legend>О документе</legend>
+          <p className={styles.fieldHint}>Укажите понятное название и категорию, чтобы посетителям было проще найти документ.</p>
         <div className={styles.field}>
           <label htmlFor="title">Название</label>
           <input {...field("title")} defaultValue={String(value("title"))} id="title" maxLength={160} name="title" required />
+          <p className={styles.fieldHint} id="title-help">Например: «Годовой отчет за 2026 год». {(guard.values.title ?? String(value("title"))).length} / 160</p>
           <FieldError id="title-error">{state.errors?.title}</FieldError>
         </div>
 
         <div className={styles.field}>
           <label htmlFor="category">Категория</label>
           <input {...field("category")} defaultValue={String(value("category"))} id="category" maxLength={80} name="category" required />
+          <p className={styles.fieldHint} id="category-help">Например: «Отчеты», «Учредительные документы». Используйте одинаковые названия для одной категории. {(guard.values.category ?? String(value("category"))).length} / 80</p>
           <FieldError id="category-error">{state.errors?.category}</FieldError>
         </div>
+        </fieldset>
 
+        <fieldset className={styles.projectFormSection}>
+          <legend>Файл документа</legend>
+          <p className={styles.fieldHint}>Загрузите PDF или укажите ссылку. Перед публикацией откройте файл и проверьте его содержимое.</p>
         <MediaUrlField
           accept="application/pdf"
           describedBy="fileUrl-error"
@@ -128,6 +141,7 @@ function DocumentFormEditor({
           uploadLabel="Загрузить документ"
           value={String(value("fileUrl"))}
         />
+        </fieldset>
 
         <FieldError id="status-error">{state.errors?.status}</FieldError>
 

@@ -50,6 +50,7 @@ function MessageFormEditor({
   return (
     <section className={styles.messageEdit} aria-labelledby="message-edit-title">
       <h2 id="message-edit-title">Обработка обращения</h2>
+      <p className={styles.fieldHint}>Обновите этап обработки и запишите результат, чтобы коллеги могли продолжить работу.</p>
       {state.status === "idle" && successMessage ? (
         <p className={styles.formSuccess} role="status">{successMessage}</p>
       ) : null}
@@ -65,7 +66,7 @@ function MessageFormEditor({
         <div className={styles.field}>
           <label htmlFor="contact-status">Статус обращения</label>
           <select
-            aria-describedby={state.errors?.status ? "contact-status-error" : undefined}
+            aria-describedby={`contact-status-help${state.errors?.status ? " contact-status-error" : ""}`}
             aria-invalid={Boolean(state.errors?.status)}
             defaultValue={status}
             id="contact-status"
@@ -76,6 +77,7 @@ function MessageFormEditor({
               <option key={value} value={value}>{CONTACT_STATUS_LABELS[value]}</option>
             ))}
           </select>
+          <p className={styles.fieldHint} id="contact-status-help">Выберите текущий этап. Смена статуса сохраняется в истории обращения.</p>
           {state.errors?.status ? (
             <p className={styles.fieldError} id="contact-status-error" role="alert">
               {state.errors.status}
@@ -97,6 +99,7 @@ function MessageFormEditor({
             maxLength={4000}
             name="note"
           />
+          <p className={styles.fieldHint}>{(guard.values.note ?? note).length} / 4000</p>
           {state.errors?.note ? (
             <p className={styles.fieldError} id="contact-note-error" role="alert">
               {state.errors.note}

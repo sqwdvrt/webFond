@@ -165,11 +165,12 @@ function ValidRequisitesForm({
         ) : null}
 
         {[
-          { title: "Организация", names: ["fullName", "shortName", "ogrn", "inn", "kpp"] },
-          { title: "Контакты", names: ["address", "email"] },
-          { title: "Банковские сведения", names: ["bankName", "recipientName", "checkingAccount", "correspondentAccount", "bik"] },
+          { title: "Организация", hint: "Указывайте сведения в точности как в регистрационных документах фонда.", names: ["fullName", "shortName", "ogrn", "inn", "kpp"] },
+          { title: "Контакты", hint: "Адрес и электронная почта будут доступны посетителям на странице реквизитов.", names: ["address", "email"] },
+          { title: "Банковские сведения", hint: "Перед сохранением сверьте счета и БИК с реквизитами банка. Начальные нули важны.", names: ["bankName", "recipientName", "checkingAccount", "correspondentAccount", "bik"] },
         ].map((group) => <fieldset className={ui.section} key={group.title}>
           <legend>{group.title}</legend>
+          <p className={styles.fieldHint}>{group.hint}</p>
           {fields.filter((item) => group.names.includes(item.name)).map((item) => (
           <div className={styles.field} key={item.name}>
             <label htmlFor={item.name}>{item.label}</label>
@@ -188,10 +189,14 @@ function ValidRequisitesForm({
           </div>
         ))}</fieldset>)}
 
+        <fieldset className={ui.section}>
+          <legend>Публикация реквизитов</legend>
+          <p className={styles.fieldHint} id="status-help">Опубликованные реквизиты видны посетителям. Перед сохранением проверьте таблицу изменений ниже.</p>
         <div className={styles.field}>
           <label htmlFor="status">Статус</label>
           <select
             {...field("status")}
+            aria-describedby="status-help status-error"
             defaultValue={String(value("status"))}
             id="status"
             key={String(value("status"))}
@@ -203,9 +208,10 @@ function ValidRequisitesForm({
           </select>
           <FieldError id="status-error">{state.errors?.status}</FieldError>
         </div>
+        </fieldset>
 
         <UnsavedChangesNotice guard={guard} />
-        {changedFields.length ? <section aria-label="Изменения перед сохранением">
+        {changedFields.length ? <section className={ui.section} aria-label="Изменения перед сохранением">
           <table className={ui.diff}>
             <caption>Изменения перед сохранением</caption>
             <thead><tr><th scope="col">Поле</th><th scope="col">Было</th><th scope="col">Станет</th></tr></thead>
@@ -215,7 +221,7 @@ function ValidRequisitesForm({
               <td>{item.name === "status" ? statusLabels[guard.values.status as keyof typeof statusLabels] : guard.values[item.name] || "Нет данных"}</td>
             </tr>)}</tbody>
           </table>
-          <button type="button" onClick={() => {
+          <button className={styles.secondaryButton} type="button" onClick={() => {
             const form = formRef.current;
             if (!form) return;
             for (const [name, value] of Object.entries(guard.baseline)) {
@@ -225,8 +231,10 @@ function ValidRequisitesForm({
             form.dispatchEvent(new Event("editorialchange", { bubbles: true }));
           }}>Отменить изменения</button>
         </section> : null}
+        <div className={ui.actions}>
         <SubmitButton pendingLabel="Сохранение...">Сохранить</SubmitButton>
         <a href="/requisites">Открыть публичные реквизиты</a>
+        </div>
         {state.status === "error" ? <a href="/admin/requisites">Загрузить актуальные реквизиты</a> : null}
       </form>
     </>

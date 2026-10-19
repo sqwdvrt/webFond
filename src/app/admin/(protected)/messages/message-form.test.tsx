@@ -36,9 +36,7 @@ describe("MessageForm", () => {
       contact.updatedAt.toISOString(),
     );
     expect(document.querySelectorAll('input[type="hidden"]')).toHaveLength(1);
-    expect(screen.getByLabelText("Статус обращения")).not.toHaveAttribute(
-      "aria-describedby",
-    );
+    expect(screen.getByLabelText("Статус обращения")).toHaveAccessibleDescription(/Смена статуса сохраняется/);
   });
 
   it("preserves submitted status and an empty note after validation errors", async () => {

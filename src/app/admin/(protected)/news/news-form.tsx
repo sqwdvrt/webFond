@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { projectSlug } from "@/features/content-admin/project-slug";
 
@@ -67,6 +67,10 @@ function NewsFormEditor({
     initialState,
   );
 
+  useEffect(() => {
+    if (state.status === "error") formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
+
   function value(name: "title" | "slug" | "summary" | "content" | "imageUrl" | "status") {
     if (state.values && Object.hasOwn(state.values, name)) {
       return state.values[name] ?? "";
@@ -77,7 +81,7 @@ function NewsFormEditor({
   const field = (
     name: "title" | "slug" | "summary" | "content" | "imageUrl" | "status",
   ) => ({
-    "aria-describedby": `${name}-error`,
+    "aria-describedby": `${name}-help ${name}-error`,
     "aria-invalid": Boolean(state.errors?.[name]),
   });
 
@@ -112,6 +116,9 @@ function NewsFormEditor({
           />
         ) : null}
 
+        <fieldset className={styles.projectFormSection}>
+          <legend>Основная информация</legend>
+          <p className={styles.fieldHint}>Заголовок и адрес обязательны. Текст и изображение можно добавить позже в черновике.</p>
         <div className={styles.field}>
           <label htmlFor="title">Заголовок</label>
           <input {...field("title")} defaultValue={String(value("title"))} id="title" maxLength={160} name="title" required onChange={(event) => {
@@ -122,24 +129,34 @@ function NewsFormEditor({
               input.dispatchEvent(new Event("editorialchange", { bubbles: true }));
             }
           }} />
+          <p className={styles.fieldHint} id="title-help">Коротко о главном событии. {(guard.values.title ?? String(value("title"))).length} / 160</p>
           <FieldError id="title-error">{state.errors?.title}</FieldError>
         </div>
 
         <div className={styles.field}>
           <label htmlFor="slug">Адрес страницы</label>
           <input {...field("slug")} defaultValue={String(value("slug"))} id="slug" maxLength={120} name="slug" required autoCapitalize="none" spellCheck={false} onChange={() => { customSlug.current = true; }} />
+          <p className={styles.fieldHint} id="slug-help">
+            Заполняется из заголовка. Можно изменить: строчные латинские буквы, цифры и дефисы.
+            <span className={styles.projectUrl}>/news/{guard.values.slug || "adres-novosti"}</span>
+          </p>
           <FieldError id="slug-error">{state.errors?.slug}</FieldError>
         </div>
+        </fieldset>
 
+        <fieldset className={styles.projectFormSection}>
+          <legend>Текст и изображение</legend>
         <div className={styles.field}>
           <label htmlFor="summary">Краткое описание</label>
           <textarea {...field("summary")} defaultValue={String(value("summary"))} id="summary" maxLength={500} name="summary" rows={4} />
+          <p className={styles.fieldHint} id="summary-help">Текст для карточки новости, от 10 символов для публикации. {(guard.values.summary ?? String(value("summary"))).length} / 500</p>
           <FieldError id="summary-error">{state.errors?.summary}</FieldError>
         </div>
 
         <div className={styles.field}>
           <label htmlFor="content">Содержание</label>
           <textarea {...field("content")} defaultValue={String(value("content"))} id="content" maxLength={20_000} name="content" rows={12} />
+          <p className={styles.fieldHint} id="content-help">Подробности события. Разделяйте абзацы пустой строкой, от 20 символов для публикации. {(guard.values.content ?? String(value("content"))).length} / 20000</p>
           <FieldError id="content-error">{state.errors?.content}</FieldError>
         </div>
 
@@ -156,6 +173,7 @@ function NewsFormEditor({
           uploadLabel="Загрузить изображение"
           value={String(value("imageUrl"))}
         />
+        </fieldset>
 
         <FieldError id="status-error">{state.errors?.status}</FieldError>
 
