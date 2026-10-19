@@ -366,6 +366,23 @@
   font-weight: 700;
 }
 
+.donationFilters {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.donationFilters > .compactField {
+  flex: 1 1 170px;
+}
+
+.donationFilters > .searchField {
+  flex: 2 1 280px;
+}
+
+.donationsHeading .filterActions {
+  flex-wrap: wrap;
+}
+
 .compactField input,
 .compactField select {
   width: 100%;

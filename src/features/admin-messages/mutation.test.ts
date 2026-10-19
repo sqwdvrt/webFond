@@ -28,6 +28,9 @@ function form(
 }
 
 describe("parseContactMutation", () => {
+  it("marks a quick status change as preserving the existing note", () => {
+    expect(parseContactMutation(form({ status: "CLOSED", intent: "status-only" }))).toEqual({ ok: true, value: { status: "CLOSED", note: null, preserveNote: true } });
+  });
   it.each(["NEW", "IN_PROGRESS", "CLOSED", "SPAM"] as const)(
     "accepts the %s status",
     (status) => {
@@ -175,6 +178,20 @@ function transactionClient(overrides: {
     createMany,
   };
 }
+
+it("quick status updates preserve the existing private note and audit only status", async () => {
+  const tx = transactionClient({ current: { status: "NEW", internalNote: "Private note", updatedAt } });
+  await expect(updateContactRequest("contact-1", updatedAt, { status: "CLOSED", note: null, preserveNote: true }, tx.client)).resolves.toEqual({ status: "ok" });
+  expect(tx.updateMany).toHaveBeenCalledWith({ where: { id: "contact-1", updatedAt }, data: { status: "CLOSED", internalNote: "Private note" } });
+  expect(tx.createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({ action: "CONTACT_STATUS_CHANGED" })] });
+});
+
+it("preserves only validated return targets after a successful mutation", async () => {
+  for (const [returnTo, expected] of [["/admin/messages?status=ACTIVE&page=2", "/admin/messages?status=ACTIVE&page=2"], ["https://evil.test", "/admin/messages"]]) {
+    const outcome = await updateContactRequestMutation("contact-1", form({ status: "CLOSED", updatedAt: updatedAt.toISOString(), returnTo }), { requireSession: async () => undefined, parse: parseContactMutation, update: async () => ({ status: "ok" }), now: () => now });
+    expect(outcome).toMatchObject({ ok: true, effect: { redirectTo: `/admin/messages/contact-1?success=saved&returnTo=${encodeURIComponent(expected!)}` } });
+  }
+});
 
 describe("updateContactRequest repository", () => {
   it("reads the current safe comparison fields inside one transaction", async () => {

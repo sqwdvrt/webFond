@@ -91,6 +91,27 @@ describe("requisites admin page", () => {
 });
 
 describe("RequisitesForm", () => {
+  it("groups fields, preserves leading zeros and previews only changes including public status", async () => {
+    const user = userEvent.setup();
+    render(<RequisitesForm replaceAction={idleAction} requisites={{ status: "ok", value: savedValues, updatedAt }} saveAction={idleAction} />);
+    expect(screen.getByRole("group", { name: "Организация" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Контакты" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Банковские сведения" })).toBeVisible();
+    const bik = screen.getByLabelText("БИК");
+    expect(bik).toHaveAttribute("inputmode", "numeric");
+    expect(bik).toHaveAttribute("type", "text");
+    await user.clear(bik);
+    await user.type(bik, "001234567");
+    await user.selectOptions(screen.getByLabelText("Статус"), "DRAFT");
+    expect(screen.getByRole("table")).toHaveTextContent("001234567");
+    expect(screen.getByRole("table")).toHaveTextContent("Публичный статус");
+    expect(screen.getByRole("table")).not.toHaveTextContent("Полное наименование");
+    await user.click(screen.getByRole("button", { name: "Отменить изменения" }));
+    expect(bik).toHaveValue(savedValues.bik);
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Есть несохранённые изменения")).not.toBeInTheDocument();
+  });
+
   it("renders every legal and bank field, status and update token", () => {
     render(
       <RequisitesForm

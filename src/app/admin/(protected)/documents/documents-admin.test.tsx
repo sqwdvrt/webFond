@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ContentFormState } from "@/features/content-admin/mutations";
 import type {
-  AdminDocumentListRow,
+  AdminDocumentPageRow,
   AdminDocumentRow,
 } from "@/features/content-admin/repository";
 
@@ -26,7 +26,8 @@ const documentRow: AdminDocumentRow = {
   updatedAt,
 };
 
-const listRow: AdminDocumentListRow = {
+const listRow: AdminDocumentPageRow = {
+  fileUrl: documentRow.fileUrl,
   id: documentRow.id,
   title: documentRow.title,
   category: documentRow.category,
@@ -44,7 +45,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
     }),
     listDocuments: vi.fn(async () => {
       events.push("list");
-      return [listRow];
+      return { items: [listRow], total: 1, page: 1, pageSize: 25, totalPages: 1 };
     }),
     getDocument: vi.fn(async () => {
       events.push("get");
@@ -62,6 +63,37 @@ const idleAction = vi.fn<
 >(async () => ({ status: "idle", message: "" }));
 
 describe("documents admin pages", () => {
+  it("passes validated filters to the paginated reader and retains the corrected page in editor links", async () => {
+    const deps = dependencies({
+      listDocuments: vi.fn(async () => ({ items: [{ ...listRow, status: "PUBLISHED" as const }], total: 26, page: 2, pageSize: 25, totalPages: 2 })),
+    });
+    render(await renderDocumentsPage({ q: "  Помощь  ", status: "PUBLISHED", page: "99", sort: "updated-asc" }, deps));
+    expect(deps.listDocuments).toHaveBeenCalledWith({ q: "Помощь", status: "PUBLISHED", page: 99, sort: "updated-asc" });
+    const edit = screen.getByRole("link", { name: `Редактировать ${listRow.title}` });
+    const returnTo = new URL(edit.getAttribute("href")!, "https://example.org").searchParams.get("returnTo")!;
+    expect(new URL(returnTo, "https://example.org").pathname).toBe("/admin/documents");
+    expect(new URL(returnTo, "https://example.org").searchParams.get("page")).toBe("2");
+    const create = screen.getByRole("link", { name: /Создать/ });
+    expect(new URL(create.getAttribute("href")!, "https://example.org").searchParams.get("returnTo")).toBe(returnTo);
+    expect(screen.queryByRole("link", { name: "Следующая страница" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Открыть файл: " + listRow.title })).toHaveAttribute("href", documentRow.fileUrl);
+  });
+
+  it("normalizes hostile URL parameters before reading", async () => {
+    const deps = dependencies();
+    render(await renderDocumentsPage({ status: "bad", sort: "random", page: "-2", q: ["one", "two"] }, deps));
+    expect(deps.listDocuments).toHaveBeenCalledWith({ q: "", status: "", page: 1, sort: "updated-desc" });
+  });
+
+  it("shows a distinct empty search state", async () => {
+    const deps = dependencies({
+      listDocuments: vi.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 25, totalPages: 1 })),
+    });
+    render(await renderDocumentsPage({ q: "Не существует" }, deps));
+    expect(screen.getByText("По вашему запросу ничего не найдено")).toBeVisible();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
   it("authenticates before listing documents and renders create and edit links", async () => {
     const deps = dependencies();
 
@@ -84,7 +116,7 @@ describe("documents admin pages", () => {
     const deps = dependencies({
       listDocuments: vi.fn(async () => {
         deps.events.push("list");
-        return [];
+        return { items: [], total: 0, page: 1, pageSize: 25, totalPages: 1 };
       }),
     });
 
@@ -171,10 +203,8 @@ describe("DocumentForm", () => {
     expect(screen.getByLabelText("Название")).toHaveValue(documentRow.title);
     expect(screen.getByLabelText("Категория")).toHaveValue(documentRow.category);
     expect(screen.getByLabelText("Ссылка на документ")).toHaveValue(documentRow.fileUrl);
-    expect(screen.getByLabelText("Статус")).toHaveValue("DRAFT");
-    expect(screen.getByRole("option", { name: "Черновик" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "Опубликован" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "В архиве" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toHaveAttribute("value", "DRAFT");
+    expect(screen.getByRole("button", { name: "Опубликовать" })).toHaveAttribute("name", "status");
     expect(document.querySelector('input[name="updatedAt"]')).toHaveValue(
       updatedAt.toISOString(),
     );
@@ -202,8 +232,7 @@ describe("DocumentForm", () => {
     await user.type(screen.getByLabelText("Название"), "Измененный отчет");
     await user.type(screen.getByLabelText("Категория"), "Финансы");
     await user.type(screen.getByLabelText("Ссылка на документ"), "/docs/edited.pdf");
-    await user.selectOptions(screen.getByLabelText("Статус"), "ARCHIVED");
-    await user.click(screen.getByRole("button", { name: "Создать документ" }));
+    await user.click(screen.getByRole("button", { name: "Сохранить черновик" }));
 
     expect(await screen.findByRole("alert", { name: "Ошибка сохранения" })).toHaveTextContent(
       "Не удалось сохранить",
@@ -211,8 +240,8 @@ describe("DocumentForm", () => {
     expect(screen.getByLabelText("Название")).toHaveValue("Измененный отчет");
     expect(screen.getByLabelText("Категория")).toHaveValue("Финансы");
     expect(screen.getByLabelText("Ссылка на документ")).toHaveValue("/docs/edited.pdf");
-    expect(screen.getByLabelText("Статус")).toHaveValue("ARCHIVED");
-    expect(container.querySelector('a[href*="edited.pdf"]')).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toBeVisible();
+    expect(container.querySelector('a[href*="edited.pdf"]')).toHaveTextContent("Открыть документ");
   });
 
   it("offers confirmed deletion only for a never-published draft and sends its token", async () => {

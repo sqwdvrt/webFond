@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -42,6 +42,36 @@ describe("ProjectForm React action integration", () => {
     expect(screen.getByLabelText("Адрес страницы")).toHaveValue("existing-project");
   });
 
+  it("prevents click and keyboard saves during upload and tracks the uploaded URL as unsaved", async () => {
+    const user = userEvent.setup();
+    let complete!: (response: Response) => void;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise((resolve) => { complete = resolve; }));
+    const save = vi.fn(async (state: ContentFormState) => state);
+    render(<ProjectForm mode="create" saveAction={save} />);
+    await user.type(screen.getByLabelText("Название"), "Проект");
+    await user.upload(screen.getByLabelText("Загрузить изображение"), new File(["image"], "image.jpg", { type: "image/jpeg" }));
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toBeDisabled();
+    expect(screen.getByText("Дождитесь завершения загрузки перед сохранением.")).toBeVisible();
+    fireEvent.submit(screen.getByLabelText("Название").closest("form")!);
+    expect(save).not.toHaveBeenCalled();
+    await act(async () => { complete(new Response(JSON.stringify({ url: "/uploaded.jpg" }))); });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Сохранить черновик" })).toBeEnabled());
+    expect(screen.getByLabelText("Изображение")).toHaveValue("/uploaded.jpg");
+    expect(screen.getByText("Есть несохранённые изменения")).toBeVisible();
+    fetchMock.mockRestore();
+  });
+
+  it("submits a validated returnTo without counting it as an editorial change", async () => {
+    const user = userEvent.setup();
+    const save = vi.fn(async (): Promise<ContentFormState> => ({ status: "error", message: "Ошибка" }));
+    render(<ProjectForm mode="create" returnTo="/admin/projects?status=DRAFT&page=2" saveAction={save} />);
+    expect(screen.queryByText("Есть несохранённые изменения")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Название"), "Проект");
+    await user.click(screen.getByRole("button", { name: "Сохранить черновик" }));
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect((save.mock.calls[0] as unknown as [ContentFormState, FormData])[1].get("returnTo")).toBe("/admin/projects?status=DRAFT&page=2");
+  });
+
   it("preserves every submitted edit after a duplicate repository error", async () => {
     const user = userEvent.setup();
     const create = vi.fn(async (): Promise<CreateEditorialResult> => ({
@@ -68,8 +98,7 @@ describe("ProjectForm React action integration", () => {
     await user.type(screen.getByLabelText("Краткое описание"), edits.summary);
     await user.type(screen.getByLabelText("Содержание"), edits.content);
     await user.type(screen.getByLabelText("Изображение"), edits.imageUrl);
-    await user.selectOptions(screen.getByLabelText("Статус"), edits.status);
-    await user.click(screen.getByRole("button", { name: "Создать проект" }));
+    await user.click(screen.getByRole("button", { name: "Сохранить черновик" }));
 
     expect(await screen.findByRole("alert", { name: "Ошибка сохранения" })).toHaveTextContent(
       "Такой адрес уже используется",
@@ -80,6 +109,6 @@ describe("ProjectForm React action integration", () => {
     expect(screen.getByLabelText("Краткое описание")).toHaveValue(edits.summary);
     expect(screen.getByLabelText("Содержание")).toHaveValue(edits.content);
     expect(screen.getByLabelText("Изображение")).toHaveValue(edits.imageUrl);
-    expect(screen.getByLabelText("Статус")).toHaveValue(edits.status);
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toBeVisible();
   });
 });

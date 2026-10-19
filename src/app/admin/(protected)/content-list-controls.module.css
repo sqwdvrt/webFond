@@ -1,0 +1,89 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  padding-block: 1rem;
+}
+
+.filters label {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.search {
+  flex: 1 1 14rem;
+}
+
+.filters input,
+.filters select,
+.filters button {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #a9b7b5;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #183b36;
+  font: inherit;
+}
+
+.filters button {
+  cursor: pointer;
+  background: #183b36;
+  color: #fff;
+}
+
+.filters a,
+.pagination a,
+.rowActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  color: #23594f;
+  text-underline-offset: 0.2em;
+}
+
+.filters :focus-visible,
+.pagination :focus-visible,
+.rowActions :focus-visible,
+.tableViewport:focus-visible {
+  outline: 2px solid #23594f;
+  outline-offset: 3px;
+}
+
+.pagination,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pagination {
+  padding-block: 1rem;
+}
+
+.tableViewport {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.rowActions {
+  min-width: 11rem;
+}
+
+@media (max-width: 640px) {
+  .filters label {
+    width: 100%;
+  }
+
+  .pagination {
+    justify-content: center;
+  }
+}

@@ -13,6 +13,10 @@ export type DonationExportFilters = {
   q?: string;
   fromUtc?: Date;
   toExclusiveUtc?: Date;
+  needsReview?: boolean;
+  stale?: boolean;
+  dateField?: "paidAt";
+  donationId?: string;
 };
 
 export type DonationPageFilters = DonationExportFilters & {
@@ -29,6 +33,11 @@ export type DonationRow = {
   donorEmail: string | null;
   paidAt: Date | null;
   createdAt: Date;
+  lastReconciledAt?: Date | null;
+  nextReconcileAt?: Date | null;
+  lastReconcileErrorCode?: string | null;
+  reconcileAttempts?: number;
+  manualReviewRequired?: boolean;
 };
 
 export type DonationCursor = Pick<DonationRow, "createdAt" | "id">;

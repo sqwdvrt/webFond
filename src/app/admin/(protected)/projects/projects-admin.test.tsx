@@ -71,7 +71,7 @@ function dependencies(overrides: Record<string, unknown> = {}) {
     }),
     listProjects: vi.fn(async () => {
       events.push("list");
-      return [listRow];
+      return { items: [listRow], total: 1, page: 1, pageSize: 25, totalPages: 1 };
     }),
     getProject: vi.fn(async () => {
       events.push("get");
@@ -89,6 +89,37 @@ describe("projects admin pages", () => {
     actionState.state = { status: "idle", message: "" };
     actionState.deleteState = { status: "idle", message: "" };
     actionState.deleteAction = undefined;
+  });
+
+  it("passes validated filters to the paginated reader and retains the corrected page in editor links", async () => {
+    const deps = dependencies({
+      listProjects: vi.fn(async () => ({ items: [{ ...listRow, status: "PUBLISHED" as const }], total: 26, page: 2, pageSize: 25, totalPages: 2 })),
+    });
+    render(await renderProjectsPage({ q: "  Помощь  ", status: "PUBLISHED", page: "99", sort: "updated-asc" }, deps));
+    expect(deps.listProjects).toHaveBeenCalledWith({ q: "Помощь", status: "PUBLISHED", page: 99, sort: "updated-asc" });
+    const edit = screen.getByRole("link", { name: `Редактировать ${listRow.title}` });
+    const returnTo = new URL(edit.getAttribute("href")!, "https://example.org").searchParams.get("returnTo")!;
+    expect(new URL(returnTo, "https://example.org").pathname).toBe("/admin/projects");
+    expect(new URL(returnTo, "https://example.org").searchParams.get("page")).toBe("2");
+    const create = screen.getByRole("link", { name: /Создать/ });
+    expect(new URL(create.getAttribute("href")!, "https://example.org").searchParams.get("returnTo")).toBe(returnTo);
+    expect(screen.queryByRole("link", { name: "Следующая страница" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Открыть на сайте: " + listRow.title })).toHaveAttribute("href", `/projects/${project.slug}`);
+  });
+
+  it("normalizes hostile URL parameters before reading", async () => {
+    const deps = dependencies();
+    render(await renderProjectsPage({ status: "bad", sort: "random", page: "-2", q: ["one", "two"] }, deps));
+    expect(deps.listProjects).toHaveBeenCalledWith({ q: "", status: "", page: 1, sort: "updated-desc" });
+  });
+
+  it("shows a distinct empty search state", async () => {
+    const deps = dependencies({
+      listProjects: vi.fn(async () => ({ items: [], total: 0, page: 1, pageSize: 25, totalPages: 1 })),
+    });
+    render(await renderProjectsPage({ q: "Не существует" }, deps));
+    expect(screen.getByText("По вашему запросу ничего не найдено")).toBeVisible();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
   it("authenticates before listing projects and renders create and edit links", async () => {
@@ -113,7 +144,7 @@ describe("projects admin pages", () => {
     const deps = dependencies({
       listProjects: vi.fn(async () => {
         deps.events.push("list");
-        return [];
+        return { items: [], total: 0, page: 1, pageSize: 25, totalPages: 1 };
       }),
     });
 
@@ -219,10 +250,8 @@ describe("ProjectForm", () => {
     expect(screen.getByLabelText("Изображение")).toHaveValue(project.imageUrl);
     expect(screen.getByLabelText("Цель сбора, ₽")).toHaveValue("");
     expect(screen.getByLabelText("Уже собрано вне сайта, ₽")).toHaveValue("");
-    expect(screen.getByLabelText("Статус")).toHaveValue("DRAFT");
-    expect(screen.getByRole("option", { name: "Черновик" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "Опубликован" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "В архиве" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toHaveAttribute("value", "DRAFT");
+    expect(screen.getByRole("button", { name: "Опубликовать" })).toHaveAttribute("name", "status");
     expect(document.querySelector('input[name="updatedAt"]')).toHaveValue(
       updatedAt.toISOString(),
     );
@@ -254,7 +283,7 @@ describe("ProjectForm", () => {
     expect(screen.getByLabelText("Изображение")).toHaveValue("/submitted.jpg");
     expect(screen.getByLabelText("Цель сбора, ₽")).toHaveValue("6000000");
     expect(screen.getByLabelText("Уже собрано вне сайта, ₽")).toHaveValue("1000");
-    expect(screen.getByLabelText("Статус")).toHaveValue("ARCHIVED");
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toBeVisible();
     expect(screen.getByText("Введите название")).toHaveAttribute("role", "alert");
     expect(screen.getByText("Используйте латиницу")).toHaveAttribute("role", "alert");
     expect(screen.getByText("Проверьте заполнение формы")).toHaveAttribute("role", "alert");

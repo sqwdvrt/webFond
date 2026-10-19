@@ -1,3 +1,5 @@
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
+
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +25,7 @@ export async function renderDocumentEditPage(
 
   if (!document) dependencies.showNotFound();
 
+  const returnTo = safeContentReturnTo(searchParams.returnTo, "/admin/documents");
   const saveAction = updateDocumentAction.bind(null, document.id);
   const removeAction = deleteDocumentAction.bind(null, document.id);
   const successMessage =
@@ -36,7 +39,7 @@ export async function renderDocumentEditPage(
     <section className={styles.dashboard} aria-labelledby="edit-document-title">
       <div className={styles.dashboardHeader}>
         <div>
-          <Link className={styles.backLink} href="/admin/documents">
+          <Link className={styles.backLink} href={returnTo}>
             <ChevronLeft aria-hidden="true" size={16} />
             Документы
           </Link>
@@ -47,6 +50,7 @@ export async function renderDocumentEditPage(
         <DocumentForm
           deleteAction={removeAction}
           initialValues={document}
+          returnTo={returnTo}
           mode="edit"
           saveAction={saveAction}
           successMessage={successMessage}

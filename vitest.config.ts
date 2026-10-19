@@ -16,6 +16,7 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       paymentIntegrationPath,
+      "src/features/payments/reconciliation-repository.integration.test.ts",
       ".worktrees/**",
     ],
     setupFiles: ["./vitest.setup.ts"],

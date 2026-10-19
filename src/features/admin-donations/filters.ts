@@ -107,6 +107,13 @@ function parseBaseFilters(
   const fromValue = oneValue(input, "from");
   const toValue = oneValue(input, "to");
   const queryValue = oneValue(input, "q");
+  const dateField = oneValue(input, "dateField");
+  if (!dateField.ok || (dateField.value && dateField.value !== "paidAt")) return { ok: false };
+  const donationId = oneValue(input, "donationId");
+  if (!donationId.ok || (donationId.value && !/^[a-zA-Z0-9_-]{1,128}$/.test(donationId.value))) return { ok: false };
+  const reviewValue = oneValue(input, "needsReview");
+  const staleValue = oneValue(input, "stale");
+  if (!reviewValue.ok || !staleValue.ok || (reviewValue.value && reviewValue.value !== "1") || (staleValue.value && staleValue.value !== "1")) return { ok: false };
 
   if (
     !statusValue.ok ||
@@ -150,6 +157,10 @@ function parseBaseFilters(
       ...(fromValue.value ? { from: fromValue.value, fromUtc } : {}),
       ...(toValue.value ? { to: toValue.value, toExclusiveUtc } : {}),
       ...(queryValue.value ? { q: queryValue.value } : {}),
+      ...(dateField.value ? { dateField: "paidAt" as const } : {}),
+      ...(donationId.value ? { donationId: donationId.value } : {}),
+      ...(reviewValue.value ? { needsReview: true } : {}),
+      ...(staleValue.value ? { stale: true } : {}),
     },
   };
 }
@@ -178,12 +189,16 @@ export function parseDonationPageFilters(
 
 export function buildDonationWhere(
   filters: DonationExportFilters,
+  now = new Date(),
 ): Prisma.DonationWhereInput {
   return {
+    ...(filters.needsReview ? { manualReviewRequired: true } : {}),
+    ...(filters.donationId ? { id: filters.donationId } : {}),
+    ...(filters.stale ? { AND: [{ status: "PENDING", createdAt: { lt: new Date(now.getTime() - 3_600_000) } }] } : {}),
     ...(filters.status ? { status: filters.status } : {}),
     ...(filters.fromUtc || filters.toExclusiveUtc
       ? {
-          createdAt: {
+          [filters.dateField === "paidAt" ? "paidAt" : "createdAt"]: {
             ...(filters.fromUtc ? { gte: filters.fromUtc } : {}),
             ...(filters.toExclusiveUtc ? { lt: filters.toExclusiveUtc } : {}),
           },
@@ -215,6 +230,10 @@ export function buildDonationQuery(
   if (filters.from) query.set("from", filters.from);
   if (filters.to) query.set("to", filters.to);
   if (filters.q) query.set("q", filters.q);
+  if (filters.needsReview) query.set("needsReview", "1");
+  if (filters.stale) query.set("stale", "1");
+  if (filters.dateField) query.set("dateField", filters.dateField);
+  if (filters.donationId) query.set("donationId", filters.donationId);
   if (options.includePage !== false && filters.page && filters.page !== 1) {
     query.set("page", String(filters.page));
   }

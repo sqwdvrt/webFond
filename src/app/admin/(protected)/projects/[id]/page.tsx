@@ -1,3 +1,5 @@
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
+
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +25,7 @@ export async function renderProjectEditPage(
 
   if (!project) dependencies.showNotFound();
 
+  const returnTo = safeContentReturnTo(searchParams.returnTo, "/admin/projects");
   const saveAction = updateProjectAction.bind(null, project.id);
   const removeAction = deleteProjectAction.bind(null, project.id, project.slug);
   const successMessage =
@@ -36,7 +39,7 @@ export async function renderProjectEditPage(
     <section className={styles.dashboard} aria-labelledby="edit-project-title">
       <div className={styles.dashboardHeader}>
         <div>
-          <Link className={styles.backLink} href="/admin/projects">
+          <Link className={styles.backLink} href={returnTo}>
             <ChevronLeft aria-hidden="true" size={16} />
             Проекты
           </Link>
@@ -47,6 +50,7 @@ export async function renderProjectEditPage(
         <ProjectForm
           deleteAction={removeAction}
           initialValues={project}
+          returnTo={returnTo}
           mode="edit"
           saveAction={saveAction}
           successMessage={successMessage}

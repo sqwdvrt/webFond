@@ -10,7 +10,9 @@ import {
   updateAuditedDocument,
   updateAuditedNews,
   updateAuditedProject,
+  saveAuditedRequisites,
 } from "./content-repository";
+import { defaultRequisitesDraft } from "../content-admin/validation";
 
 const updatedAt = new Date("2026-10-16T10:00:00.000Z");
 
@@ -178,12 +180,14 @@ describe("audited content updates", () => {
     });
   });
 
-  it("does not insert an audit row when a successful update keeps its status", async () => {
+  it("does not insert an audit row for an unchanged save", async () => {
     const createMany = vi.fn();
     const transaction = {
       document: {
         findUnique: vi.fn(async () => ({
           id: "document-1",
+          ...documentInput,
+          updatedAt,
           status: "DRAFT" as const,
           publishedAt: null,
         })),
@@ -199,6 +203,20 @@ describe("audited content updates", () => {
       transactionClient(transaction) as never,
     )).resolves.toMatchObject({ status: "ok" });
     expect(createMany).not.toHaveBeenCalled();
+  });
+
+  it("audits actual field changes with the same status without copying values", async () => {
+    const createMany = vi.fn();
+    const transaction = {
+      document: {
+        findUnique: vi.fn(async () => ({ id: "document-1", ...documentInput, updatedAt, publishedAt: null })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      adminAuditEvent: { createMany },
+    };
+    await updateAuditedDocument("document-1", updatedAt, { ...documentInput, title: "Secret changed title" }, transactionClient(transaction) as never);
+    expect(createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({ action: "CONTENT_UPDATED", changedFields: ["title"] })] });
+    expect(JSON.stringify(createMany.mock.calls)).not.toContain("Secret changed title");
   });
 
   it.each(["missing", "conflict"] as const)(
@@ -226,6 +244,24 @@ describe("audited content updates", () => {
       expect(createMany).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("audited requisites", () => {
+  it.each([false, true])("saves and audits only real changes: %s", async (changed) => {
+    const input = defaultRequisitesDraft();
+    const createMany = vi.fn();
+    const tx = {
+      siteSetting: {
+        findUnique: vi.fn(async () => ({ value: input, updatedAt })),
+        updateMany: vi.fn(async () => ({ count: 1 })),
+      },
+      adminAuditEvent: { createMany },
+    };
+    await saveAuditedRequisites({ ...input, bankName: changed ? "Private bank" : input.bankName }, updatedAt, transactionClient(tx) as never);
+    if (changed) expect(createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({ action: "REQUISITES_CHANGED", entityType: "REQUISITES", entityId: "requisites", changedFields: ["bankName"] })] });
+    else expect(createMany).not.toHaveBeenCalled();
+    expect(JSON.stringify(createMany.mock.calls)).not.toContain("Private bank");
+  });
 });
 
 describe("audited content deletes", () => {

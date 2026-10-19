@@ -27,6 +27,18 @@ import {
 } from "./content-ui";
 
 describe("shared content admin UI", () => {
+  it("only exposes public links for published rows, including document files", () => {
+    render(<ContentList caption="Материалы" emptyMessage="Пусто" items={[
+      { id: "1", title: "Публикация", status: "PUBLISHED", updatedAt: "Сегодня", editHref: "/admin/news/1", publicHref: "/news/publication" },
+      { id: "2", title: "Черновик", status: "DRAFT", updatedAt: "Сегодня", editHref: "/admin/news/2", publicHref: "/news/draft" },
+      { id: "3", title: "Архив", status: "ARCHIVED", updatedAt: "Сегодня", editHref: "/admin/news/3", publicHref: "/news/archive" },
+      { id: "4", title: "Отчет", status: "PUBLISHED", updatedAt: "Сегодня", editHref: "/admin/documents/4", publicHref: "/report.pdf", publicLabel: "Открыть файл" },
+    ]} />);
+    expect(screen.getByRole("link", { name: "Открыть на сайте: Публикация" })).toHaveAttribute("href", "/news/publication");
+    expect(screen.getByRole("link", { name: "Открыть файл: Отчет" })).toHaveAttribute("href", "/report.pdf");
+    expect(screen.queryByRole("link", { name: /Открыть.*Черновик|Открыть.*Архив/ })).not.toBeInTheDocument();
+  });
+
   beforeEach(() => {
     formStatus.pending = false;
     vi.restoreAllMocks();

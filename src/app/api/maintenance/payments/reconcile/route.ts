@@ -1,4 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
+import { parseReconcileRequest } from "@/features/payments/reconcile-request";
+import { readLimitedBody } from "@/features/payments/read-limited-body";
+import { prisma } from "@/lib/db";
 
 import { reconcilePendingPayments } from "@/features/payments/reconcile-pending";
 import { paymentRepository } from "@/features/payments/repository";
@@ -27,17 +30,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
-    const limit = typeof body.limit === "number" ? body.limit : 25;
+    const body = await readLimitedBody(request, 4096);
+    if (body.kind === "too-large") return new Response(null, { status: 413, headers });
+    let raw: unknown;
+    try { raw = JSON.parse(new TextDecoder().decode(body.bytes) || "{}"); } catch { return new Response(null, { status: 400, headers }); }
+    const command = parseReconcileRequest(raw);
+    if (!command || command.mode !== "batch") return new Response(null, { status: 400, headers });
     const now = new Date();
     const result = await reconcilePendingPayments({
       repository: paymentRepository,
       client: createYooKassaClient(readYooKassaConfig()),
       now,
-      limit,
-      maxAge: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1_000),
-      maxAttempts: 8,
+      limit: command.limit,
     });
+    await prisma.siteSetting.upsert({ where: { key: "paymentsReconciliationHeartbeat" }, create: { key: "paymentsReconciliationHeartbeat", value: { completedAt: new Date().toISOString(), failed: result.failed } }, update: { value: { completedAt: new Date().toISOString(), failed: result.failed } } });
     return Response.json(result, { headers });
   } catch {
     return new Response(null, { status: 503, headers });

@@ -23,6 +23,7 @@ import {
 
 import styles from "../../admin.module.css";
 import { ReconcileDonationsAction } from "./reconcile-action";
+import { reconciliationMessage } from "@/features/admin-donations/reconciliation-presentation";
 
 function donationsHref(filters: DonationPageFilters, page: number) {
   const query = buildDonationQuery({ ...filters, page });
@@ -72,6 +73,7 @@ export function DonationsView({
           </Link>
           <h1 id="donations-title">Пожертвования</h1>
         </div>
+        <div className={styles.filterActions}>
         <Link
           className={styles.exportButton}
           href={exportHref}
@@ -81,9 +83,19 @@ export function DonationsView({
           Скачать CSV
         </Link>
         <ReconcileDonationsAction />
+        </div>
       </div>
 
-      <form className={styles.filters} method="get" role="search">
+      <form className={`${styles.filters} ${styles.donationFilters}`} method="get" role="search">
+        <label className={styles.compactField}>
+          <span>Проверка</span>
+          <select name="needsReview" defaultValue={filters.needsReview ? "1" : ""}>
+            <option value="">Все платежи</option><option value="1">Требуют ручной проверки</option>
+          </select>
+        </label>
+        {filters.stale ? <input type="hidden" name="stale" value="1" /> : null}
+        {filters.donationId ? <input type="hidden" name="donationId" value={filters.donationId} /> : null}
+        <label className={styles.compactField}><span>Дата</span><select name="dateField" defaultValue={filters.dateField ?? ""}><option value="">Создания платежа</option><option value="paidAt">Подтверждения оплаты</option></select></label>
         <label className={styles.compactField}>
           <span>Статус</span>
           <select defaultValue={filters.status ?? ""} name="status">
@@ -143,6 +155,7 @@ export function DonationsView({
                 <th scope="col">Плательщик</th>
                 <th scope="col">Email</th>
                 <th scope="col">ID платежа</th>
+                <th scope="col">Проверка в ЮKassa</th>
               </tr>
             </thead>
             <tbody>
@@ -166,6 +179,13 @@ export function DonationsView({
                   <td>{donation.donorEmail ?? <MissingValue />}</td>
                   <td className={styles.paymentId}>
                     {donation.providerPaymentId ?? <MissingValue />}
+                  </td>
+                  <td>
+                    <p>{donation.lastReconciledAt ? `Проверено: ${formatDonationDateTime(donation.lastReconciledAt)}` : "Ещё не проверен"}</p>
+                    {donation.lastReconcileErrorCode || donation.manualReviewRequired ? <details><summary>{reconciliationMessage(donation.lastReconcileErrorCode, donation.manualReviewRequired)}</summary><code>{donation.lastReconcileErrorCode}</code></details> : null}
+                    {donation.nextReconcileAt ? <p>Следующая попытка: {formatDonationDateTime(donation.nextReconcileAt)}</p> : null}
+                    {donation.reconcileAttempts ? <p>Попыток: {donation.reconcileAttempts}</p> : null}
+                    {donation.status === "PENDING" && donation.providerPaymentId ? <ReconcileDonationsAction donationId={donation.id} /> : null}
                   </td>
                 </tr>
               ))}

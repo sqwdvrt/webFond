@@ -14,6 +14,16 @@ function expectValid<T>(result: { ok: true; value: T } | { ok: false }) {
 }
 
 describe("donation filters", () => {
+  it("supports an audited donation, manual-review queue and paid-date KPI links", () => {
+    const parsed = parseDonationPageFilters(new URLSearchParams("donationId=donation-1&needsReview=1&stale=1&dateField=paidAt&from=2026-10-01&to=2026-10-19"));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) throw new Error("expected valid filters");
+    const where = buildDonationWhere(parsed.value, new Date("2026-10-19T12:00:00Z"));
+    expect(where).toMatchObject({ id: "donation-1", manualReviewRequired: true, paidAt: { gte: new Date("2026-09-30T21:00:00Z") }, AND: [{ status: "PENDING", createdAt: { lt: new Date("2026-10-19T11:00:00Z") } }] });
+    const query = buildDonationQuery(parsed.value);
+    expect(query.get("dateField")).toBe("paidAt");
+    expect(query.get("donationId")).toBe("donation-1");
+  });
   it("normalizes valid page filters and serializes them", () => {
     const filters = expectValid(
       parseDonationPageFilters(

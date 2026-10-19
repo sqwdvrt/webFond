@@ -21,6 +21,21 @@ const edits = {
 } as const;
 
 describe("NewsForm React action integration", () => {
+  it("autofills a new address without overwriting manual or existing addresses", async () => {
+    const user = userEvent.setup();
+    const view = render(<NewsForm mode="create" saveAction={async (state) => state} />);
+    await user.type(screen.getByLabelText("Заголовок"), "Новости фонда");
+    expect(screen.getByLabelText("Адрес страницы")).toHaveValue("novosti-fonda");
+    await user.clear(screen.getByLabelText("Адрес страницы"));
+    await user.type(screen.getByLabelText("Адрес страницы"), "custom");
+    await user.type(screen.getByLabelText("Заголовок"), " сегодня");
+    expect(screen.getByLabelText("Адрес страницы")).toHaveValue("custom");
+    view.unmount();
+    render(<NewsForm mode="edit" saveAction={async (state) => state} />);
+    await user.type(screen.getByLabelText("Заголовок"), "Другое название");
+    expect(screen.getByLabelText("Адрес страницы")).toHaveValue("");
+  });
+
   it("preserves every submitted edit after a duplicate repository error", async () => {
     const user = userEvent.setup();
     const create = vi.fn(async (): Promise<CreateEditorialResult> => ({
@@ -42,12 +57,12 @@ describe("NewsForm React action integration", () => {
     render(<NewsForm mode="create" saveAction={action} />);
 
     await user.type(screen.getByLabelText("Заголовок"), edits.title);
+    await user.clear(screen.getByLabelText("Адрес страницы"));
     await user.type(screen.getByLabelText("Адрес страницы"), edits.slug);
     await user.type(screen.getByLabelText("Краткое описание"), edits.summary);
     await user.type(screen.getByLabelText("Содержание"), edits.content);
     await user.type(screen.getByLabelText("Изображение"), edits.imageUrl);
-    await user.selectOptions(screen.getByLabelText("Статус"), edits.status);
-    await user.click(screen.getByRole("button", { name: "Создать новость" }));
+    await user.click(screen.getByRole("button", { name: "Сохранить черновик" }));
 
     expect(await screen.findByRole("alert", { name: "Ошибка сохранения" })).toHaveTextContent(
       "Такой адрес уже используется",
@@ -58,6 +73,6 @@ describe("NewsForm React action integration", () => {
     expect(screen.getByLabelText("Краткое описание")).toHaveValue(edits.summary);
     expect(screen.getByLabelText("Содержание")).toHaveValue(edits.content);
     expect(screen.getByLabelText("Изображение")).toHaveValue(edits.imageUrl);
-    expect(screen.getByLabelText("Статус")).toHaveValue(edits.status);
+    expect(screen.getByRole("button", { name: "Сохранить черновик" })).toBeVisible();
   });
 });

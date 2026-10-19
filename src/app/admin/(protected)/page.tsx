@@ -67,6 +67,7 @@ const overviewSections = [
 
 const contentActivityLabels = {
   PROJECT: {
+    CONTENT_UPDATED: "Проект обновлён",
     CONTENT_CREATED: "Проект создан",
     CONTENT_PUBLISHED: "Проект опубликован",
     CONTENT_ARCHIVED: "Проект архивирован",
@@ -74,6 +75,7 @@ const contentActivityLabels = {
     CONTENT_DELETED: "Проект удалён",
   },
   NEWS_POST: {
+    CONTENT_UPDATED: "Новость обновлена",
     CONTENT_CREATED: "Новость создана",
     CONTENT_PUBLISHED: "Новость опубликована",
     CONTENT_ARCHIVED: "Новость архивирована",
@@ -81,6 +83,7 @@ const contentActivityLabels = {
     CONTENT_DELETED: "Новость удалена",
   },
   DOCUMENT: {
+    CONTENT_UPDATED: "Документ обновлён",
     CONTENT_CREATED: "Документ создан",
     CONTENT_PUBLISHED: "Документ опубликован",
     CONTENT_ARCHIVED: "Документ архивирован",
@@ -102,6 +105,8 @@ const activityEntityLabels: Record<SafeAdminAuditEvent["entityType"], string> = 
   NEWS_POST: "Новость",
   DOCUMENT: "Документ",
   CONTACT_REQUEST: "Обращение",
+  REQUISITES: "Реквизиты",
+  DONATION: "Пожертвование",
 };
 
 function isContactStatus(value: string): value is ContactStatusValue {
@@ -115,6 +120,8 @@ function isContentActivityAction(
 }
 
 function activityLabel(event: SafeAdminAuditEvent) {
+  if (event.action === "REQUISITES_CHANGED" && event.entityType === "REQUISITES") return "Реквизиты изменены";
+  if (event.action === "PAYMENT_RECONCILE_REQUESTED" && event.entityType === "DONATION") return "Запрошена проверка платежа в ЮKassa";
   if (event.entityType === "CONTACT_REQUEST") {
     if (event.action === "CONTACT_NOTE_CHANGED") {
       return "Изменена внутренняя заметка обращения";
@@ -135,11 +142,11 @@ function activityLabel(event: SafeAdminAuditEvent) {
     return "Выполнено административное действие";
   }
 
-  if (!isContentActivityAction(event.action)) {
+  if (!isContentActivityAction(event.action) || !(event.entityType in contentActivityLabels)) {
     return "Выполнено административное действие";
   }
 
-  const label = contentActivityLabels[event.entityType][event.action];
+  const label = contentActivityLabels[event.entityType as keyof typeof contentActivityLabels][event.action];
 
   if (
     event.action === "CONTENT_STATUS_CHANGED" &&
@@ -169,37 +176,47 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
         <dl className={styles.dashboardMetrics}>
           <div className={styles.dashboardMetric}>
             <dt>Новые обращения</dt>
-            <dd><strong>{model.messages.newCount}</strong></dd>
+            <dd><Link href="/admin/messages?status=NEW" prefetch={false} aria-label={`Новые обращения: ${model.messages.newCount}`}><strong>{model.messages.newCount}</strong></Link></dd>
           </div>
           <div className={styles.dashboardMetric}>
             <dt>Активные обращения</dt>
-            <dd><strong>{model.messages.activeCount}</strong></dd>
+            <dd><Link href="/admin/messages?status=ACTIVE" prefetch={false} aria-label={`Активные обращения: ${model.messages.activeCount}`}><strong>{model.messages.activeCount}</strong></Link></dd>
           </div>
           <div className={styles.dashboardMetric}>
             <dt>Успешные пожертвования сегодня</dt>
             <dd>
+              <Link href={model.donationLinks?.today ?? "/admin/donations?status=SUCCEEDED"} prefetch={false}>
               <span>{model.donations.today.count} успешных</span>
               <strong>
                 {formatDonationAmount(model.donations.today.amountKopecks, "RUB")}
               </strong>
+              </Link>
             </dd>
           </div>
           <div className={styles.dashboardMetric}>
             <dt>Успешные пожертвования за месяц</dt>
             <dd>
+              <Link href={model.donationLinks?.month ?? "/admin/donations?status=SUCCEEDED"} prefetch={false}>
               <span>{model.donations.month.count} успешных</span>
               <strong>
                 {formatDonationAmount(model.donations.month.amountKopecks, "RUB")}
               </strong>
+              </Link>
             </dd>
           </div>
           <div className={styles.dashboardMetric}>
             <dt>Опубликованные проекты</dt>
-            <dd><strong>{model.content.publishedProjectCount}</strong></dd>
+            <dd><Link href="/admin/projects?status=PUBLISHED" prefetch={false} aria-label={`Опубликованные проекты: ${model.content.publishedProjectCount}`}><strong>{model.content.publishedProjectCount}</strong></Link></dd>
           </div>
           <div className={styles.dashboardMetric}>
             <dt>Черновики</dt>
-            <dd><strong>{model.content.draftCount}</strong></dd>
+            <dd><strong>{model.content.draftCount}</strong>
+              {model.draftCounts ? <span>
+                <Link href="/admin/projects?status=DRAFT" prefetch={false}>Проекты: {model.draftCounts.projects}</Link>{" · "}
+                <Link href="/admin/news?status=DRAFT" prefetch={false}>Новости: {model.draftCounts.news}</Link>{" · "}
+                <Link href="/admin/documents?status=DRAFT" prefetch={false}>Документы: {model.draftCounts.documents}</Link>
+              </span> : null}
+            </dd>
           </div>
         </dl>
       </section>
@@ -207,6 +224,12 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
       <div className={styles.dashboardColumns}>
         <section className={styles.dashboardSection} aria-labelledby="alerts-title">
           <h2 id="alerts-title">Предупреждения</h2>
+          {model.reconciliation?.enabled ? <p>
+            Последняя автоматическая сверка: {model.reconciliation.completedAt
+              ? <time dateTime={model.reconciliation.completedAt.toISOString()}>{formatDonationDateTime(model.reconciliation.completedAt)} МСК</time>
+              : "нет данных"}.
+            {model.reconciliation.failed !== null ? ` Ошибок в последнем запуске: ${model.reconciliation.failed}.` : ""}
+          </p> : null}
           {model.alerts.length ? (
             <ul className={styles.dashboardAlerts} aria-label="Требует внимания">
               {model.alerts.map((alert) => (
@@ -226,6 +249,7 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
 
         <section className={styles.dashboardSection} aria-labelledby="activity-title">
           <h2 id="activity-title">Последние действия</h2>
+          <p>Доступ к админке общий; персональный автор действий не определяется.</p>
           {model.recentActivity.length ? (
             <ol className={styles.dashboardActivity}>
               {model.recentActivity.map((event) => (
@@ -234,6 +258,7 @@ function Dashboard({ model }: { model: AdminDashboardReadModel }) {
                     {activityEntityLabels[event.entityType]}
                   </span>
                   <strong>{activityLabel(event)}</strong>
+                  {event.href ? <Link href={event.href} prefetch={false}>Открыть объект</Link> : event.href === null ? <span>Объект недоступен</span> : null}
                   <time dateTime={event.createdAt.toISOString()}>
                     {formatDonationDateTime(event.createdAt)}
                   </time>

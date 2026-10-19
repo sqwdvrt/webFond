@@ -8,7 +8,8 @@ export const CONTACT_STATUSES = [
 export type ContactStatusValue = (typeof CONTACT_STATUSES)[number];
 
 export type ContactFilters = {
-  status?: ContactStatusValue;
+  status?: ContactStatusValue | "ACTIVE";
+  before?: string;
   from?: string;
   to?: string;
   q?: string;

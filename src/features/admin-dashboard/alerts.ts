@@ -6,6 +6,7 @@ const DONATION_STALE_AFTER_MS = 60 * 60 * 1_000;
 export type OperationalAlertCode =
   | "STALE_NEW_CONTACTS"
   | "STALE_PENDING_DONATIONS"
+  | "PAYMENTS_RECONCILIATION_STALE"
   | "ADMIN_CONFIGURATION";
 
 export type OperationalAlert = {
@@ -16,6 +17,8 @@ export type OperationalAlert = {
 };
 
 type OperationalAlertInput = {
+  now?: Date;
+  reconciliation?: { enabled: boolean; completedAt: Date | null; failed: number | null };
   staleNewContactCount: number;
   stalePendingDonationCount: number;
   readinessIssues: ReadinessIssueCode[];
@@ -37,6 +40,8 @@ export function buildOperationalAlerts({
   staleNewContactCount,
   stalePendingDonationCount,
   readinessIssues,
+  now = new Date(),
+  reconciliation,
 }: OperationalAlertInput): OperationalAlert[] {
   const alerts: OperationalAlert[] = [];
   const contacts = normalizeCount(staleNewContactCount);
@@ -56,8 +61,14 @@ export function buildOperationalAlerts({
       code: "STALE_PENDING_DONATIONS",
       severity: "warning",
       message: `Ожидающих пожертвований старше часа: ${donations}.`,
-      href: "/admin/donations?status=PENDING",
+      href: "/admin/donations?status=PENDING&stale=1",
     });
+  }
+
+  if (reconciliation?.enabled) {
+    if (!reconciliation.completedAt || now.getTime() - reconciliation.completedAt.getTime() > 15 * 60 * 1_000) {
+      alerts.push({ code: "PAYMENTS_RECONCILIATION_STALE", severity: "warning", message: "Нет подтверждения завершения автоматической сверки платежей за последние 15 минут. Проверьте планировщик.", href: "/admin/donations?status=PENDING" });
+    }
   }
 
   if (contacts > 0) {
@@ -65,7 +76,7 @@ export function buildOperationalAlerts({
       code: "STALE_NEW_CONTACTS",
       severity: "warning",
       message: `Новых обращений старше 48 часов: ${contacts}.`,
-      href: "/admin/messages?status=NEW",
+      href: `/admin/messages?status=NEW&before=${encodeURIComponent(staleContactCutoff(now).toISOString())}`,
     });
   }
 

@@ -115,7 +115,7 @@ describe("DonationsView", () => {
     expect(screen.getByLabelText("Дата от")).toHaveValue("2026-08-01");
     expect(screen.getByLabelText("Дата до")).toHaveValue("2026-08-23");
     expect(screen.getByRole("searchbox", { name: "Поиск" })).toHaveValue("fixture");
-    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
+    expect(screen.getByRole("columnheader", { name: "Проверка в ЮKassa" })).toBeVisible();
     expect(screen.getByText("125,00 RUB")).toBeVisible();
     expect(within(screen.getByRole("table")).getByText("Успешно")).toBeVisible();
     expect(screen.getAllByText("—")).toHaveLength(3);

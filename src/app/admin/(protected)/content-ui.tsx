@@ -7,6 +7,7 @@ import { useFormStatus } from "react-dom";
 import type { PublicationStatus } from "@/features/content-admin/types";
 
 import styles from "../admin.module.css";
+import listStyles from "./content-list-controls.module.css";
 
 const STATUS_LABELS: Record<PublicationStatus, string> = {
   DRAFT: "Черновик",
@@ -20,6 +21,8 @@ type ContentListItem = {
   status: PublicationStatus;
   updatedAt: string;
   editHref: string;
+  publicHref?: string;
+  publicLabel?: string;
 };
 
 export function PublicationStatusBadge({
@@ -54,7 +57,12 @@ export function ContentList({
   }
 
   return (
-    <div className={styles.contentTableViewport} tabIndex={0}>
+    <div
+      className={`${styles.contentTableViewport} ${listStyles.tableViewport}`}
+      tabIndex={0}
+      role="region"
+      aria-label={caption}
+    >
       <table className={styles.contentTable}>
         <caption>{caption}</caption>
         <thead>
@@ -76,14 +84,24 @@ export function ContentList({
               </td>
               <td className={styles.contentUpdatedAt}>{item.updatedAt}</td>
               <td className={styles.contentActionCell}>
-                <Link
-                  aria-label={`Редактировать ${item.title}`}
-                  className={styles.iconButton}
-                  href={item.editHref}
-                  title="Редактировать"
-                >
-                  <Pencil aria-hidden="true" size={17} />
-                </Link>
+                <div className={listStyles.rowActions}>
+                  <Link
+                    aria-label={`Редактировать ${item.title}`}
+                    href={item.editHref}
+                    title="Редактировать"
+                  >
+                    <Pencil aria-hidden="true" size={17} />
+                    Редактировать
+                  </Link>
+                  {item.status === "PUBLISHED" && item.publicHref && (
+                    <a
+                      href={item.publicHref}
+                      aria-label={`${item.publicLabel ?? "Открыть на сайте"}: ${item.title}`}
+                    >
+                      {item.publicLabel ?? "Открыть на сайте"}
+                    </a>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

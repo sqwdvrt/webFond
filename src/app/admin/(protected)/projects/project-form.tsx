@@ -5,6 +5,8 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { siteConfig } from "@/config/site";
 import { projectSlug } from "@/features/content-admin/project-slug";
 
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
+
 import type { ContentFormState } from "@/features/content-admin/mutations";
 import type { AdminProjectRow } from "@/features/content-admin/repository";
 
@@ -13,9 +15,12 @@ import {
   DeleteDraftButton,
   FieldError,
   FormSuccess,
-  SubmitButton,
 } from "../content-ui";
 import { MediaUrlField } from "../media-url-field";
+import { useUnsavedChanges } from "../use-unsaved-changes";
+import { UnsavedChangesNotice } from "../unsaved-changes-notice";
+import { PublicationControls } from "../publication-controls";
+import { EditorialPreview } from "../editorial-preview";
 
 type FormAction = (
   state: ContentFormState,
@@ -28,6 +33,7 @@ type ProjectFormProps = {
   deleteAction?: FormAction;
   initialValues?: AdminProjectRow;
   successMessage?: string;
+  returnTo?: string;
 };
 
 const initialState: ContentFormState = { status: "idle", message: "" };
@@ -40,19 +46,21 @@ async function idleDeleteAction(
   return state;
 }
 
-const statusLabels = {
-  DRAFT: "Черновик",
-  PUBLISHED: "Опубликован",
-  ARCHIVED: "В архиве",
-} as const;
+export function ProjectForm(props: ProjectFormProps) {
+  return <ProjectFormEditor key={props.initialValues?.updatedAt.toISOString() ?? "new"} {...props} />;
+}
 
-export function ProjectForm({
+function ProjectFormEditor({
   mode,
   saveAction,
   deleteAction,
   initialValues,
   successMessage,
+  returnTo,
 }: ProjectFormProps) {
+  const listUrl = safeContentReturnTo(returnTo, "/admin/projects");
+  const formRef = useRef<HTMLFormElement>(null);
+  const guard = useUnsavedChanges(formRef);
   const [state, formAction] = useActionState(saveAction, initialState);
   const [deleteState, deleteFormAction] = useActionState(
     deleteAction ?? idleDeleteAction,
@@ -66,7 +74,6 @@ export function ProjectForm({
     return initialValues?.[name] ?? (name === "status" ? "DRAFT" : "");
   }
 
-  const formRef = useRef<HTMLFormElement>(null);
   const customSlug = useRef(mode === "edit" || Boolean(value("slug")));
   const [slugPreview, setSlugPreview] = useState(String(value("slug")));
   const [lengths, setLengths] = useState({
@@ -121,6 +128,7 @@ export function ProjectForm({
 
   const runDelete = deleteAction && initialValues
     ? (formData: FormData) => {
+        formData.set("returnTo", listUrl);
         formData.set("updatedAt", initialValues.updatedAt.toISOString());
         deleteFormAction(formData);
       }
@@ -140,6 +148,7 @@ export function ProjectForm({
       ) : null}
 
       <form ref={formRef} action={formAction} className={styles.loginForm}>
+        <input type="hidden" name="returnTo" value={listUrl} />
         {mode === "edit" && initialValues ? (
           <input
             name="updatedAt"
@@ -159,7 +168,7 @@ export function ProjectForm({
             if (!customSlug.current) {
               const slug = projectSlug(title);
               const input = formRef.current?.elements.namedItem("slug") as HTMLInputElement | null;
-              if (input) input.value = slug;
+              if (input) { input.value = slug; input.dispatchEvent(new Event("editorialchange", { bubbles: true })); }
               setSlugPreview(slug);
             }
           }} />
@@ -250,30 +259,11 @@ export function ProjectForm({
         </div>
 
         </fieldset>
-        <fieldset className={styles.projectFormSection}>
-          <legend>Публикация</legend>
+        <FieldError id="status-error">{state.errors?.status}</FieldError>
 
-        <div className={styles.field}>
-          <label htmlFor="status">Статус</label>
-          <select
-            {...field("status")}
-            defaultValue={String(value("status"))}
-            id="status"
-            key={String(value("status"))}
-            name="status"
-          >
-            {Object.entries(statusLabels).map(([status, label]) => (
-              <option key={status} value={status}>{label}</option>
-            ))}
-          </select>
-          <p id="status-hint" className={styles.fieldHint}>Черновик виден только в админке. Опубликованный проект доступен посетителям. Архив скрывает проект из публичного списка.</p>
-          <FieldError id="status-error">{state.errors?.status}</FieldError>
-        </div>
-        </fieldset>
-
-        <SubmitButton pendingLabel="Сохранение...">
-          {mode === "create" ? "Создать проект" : "Сохранить"}
-        </SubmitButton>
+        <UnsavedChangesNotice guard={guard} />
+        <EditorialPreview values={guard.values} />
+        <PublicationControls status={initialValues?.status ?? "DRAFT"} uploading={guard.uploading} missing={[!guard.values.title?.trim() && "название", !guard.values.slug?.trim() && "адрес", (guard.values.summary?.trim().length ?? 0) < 10 && "краткое описание (от 10 символов)", (guard.values.content?.trim().length ?? 0) < 20 && "содержание (от 20 символов)"].filter((item): item is string => Boolean(item))} />
       </form>
 
       {runDelete && initialValues ? (

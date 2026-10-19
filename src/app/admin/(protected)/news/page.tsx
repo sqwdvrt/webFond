@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 
 import {
   getAdminNews,
-  listAdminNews,
+  listAdminNewsPage,
 } from "@/features/content-admin/repository";
 import { requireAdminSession } from "@/lib/admin-auth/session";
+import { parseContentListFilters, contentEditorHref } from "@/features/content-admin/list-filters";
 
 import styles from "../../admin.module.css";
 import { ContentList, FormSuccess } from "../content-ui";
+import { ContentListControls, ContentListPagination } from "../content-list-controls";
 
 const updatedAtFormatter = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "short",
@@ -19,14 +21,14 @@ const updatedAtFormatter = new Intl.DateTimeFormat("ru-RU", {
 
 export type NewsPageDependencies = {
   requireSession: () => Promise<unknown>;
-  listNews: typeof listAdminNews;
+  listNews: typeof listAdminNewsPage;
   getNews: typeof getAdminNews;
   showNotFound: typeof notFound;
 };
 
 export const defaultNewsPageDependencies: NewsPageDependencies = {
   requireSession: requireAdminSession,
-  listNews: listAdminNews,
+  listNews: listAdminNewsPage,
   getNews: getAdminNews,
   showNotFound: notFound,
 };
@@ -36,7 +38,10 @@ export async function renderNewsPage(
   dependencies: NewsPageDependencies = defaultNewsPageDependencies,
 ) {
   await dependencies.requireSession();
-  const news = await dependencies.listNews();
+  const parsedFilters = parseContentListFilters(searchParams);
+  const result = await dependencies.listNews(parsedFilters);
+  const filters = { ...parsedFilters, page: result.page };
+  const news = result.items;
 
   return (
     <section className={styles.dashboard} aria-labelledby="news-title">
@@ -47,7 +52,7 @@ export async function renderNewsPage(
         </div>
         <Link
           className={`${styles.primaryButton} ${styles.primaryLink}`}
-          href="/admin/news/new"
+          href={contentEditorHref("/admin/news", "new", filters)}
         >
           <Plus aria-hidden="true" size={18} />
           Создать новость
@@ -58,17 +63,20 @@ export async function renderNewsPage(
         <FormSuccess>
           {searchParams.success === "deleted" ? "Новость удалена" : undefined}
         </FormSuccess>
+        <ContentListControls path="/admin/news" filters={filters} />
         <ContentList
           caption="Новости фонда"
-          emptyMessage="Новостей пока нет"
+          emptyMessage={filters.q || filters.status ? "По вашему запросу ничего не найдено" : "Новостей пока нет"}
           items={news.map((newsPost) => ({
             id: newsPost.id,
             title: newsPost.title,
             status: newsPost.status,
             updatedAt: updatedAtFormatter.format(newsPost.updatedAt),
-            editHref: `/admin/news/${newsPost.id}`,
+            editHref: contentEditorHref("/admin/news", newsPost.id, filters),
+            publicHref: `/news/${encodeURIComponent(newsPost.slug)}`,
           }))}
         />
+        <ContentListPagination path="/admin/news" filters={filters} page={result.page} total={result.total} totalPages={result.totalPages} />
       </div>
     </section>
   );

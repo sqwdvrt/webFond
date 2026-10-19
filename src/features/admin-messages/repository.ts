@@ -7,6 +7,21 @@ import type { ContactPageFilters } from "./types";
 
 export const CONTACT_PAGE_SIZE = 25;
 
+const historySelect = { id: true, action: true, previousStatus: true, nextStatus: true, createdAt: true } satisfies Prisma.AdminAuditEventSelect;
+export type ContactHistoryEvent = Prisma.AdminAuditEventGetPayload<{ select: typeof historySelect }>;
+
+export function getContactHistory(
+  id: string,
+  client: { adminAuditEvent: { findMany(args: Prisma.AdminAuditEventFindManyArgs): Promise<ContactHistoryEvent[]> } } = prisma,
+) {
+  return client.adminAuditEvent.findMany({
+    where: { entityType: "CONTACT_REQUEST", entityId: id, action: { in: ["CONTACT_STATUS_CHANGED", "CONTACT_NOTE_CHANGED"] } },
+    select: historySelect,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: 20,
+  });
+}
+
 const contactListSelect = {
   id: true,
   name: true,

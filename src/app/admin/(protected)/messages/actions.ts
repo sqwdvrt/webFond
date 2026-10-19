@@ -22,3 +22,13 @@ export async function updateContactRequestAction(
   }
   redirect(outcome.effect.redirectTo);
 }
+
+export async function updateContactRequestWithReturnAction(
+  id: string,
+  returnTo: string,
+  previousState: ContactMutationState,
+  formData: FormData,
+): Promise<ContactMutationState> {
+  formData.set("returnTo", returnTo);
+  return updateContactRequestAction(id, previousState, formData);
+}

@@ -1,0 +1,12 @@
+.notice { padding: .75rem 1rem; border-left: 3px solid #996421; background: #fff7e6; color: #513a17; }
+.dialog { max-width: 30rem; border: 1px solid #bbb; border-radius: .75rem; padding: 1.5rem; }
+.dialog::backdrop { background: #0008; }
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.actions button, .preview button { padding: .65rem 1rem; cursor: pointer; }
+.section { border: 1px solid #d4d4d4; border-radius: .5rem; padding: 1rem; min-width: 0; }
+.preview { display: grid; gap: 1rem; overflow: auto; border: 1px solid #ccc; padding: 1rem; }
+.narrow { width: min(100%, 375px); }
+.wide { width: 100%; }
+.image { display: block; max-width: 100%; max-height: 240px; object-fit: contain; }
+.diff { width: 100%; border-collapse: collapse; overflow-wrap: anywhere; }
+.diff th, .diff td { padding: .5rem; border-bottom: 1px solid #ddd; text-align: left; vertical-align: top; }

@@ -46,6 +46,21 @@ export type ReconciliationUpdate = {
   nextReconcileAt: Date | null;
   attempts: number;
   manualReviewRequired?: boolean;
+  checkedAt?: Date;
+};
+
+export type ReconciliationSelection = {
+  now: Date;
+  limit: number;
+  createdBefore?: Date;
+  createdAfter?: Date;
+  maxAttempts?: number;
+};
+
+export type ReconciliationRepository = {
+  retireReconciliationCandidates(input: ReconciliationSelection): Promise<void>;
+  releaseReconciliation(id: string, token: string): Promise<void>;
+  claimManualReconciliation(id: string, token: string, expiresAt: Date, now: Date): Promise<boolean>;
 };
 
 export type PaymentRepository = {
@@ -60,11 +75,7 @@ export type PaymentRepository = {
     id: string,
     ...transition: PendingTransition
   ): Promise<Donation>;
-  listPendingForReconciliation(input: {
-    now: Date;
-    limit: number;
-    olderThan?: Date;
-  }): Promise<ReconciliationCandidate[]>;
+  listPendingForReconciliation(input: ReconciliationSelection): Promise<ReconciliationCandidate[]>;
   claimForReconciliation(id: string, token: string, expiresAt: Date, now: Date): Promise<boolean>;
   updateReconciliation(id: string, token: string, update: ReconciliationUpdate): Promise<void>;
   clearManualReview(id: string): Promise<void>;
@@ -89,7 +100,7 @@ function isUniqueConstraintError(error: unknown): boolean {
 
 export function createPaymentRepository(
   client: PaymentClient,
-): PaymentRepository {
+): PaymentRepository & ReconciliationRepository {
   return {
     async beginAttempt({
       attemptId,
@@ -220,18 +231,62 @@ export function createPaymentRepository(
       return client.donation.findUniqueOrThrow({ where: { id } });
     },
 
-    listPendingForReconciliation({ now, limit, olderThan }) {
+    listPendingForReconciliation({ now, limit, createdBefore, createdAfter, maxAttempts = 8 }) {
       return client.donation.findMany({
         where: {
           status: "PENDING",
           providerPaymentId: { not: null },
           manualReviewRequired: false,
-          OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }],
-          ...(olderThan ? { createdAt: { gte: olderThan } } : {}),
+          reconcileAttempts: { lt: maxAttempts },
+          createdAt: { ...(createdBefore ? { lte: createdBefore } : {}), ...(createdAfter ? { gte: createdAfter } : {}) },
+          AND: [
+            { OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }] },
+            { OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }] },
+          ],
         },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         take: limit,
       });
+    },
+
+    async retireReconciliationCandidates({ now, limit, createdAfter, maxAttempts = 8 }) {
+      const rows = await client.donation.findMany({
+        where: {
+          status: "PENDING", manualReviewRequired: false, providerPaymentId: { not: null },
+          AND: [
+            { OR: [{ reconcileAttempts: { gte: maxAttempts } }, ...(createdAfter ? [{ createdAt: { lt: createdAfter } }] : [])] },
+            { OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }] },
+          ],
+        },
+        select: { id: true }, take: limit, orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      });
+      for (const row of rows) {
+        await client.donation.updateMany({
+          where: {
+            id: row.id, status: "PENDING",
+            AND: [
+              { OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }] },
+              { OR: [{ reconcileAttempts: { gte: maxAttempts } }, ...(createdAfter ? [{ createdAt: { lt: createdAfter } }] : [])] },
+            ],
+          },
+          data: { manualReviewRequired: true, lastReconcileErrorCode: "manual_review_required", nextReconcileAt: null },
+        });
+      }
+    },
+
+    async claimManualReconciliation(id, token, expiresAt, now) {
+      return client.$transaction(async (tx) => {
+        const result = await tx.donation.updateMany({
+          where: { id, status: "PENDING", providerPaymentId: { not: null }, OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }] },
+          data: { claimToken: token, claimExpiresAt: expiresAt, manualReviewRequired: false, reconcileAttempts: 0, nextReconcileAt: null },
+        });
+        if (result.count === 1) await tx.adminAuditEvent.create({ data: { actorKind: "ADMIN", action: "PAYMENT_RECONCILE_REQUESTED", entityType: "DONATION", entityId: id } });
+        return result.count === 1;
+      });
+    },
+
+    async releaseReconciliation(id, token) {
+      await client.donation.updateMany({ where: { id, claimToken: token }, data: { claimToken: null, claimExpiresAt: null } });
     },
 
     async claimForReconciliation(id, token, expiresAt, now) {
@@ -240,7 +295,10 @@ export function createPaymentRepository(
           id,
           status: "PENDING",
           manualReviewRequired: false,
-          OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }],
+          AND: [
+            { OR: [{ claimToken: null }, { claimExpiresAt: { lte: now } }] },
+            { OR: [{ nextReconcileAt: null }, { nextReconcileAt: { lte: now } }] },
+          ],
         },
         data: { claimToken: token, claimExpiresAt: expiresAt },
       });
@@ -252,7 +310,7 @@ export function createPaymentRepository(
         where: { id, claimToken: token },
         data: {
           lastProviderStatus: update.providerStatus,
-          lastReconciledAt: new Date(),
+          lastReconciledAt: update.checkedAt ?? new Date(),
           lastReconcileErrorCode: update.errorCode,
           nextReconcileAt: update.nextReconcileAt,
           reconcileAttempts: update.attempts,
@@ -289,3 +347,10 @@ export function createPaymentRepository(
 }
 
 export const paymentRepository = createPaymentRepository(prisma);
+
+export async function consumeReconciliationQuota(now: Date, auditBatch = false) {
+  await prisma.$transaction(async (tx) => {
+    await consumeBucket(tx, { key: "admin:reconciliation:1m", now, windowMs: 60_000, limit: 20 });
+    if (auditBatch) await tx.adminAuditEvent.create({ data: { actorKind: "ADMIN", action: "PAYMENT_RECONCILE_REQUESTED", entityType: "DONATION", entityId: "batch" } });
+  });
+}

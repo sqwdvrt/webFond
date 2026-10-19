@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 
 import type { ContactMutationState } from "@/features/admin-messages/mutation";
 import { CONTACT_STATUS_LABELS } from "@/features/admin-messages/presentation";
@@ -8,6 +8,8 @@ import type { getAdminContactRequest } from "@/features/admin-messages/repositor
 import { CONTACT_STATUSES } from "@/features/admin-messages/types";
 
 import styles from "../../admin.module.css";
+import { useUnsavedChanges } from "../use-unsaved-changes";
+import { UnsavedChangesNotice } from "../unsaved-changes-notice";
 
 type ContactDetail = NonNullable<Awaited<ReturnType<typeof getAdminContactRequest>>>;
 
@@ -18,7 +20,15 @@ type MessageFormAction = (
 
 const initialState: ContactMutationState = { status: "idle", message: "" };
 
-export function MessageForm({
+export function MessageForm(props: {
+  action: MessageFormAction;
+  contact: Pick<ContactDetail, "status" | "internalNote" | "updatedAt">;
+  successMessage?: string;
+}) {
+  return <MessageFormEditor key={props.contact.updatedAt.toISOString()} {...props} />;
+}
+
+function MessageFormEditor({
   action,
   contact,
   successMessage,
@@ -28,6 +38,8 @@ export function MessageForm({
   successMessage?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+  const guard = useUnsavedChanges(formRef);
   const status = state.values && Object.hasOwn(state.values, "status")
     ? state.values.status
     : contact.status;
@@ -47,7 +59,7 @@ export function MessageForm({
         </p>
       ) : null}
 
-      <form action={formAction} className={styles.messageEditForm}>
+      <form ref={formRef} action={formAction} className={styles.messageEditForm}>
         <input name="updatedAt" type="hidden" value={contact.updatedAt.toISOString()} />
 
         <div className={styles.field}>
@@ -92,6 +104,7 @@ export function MessageForm({
           ) : null}
         </div>
 
+        <UnsavedChangesNotice guard={guard} />
         <button className={styles.primaryButton} disabled={pending} type="submit">
           {pending ? "Сохранение..." : "Сохранить обращение"}
         </button>

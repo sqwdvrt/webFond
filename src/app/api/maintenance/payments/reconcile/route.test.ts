@@ -16,6 +16,7 @@ vi.mock("@/features/payments/yookassa-client", () => ({
   createYooKassaClient: mocks.createClient,
 }));
 vi.mock("@/features/payments/repository", () => ({ paymentRepository: {} }));
+vi.mock("@/lib/db", () => ({ prisma: { siteSetting: { upsert: vi.fn(async () => ({})) } } }));
 
 import { POST } from "./route";
 

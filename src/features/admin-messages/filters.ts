@@ -36,19 +36,21 @@ export function parseContactPageFilters(
   const toValue = oneValue(input, "to");
   const queryValue = oneValue(input, "q");
   const pageValue = oneValue(input, "page");
+  const beforeValue = oneValue(input, "before");
 
   if (
     !statusValue.ok ||
     !fromValue.ok ||
     !toValue.ok ||
     !queryValue.ok ||
-    !pageValue.ok
+    !pageValue.ok || !beforeValue.ok
   ) {
     return { ok: false };
   }
 
   if (
     statusValue.value &&
+    statusValue.value !== "ACTIVE" &&
     !CONTACT_STATUSES.includes(statusValue.value as ContactStatusValue)
   ) {
     return { ok: false };
@@ -62,17 +64,20 @@ export function parseContactPageFilters(
 
   const dateRange = moscowDateRange(fromValue.value, toValue.value);
   if (!dateRange) return { ok: false };
+  if (beforeValue.value && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(beforeValue.value) ||
+    !Number.isFinite(Date.parse(beforeValue.value)) || new Date(beforeValue.value).toISOString() !== beforeValue.value)) return { ok: false };
 
   return {
     ok: true,
     value: {
       ...(statusValue.value
-        ? { status: statusValue.value as ContactStatusValue }
+        ? { status: statusValue.value as ContactPageFilters["status"] }
         : {}),
       ...(fromValue.value ? { from: fromValue.value } : {}),
       ...(toValue.value ? { to: toValue.value } : {}),
       ...(queryValue.value ? { q: queryValue.value } : {}),
       ...dateRange,
+      ...(beforeValue.value ? { before: beforeValue.value } : {}),
       page: Number(pageValue.value ?? "1"),
     },
   };
@@ -82,12 +87,12 @@ export function buildContactWhere(
   filters: ContactFilters,
 ): Prisma.ContactRequestWhereInput {
   return {
-    ...(filters.status ? { status: filters.status } : {}),
-    ...(filters.fromUtc || filters.toExclusiveUtc
+    ...(filters.status ? { status: filters.status === "ACTIVE" ? { in: ["NEW", "IN_PROGRESS"] } : filters.status } : {}),
+    ...(filters.fromUtc || filters.toExclusiveUtc || filters.before
       ? {
           createdAt: {
             ...(filters.fromUtc ? { gte: filters.fromUtc } : {}),
-            ...(filters.toExclusiveUtc ? { lt: filters.toExclusiveUtc } : {}),
+            ...((filters.toExclusiveUtc || filters.before) ? { lt: new Date(Math.min(filters.toExclusiveUtc?.getTime() ?? Infinity, filters.before ? Date.parse(filters.before) : Infinity)) } : {}),
           },
         }
       : {}),
@@ -106,9 +111,20 @@ export function buildContactWhere(
 export function buildContactQuery(filters: ContactPageFilters) {
   const query = new URLSearchParams();
   if (filters.status) query.set("status", filters.status);
+  if (filters.before) query.set("before", filters.before);
   if (filters.from) query.set("from", filters.from);
   if (filters.to) query.set("to", filters.to);
   if (filters.q) query.set("q", filters.q);
   if (filters.page !== 1) query.set("page", String(filters.page));
   return query;
+}
+
+export function safeMessagesReturnTo(value: unknown): string {
+  if (typeof value !== "string" || !/^\/admin\/messages(?:\?|$)/.test(value) || /[\\#\x00-\x20]/.test(value)) return "/admin/messages";
+  const query = new URLSearchParams(value.split("?")[1]);
+  if ([...query.keys()].some((key) => !["status", "from", "to", "q", "page", "before"].includes(key))) return "/admin/messages";
+  const parsed = parseContactPageFilters(query);
+  if (!parsed.ok) return "/admin/messages";
+  const canonical = buildContactQuery(parsed.value);
+  return `/admin/messages${canonical.size ? `?${canonical}` : ""}`;
 }

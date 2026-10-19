@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
+
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
 
 import type { ContentFormState } from "@/features/content-admin/mutations";
 import type { AdminDocumentRow } from "@/features/content-admin/repository";
@@ -10,9 +12,12 @@ import {
   DeleteDraftButton,
   FieldError,
   FormSuccess,
-  SubmitButton,
 } from "../content-ui";
 import { MediaUrlField } from "../media-url-field";
+import { useUnsavedChanges } from "../use-unsaved-changes";
+import { UnsavedChangesNotice } from "../unsaved-changes-notice";
+import { PublicationControls } from "../publication-controls";
+
 
 type FormAction = (
   state: ContentFormState,
@@ -25,6 +30,7 @@ type DocumentFormProps = {
   deleteAction?: FormAction;
   initialValues?: AdminDocumentRow;
   successMessage?: string;
+  returnTo?: string;
 };
 
 const initialState: ContentFormState = { status: "idle", message: "" };
@@ -34,21 +40,23 @@ async function idleDeleteAction(state: ContentFormState, formData: FormData) {
   return state;
 }
 
-const statusLabels = {
-  DRAFT: "Черновик",
-  PUBLISHED: "Опубликован",
-  ARCHIVED: "В архиве",
-} as const;
-
 type DocumentField = "title" | "category" | "fileUrl" | "status";
 
-export function DocumentForm({
+export function DocumentForm(props: DocumentFormProps) {
+  return <DocumentFormEditor key={props.initialValues?.updatedAt.toISOString() ?? "new"} {...props} />;
+}
+
+function DocumentFormEditor({
   mode,
   saveAction,
   deleteAction,
   initialValues,
   successMessage,
+  returnTo,
 }: DocumentFormProps) {
+  const listUrl = safeContentReturnTo(returnTo, "/admin/documents");
+  const formRef = useRef<HTMLFormElement>(null);
+  const guard = useUnsavedChanges(formRef);
   const [state, formAction] = useActionState(saveAction, initialState);
   const [deleteState, deleteFormAction] = useActionState(
     deleteAction ?? idleDeleteAction,
@@ -69,6 +77,7 @@ export function DocumentForm({
 
   const runDelete = deleteAction && initialValues
     ? (formData: FormData) => {
+        formData.set("returnTo", listUrl);
         formData.set("updatedAt", initialValues.updatedAt.toISOString());
         deleteFormAction(formData);
       }
@@ -83,7 +92,8 @@ export function DocumentForm({
         </p>
       ) : null}
 
-      <form action={formAction} className={styles.loginForm}>
+      <form ref={formRef} action={formAction} className={styles.loginForm}>
+        <input type="hidden" name="returnTo" value={listUrl} />
         {mode === "edit" && initialValues ? (
           <input
             name="updatedAt"
@@ -119,25 +129,10 @@ export function DocumentForm({
           value={String(value("fileUrl"))}
         />
 
-        <div className={styles.field}>
-          <label htmlFor="status">Статус</label>
-          <select
-            {...field("status")}
-            defaultValue={String(value("status"))}
-            id="status"
-            key={String(value("status"))}
-            name="status"
-          >
-            {Object.entries(statusLabels).map(([status, label]) => (
-              <option key={status} value={status}>{label}</option>
-            ))}
-          </select>
-          <FieldError id="status-error">{state.errors?.status}</FieldError>
-        </div>
+        <FieldError id="status-error">{state.errors?.status}</FieldError>
 
-        <SubmitButton pendingLabel="Сохранение...">
-          {mode === "create" ? "Создать документ" : "Сохранить"}
-        </SubmitButton>
+        <UnsavedChangesNotice guard={guard} />
+        <PublicationControls status={initialValues?.status ?? "DRAFT"} uploading={guard.uploading} missing={[!guard.values.title && "название", !guard.values.category && "категория", !guard.values.fileUrl && "PDF"].filter((item): item is string => Boolean(item))} />
       </form>
 
       {runDelete && initialValues ? (

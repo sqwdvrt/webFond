@@ -103,6 +103,36 @@ function dependencies(model = dashboard) {
 }
 
 describe("admin dashboard", () => {
+  it("links metrics to matching filter selections including each draft type", async () => {
+    const model = {
+      ...dashboard,
+      draftCounts: { projects: 3, news: 4, documents: 5 },
+      donationLinks: { today: "/admin/donations?status=SUCCEEDED&dateField=paidAt&from=2026-10-19&to=2026-10-19", month: "/admin/donations?status=SUCCEEDED&dateField=paidAt&from=2026-10-01&to=2026-10-31" },
+    };
+    const { container } = render(await renderAdminDashboard(dependencies(model)));
+    expect(screen.getByRole("link", { name: "Новые обращения: 7" })).toHaveAttribute("href", "/admin/messages?status=NEW");
+    expect(screen.getByRole("link", { name: "Активные обращения: 5" })).toHaveAttribute("href", "/admin/messages?status=ACTIVE");
+    expect(screen.getByRole("link", { name: "Опубликованные проекты: 11" })).toHaveAttribute("href", "/admin/projects?status=PUBLISHED");
+    for (const [label, href] of [["Проекты: 3", "/admin/projects?status=DRAFT"], ["Новости: 4", "/admin/news?status=DRAFT"], ["Документы: 5", "/admin/documents?status=DRAFT"]]) {
+      expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", href);
+    }
+    const metrics = container.querySelector("dl")!;
+    expect(within(metrics).getByRole("link", { name: /4 успешных/ })).toHaveAttribute("href", model.donationLinks.today);
+    expect(within(metrics).getByRole("link", { name: /18 успешных/ })).toHaveAttribute("href", model.donationLinks.month);
+  });
+
+  it("displays heartbeat completion and distinguishes a command from payment success", async () => {
+    const model: AdminDashboardReadModel = { ...dashboard, reconciliation: { enabled: true, completedAt: new Date("2026-10-19T11:55:00.000Z"), failed: 2 }, recentActivity: [
+      { id: "reconcile", action: "PAYMENT_RECONCILE_REQUESTED", entityType: "DONATION", previousStatus: null, nextStatus: null, createdAt: new Date("2026-10-19T11:50:00.000Z"), href: "/admin/donations?donationId=donation-1" },
+      { id: "requisites", action: "REQUISITES_CHANGED", entityType: "REQUISITES", previousStatus: null, nextStatus: null, createdAt: new Date("2026-10-19T11:50:00.000Z"), href: null },
+    ] };
+    render(await renderAdminDashboard(dependencies(model)));
+    expect(screen.getByText(/Последняя автоматическая сверка:/)).toHaveTextContent("Ошибок в последнем запуске: 2");
+    expect(screen.getByText("Запрошена проверка платежа в ЮKassa")).toBeVisible();
+    expect(screen.getByText("Реквизиты изменены")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Открыть объект" })).toHaveAttribute("href", "/admin/donations?donationId=donation-1");
+    expect(screen.getByText("Объект недоступен")).toBeVisible();
+  });
   it("uses canonical contact status labels in every contact-status consumer", () => {
     const consumerPaths = [
       "src/app/admin/(protected)/messages/message-form.tsx",

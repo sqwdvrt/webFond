@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
 
 import { createNewsAction } from "../../content-actions";
 import styles from "../../../admin.module.css";
@@ -11,14 +12,16 @@ import {
 
 export async function renderNewNewsPage(
   dependencies: NewsPageDependencies = defaultNewsPageDependencies,
+  searchParams: Record<string, string | string[] | undefined> = {},
 ) {
   await dependencies.requireSession();
+  const returnTo = safeContentReturnTo(searchParams.returnTo, "/admin/news");
 
   return (
     <section className={styles.dashboard} aria-labelledby="new-news-title">
       <div className={styles.dashboardHeader}>
         <div>
-          <Link className={styles.backLink} href="/admin/news">
+          <Link className={styles.backLink} href={returnTo}>
             <ChevronLeft aria-hidden="true" size={16} />
             Новости
           </Link>
@@ -26,12 +29,12 @@ export async function renderNewNewsPage(
         </div>
       </div>
       <div className={styles.dashboardContent}>
-        <NewsForm mode="create" saveAction={createNewsAction} />
+        <NewsForm mode="create" saveAction={createNewsAction} returnTo={returnTo} />
       </div>
     </section>
   );
 }
 
-export default async function NewNewsPage() {
-  return renderNewNewsPage();
+export default async function NewNewsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  return renderNewNewsPage(defaultNewsPageDependencies, await searchParams);
 }

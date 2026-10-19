@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 
 import {
   getAdminDocument,
-  listAdminDocuments,
+  listAdminDocumentsPage,
 } from "@/features/content-admin/repository";
 import { requireAdminSession } from "@/lib/admin-auth/session";
+import { parseContentListFilters, contentEditorHref } from "@/features/content-admin/list-filters";
 
 import styles from "../../admin.module.css";
 import { ContentList, FormSuccess } from "../content-ui";
+import { ContentListControls, ContentListPagination } from "../content-list-controls";
 
 const updatedAtFormatter = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "short",
@@ -19,14 +21,14 @@ const updatedAtFormatter = new Intl.DateTimeFormat("ru-RU", {
 
 export type DocumentPageDependencies = {
   requireSession: () => Promise<unknown>;
-  listDocuments: typeof listAdminDocuments;
+  listDocuments: typeof listAdminDocumentsPage;
   getDocument: typeof getAdminDocument;
   showNotFound: typeof notFound;
 };
 
 export const defaultDocumentPageDependencies: DocumentPageDependencies = {
   requireSession: requireAdminSession,
-  listDocuments: listAdminDocuments,
+  listDocuments: listAdminDocumentsPage,
   getDocument: getAdminDocument,
   showNotFound: notFound,
 };
@@ -36,7 +38,10 @@ export async function renderDocumentsPage(
   dependencies: DocumentPageDependencies = defaultDocumentPageDependencies,
 ) {
   await dependencies.requireSession();
-  const documents = await dependencies.listDocuments();
+  const parsedFilters = parseContentListFilters(searchParams);
+  const result = await dependencies.listDocuments(parsedFilters);
+  const filters = { ...parsedFilters, page: result.page };
+  const documents = result.items;
 
   return (
     <section className={styles.dashboard} aria-labelledby="documents-title">
@@ -47,7 +52,7 @@ export async function renderDocumentsPage(
         </div>
         <Link
           className={`${styles.primaryButton} ${styles.primaryLink}`}
-          href="/admin/documents/new"
+          href={contentEditorHref("/admin/documents", "new", filters)}
         >
           <Plus aria-hidden="true" size={18} />
           Создать документ
@@ -58,17 +63,21 @@ export async function renderDocumentsPage(
         <FormSuccess>
           {searchParams.success === "deleted" ? "Документ удален" : undefined}
         </FormSuccess>
+        <ContentListControls path="/admin/documents" filters={filters} />
         <ContentList
           caption="Документы фонда"
-          emptyMessage="Документов пока нет"
+          emptyMessage={filters.q || filters.status ? "По вашему запросу ничего не найдено" : "Документов пока нет"}
           items={documents.map((document) => ({
             id: document.id,
             title: document.title,
             status: document.status,
             updatedAt: updatedAtFormatter.format(document.updatedAt),
-            editHref: `/admin/documents/${document.id}`,
+            editHref: contentEditorHref("/admin/documents", document.id, filters),
+            publicHref: document.fileUrl,
+            publicLabel: "Открыть файл",
           }))}
         />
+        <ContentListPagination path="/admin/documents" filters={filters} page={result.page} total={result.total} totalPages={result.totalPages} />
       </div>
     </section>
   );

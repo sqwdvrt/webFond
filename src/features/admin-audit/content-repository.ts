@@ -7,6 +7,12 @@ import {
   deleteDocument,
   deleteNews,
   deleteProject,
+  getAdminProject,
+  getAdminNews,
+  getAdminDocument,
+  getAdminRequisites,
+  saveRequisites,
+  replaceInvalidRequisites,
   updateDocument,
   updateNews,
   updateProject,
@@ -15,6 +21,7 @@ import type {
   DocumentInput,
   EditorialInput,
   ProjectInput,
+  RequisitesInput,
 } from "../content-admin/types";
 import {
   contentCreatedAuditEvents,
@@ -22,6 +29,20 @@ import {
   contentUpdatedAuditEvents,
   type ContentAuditEvent,
 } from "./events";
+import { defaultRequisitesDraft } from "../content-admin/validation";
+
+type RequisitesAuditEvent = {
+  actorKind: "ADMIN";
+  action: "REQUISITES_CHANGED";
+  entityType: "REQUISITES";
+  entityId: "requisites";
+  changedFields: string[];
+};
+
+function changedFields(input: object, current: object | null) {
+  const previous = current as Record<string, unknown> | null;
+  return Object.entries(input).filter(([key, value]) => previous?.[key] !== value).map(([key]) => key);
+}
 
 type ProjectCreateClient = NonNullable<Parameters<typeof createProject>[1]>;
 type NewsCreateClient = NonNullable<Parameters<typeof createNews>[1]>;
@@ -43,9 +64,13 @@ type ContentAuditTransaction = ProjectCreateClient &
   NewsDeleteClient &
   DocumentDeleteClient & {
     adminAuditEvent: {
-      createMany(args: { data: ContentAuditEvent[] }): Promise<unknown>;
+      createMany(args: { data: (ContentAuditEvent | RequisitesAuditEvent)[] }): Promise<unknown>;
     };
-  };
+  } & NonNullable<Parameters<typeof getAdminProject>[1]>
+    & NonNullable<Parameters<typeof getAdminNews>[1]>
+    & NonNullable<Parameters<typeof getAdminDocument>[1]>
+    & NonNullable<Parameters<typeof getAdminRequisites>[0]>
+    & NonNullable<Parameters<typeof saveRequisites>[2]>;
 
 type ContentAuditClient = {
   $transaction<T>(
@@ -117,6 +142,7 @@ export function updateAuditedProject(
   client: ContentAuditClient = defaultClient,
 ) {
   return client.$transaction(async (transaction) => {
+    const current = await getAdminProject(id, transaction);
     const result = await updateProject(id, updatedAt, input, {
       project: transaction.project,
     });
@@ -130,6 +156,7 @@ export function updateAuditedProject(
       id: result.id,
       previousStatus: result.previousStatus,
       status: result.publicationStatus,
+      changedFields: changedFields(input, current),
     });
     if (events.length > 0) {
       await transaction.adminAuditEvent.createMany({ data: events });
@@ -145,6 +172,7 @@ export function updateAuditedNews(
   client: ContentAuditClient = defaultClient,
 ) {
   return client.$transaction(async (transaction) => {
+    const current = await getAdminNews(id, transaction);
     const result = await updateNews(id, updatedAt, input, {
       newsPost: transaction.newsPost,
     });
@@ -158,6 +186,7 @@ export function updateAuditedNews(
       id: result.id,
       previousStatus: result.previousStatus,
       status: result.publicationStatus,
+      changedFields: changedFields(input, current),
     });
     if (events.length > 0) {
       await transaction.adminAuditEvent.createMany({ data: events });
@@ -173,6 +202,7 @@ export function updateAuditedDocument(
   client: ContentAuditClient = defaultClient,
 ) {
   return client.$transaction(async (transaction) => {
+    const current = await getAdminDocument(id, transaction);
     const result = await updateDocument(id, updatedAt, input, {
       document: transaction.document,
     });
@@ -186,10 +216,44 @@ export function updateAuditedDocument(
       id: result.id,
       previousStatus: result.previousStatus,
       status: result.publicationStatus,
+      changedFields: changedFields(input, current),
     });
     if (events.length > 0) {
       await transaction.adminAuditEvent.createMany({ data: events });
     }
+    return result;
+  });
+}
+
+export function saveAuditedRequisites(
+  input: RequisitesInput,
+  updatedAt: Date | null,
+  client: ContentAuditClient = defaultClient,
+) {
+  return client.$transaction(async (transaction) => {
+    const current = await getAdminRequisites(transaction);
+    if ((current.updatedAt?.getTime() ?? null) !== (updatedAt?.getTime() ?? null)) return { status: "conflict" } as const;
+    const fields = changedFields(input, current.status === "ok" ? current.value : null);
+    const result = await saveRequisites(input, updatedAt, transaction);
+    if (result.status === "ok" && fields.length) await transaction.adminAuditEvent.createMany({ data: [{
+      actorKind: "ADMIN", action: "REQUISITES_CHANGED", entityType: "REQUISITES", entityId: "requisites", changedFields: fields,
+    }] });
+    return result;
+  });
+}
+
+export function replaceInvalidAuditedRequisites(
+  updatedAt: Date,
+  replacement: RequisitesInput = defaultRequisitesDraft(),
+  client: ContentAuditClient = defaultClient,
+) {
+  return client.$transaction(async (transaction) => {
+    const current = await getAdminRequisites(transaction);
+    if (current.status !== "invalid" || current.updatedAt.getTime() !== updatedAt.getTime()) return { status: "conflict" } as const;
+    const result = await replaceInvalidRequisites(updatedAt, replacement, transaction);
+    if (result.status === "ok") await transaction.adminAuditEvent.createMany({ data: [{
+      actorKind: "ADMIN", action: "REQUISITES_CHANGED", entityType: "REQUISITES", entityId: "requisites", changedFields: Object.keys(replacement),
+    }] });
     return result;
   });
 }

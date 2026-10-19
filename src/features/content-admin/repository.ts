@@ -1,6 +1,12 @@
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import {
+  CONTENT_PAGE_SIZE,
+  normalizeContentListFilters,
+  type ContentListFilters,
+  type ContentPage,
+} from "./list-filters";
 
 import type { DocumentInput, EditorialInput, ProjectInput, RequisitesInput } from "./types";
 import type { PublicationStatus } from "./types";
@@ -430,6 +436,91 @@ export function listAdminProjects(
     select: adminEditorialListSelect,
     orderBy: adminOrder,
   });
+}
+
+type ContentPageClient<K extends "project" | "newsPost" | "document"> = {
+  $transaction<T>(
+    read: (tx: Pick<Prisma.TransactionClient, K>) => Promise<T>,
+    options: { isolationLevel: "RepeatableRead" },
+  ): Promise<T>;
+};
+
+function pageBounds(total: number, requestedPage: number) {
+  const totalPages = Math.max(1, Math.ceil(total / CONTENT_PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  return { total, page, pageSize: CONTENT_PAGE_SIZE, totalPages };
+}
+
+function listOrder(sort: ContentListFilters["sort"]) {
+  const direction = sort === "updated-asc" ? "asc" : "desc";
+  return [{ updatedAt: direction }, { id: direction }] satisfies Prisma.ProjectOrderByWithRelationInput[];
+}
+
+function editorialListWhere(filters: ContentListFilters) {
+  return {
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.q ? { OR: [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { slug: { contains: filters.q, mode: "insensitive" } },
+    ] } : {}),
+  } satisfies Prisma.ProjectWhereInput & Prisma.NewsPostWhereInput;
+}
+
+export function listAdminProjectsPage(
+  input: Partial<ContentListFilters> = {},
+  client: ContentPageClient<"project"> = prisma,
+): Promise<ContentPage<AdminEditorialListRow>> {
+  const filters = normalizeContentListFilters(input);
+  const where = editorialListWhere(filters);
+  return client.$transaction(async (tx) => {
+    const bounds = pageBounds(await tx.project.count({ where }), filters.page);
+    const items = await tx.project.findMany({
+      where, select: adminEditorialListSelect, orderBy: listOrder(filters.sort),
+      take: CONTENT_PAGE_SIZE, skip: (bounds.page - 1) * CONTENT_PAGE_SIZE,
+    });
+    return { ...bounds, items };
+  }, { isolationLevel: "RepeatableRead" });
+}
+
+export function listAdminNewsPage(
+  input: Partial<ContentListFilters> = {},
+  client: ContentPageClient<"newsPost"> = prisma,
+): Promise<ContentPage<AdminEditorialListRow>> {
+  const filters = normalizeContentListFilters(input);
+  const where = editorialListWhere(filters);
+  return client.$transaction(async (tx) => {
+    const bounds = pageBounds(await tx.newsPost.count({ where }), filters.page);
+    const items = await tx.newsPost.findMany({
+      where, select: adminEditorialListSelect, orderBy: listOrder(filters.sort),
+      take: CONTENT_PAGE_SIZE, skip: (bounds.page - 1) * CONTENT_PAGE_SIZE,
+    });
+    return { ...bounds, items };
+  }, { isolationLevel: "RepeatableRead" });
+}
+
+const adminDocumentPageSelect = { ...adminDocumentListSelect, fileUrl: true } satisfies Prisma.DocumentSelect;
+export type AdminDocumentPageRow = Prisma.DocumentGetPayload<{ select: typeof adminDocumentPageSelect }>;
+
+export function listAdminDocumentsPage(
+  input: Partial<ContentListFilters> = {},
+  client: ContentPageClient<"document"> = prisma,
+): Promise<ContentPage<AdminDocumentPageRow>> {
+  const filters = normalizeContentListFilters(input);
+  const where: Prisma.DocumentWhereInput = {
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.q ? { OR: [
+      { title: { contains: filters.q, mode: "insensitive" } },
+      { category: { contains: filters.q, mode: "insensitive" } },
+    ] } : {}),
+  };
+  return client.$transaction(async (tx) => {
+    const bounds = pageBounds(await tx.document.count({ where }), filters.page);
+    const items = await tx.document.findMany({
+      where, select: adminDocumentPageSelect, orderBy: listOrder(filters.sort),
+      take: CONTENT_PAGE_SIZE, skip: (bounds.page - 1) * CONTENT_PAGE_SIZE,
+    });
+    return { ...bounds, items };
+  }, { isolationLevel: "RepeatableRead" });
 }
 
 export function getAdminProject(

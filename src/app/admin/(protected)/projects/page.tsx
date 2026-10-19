@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 
 import {
   getAdminProject,
-  listAdminProjects,
+  listAdminProjectsPage,
 } from "@/features/content-admin/repository";
 import { requireAdminSession } from "@/lib/admin-auth/session";
+import { parseContentListFilters, contentEditorHref } from "@/features/content-admin/list-filters";
 
 import styles from "../../admin.module.css";
 import { ContentList, FormSuccess } from "../content-ui";
+import { ContentListControls, ContentListPagination } from "../content-list-controls";
 
 const updatedAtFormatter = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "short",
@@ -19,14 +21,14 @@ const updatedAtFormatter = new Intl.DateTimeFormat("ru-RU", {
 
 export type ProjectPageDependencies = {
   requireSession: () => Promise<unknown>;
-  listProjects: typeof listAdminProjects;
+  listProjects: typeof listAdminProjectsPage;
   getProject: typeof getAdminProject;
   showNotFound: typeof notFound;
 };
 
 export const defaultProjectPageDependencies: ProjectPageDependencies = {
   requireSession: requireAdminSession,
-  listProjects: listAdminProjects,
+  listProjects: listAdminProjectsPage,
   getProject: getAdminProject,
   showNotFound: notFound,
 };
@@ -36,7 +38,10 @@ export async function renderProjectsPage(
   dependencies: ProjectPageDependencies = defaultProjectPageDependencies,
 ) {
   await dependencies.requireSession();
-  const projects = await dependencies.listProjects();
+  const parsedFilters = parseContentListFilters(searchParams);
+  const result = await dependencies.listProjects(parsedFilters);
+  const filters = { ...parsedFilters, page: result.page };
+  const projects = result.items;
 
   return (
     <section className={styles.dashboard} aria-labelledby="projects-title">
@@ -47,7 +52,7 @@ export async function renderProjectsPage(
         </div>
         <Link
           className={`${styles.primaryButton} ${styles.primaryLink}`}
-          href="/admin/projects/new"
+          href={contentEditorHref("/admin/projects", "new", filters)}
         >
           <Plus aria-hidden="true" size={18} />
           Создать проект
@@ -58,17 +63,20 @@ export async function renderProjectsPage(
         <FormSuccess>
           {searchParams.success === "deleted" ? "Проект удален" : undefined}
         </FormSuccess>
+        <ContentListControls path="/admin/projects" filters={filters} />
         <ContentList
           caption="Проекты фонда"
-          emptyMessage="Проектов пока нет"
+          emptyMessage={filters.q || filters.status ? "По вашему запросу ничего не найдено" : "Проектов пока нет"}
           items={projects.map((project) => ({
             id: project.id,
             title: project.title,
             status: project.status,
             updatedAt: updatedAtFormatter.format(project.updatedAt),
-            editHref: `/admin/projects/${project.id}`,
+            editHref: contentEditorHref("/admin/projects", project.id, filters),
+            publicHref: `/projects/${encodeURIComponent(project.slug)}`,
           }))}
         />
+        <ContentListPagination path="/admin/projects" filters={filters} page={result.page} total={result.total} totalPages={result.totalPages} />
       </div>
     </section>
   );

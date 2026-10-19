@@ -25,6 +25,8 @@ const donationSelect = {
   createdAt: true,
 } satisfies Prisma.DonationSelect;
 
+const pageSelect = { ...donationSelect, lastReconciledAt: true, nextReconcileAt: true, lastReconcileErrorCode: true, reconcileAttempts: true, manualReviewRequired: true } satisfies Prisma.DonationSelect;
+
 const donationOrder = [
   { createdAt: "desc" },
   { id: "desc" },
@@ -34,7 +36,7 @@ type DonationPageDelegate = {
   count(args: { where: Prisma.DonationWhereInput }): Promise<number>;
   findMany(args: {
     where: Prisma.DonationWhereInput;
-    select: typeof donationSelect;
+    select: typeof pageSelect;
     orderBy: typeof donationOrder;
     skip?: number;
     take: number;
@@ -83,7 +85,7 @@ export async function getDonationPage(
       const page = Math.min(filters.page, totalPages);
       const rows = await transaction.donation.findMany({
         where,
-        select: donationSelect,
+        select: pageSelect,
         orderBy: donationOrder,
         skip: (page - 1) * DONATION_PAGE_SIZE,
         take: DONATION_PAGE_SIZE,

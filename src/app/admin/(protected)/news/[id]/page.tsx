@@ -1,3 +1,5 @@
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
+
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -23,6 +25,7 @@ export async function renderNewsEditPage(
 
   if (!newsPost) dependencies.showNotFound();
 
+  const returnTo = safeContentReturnTo(searchParams.returnTo, "/admin/news");
   const saveAction = updateNewsAction.bind(null, newsPost.id);
   const removeAction = deleteNewsAction.bind(null, newsPost.id, newsPost.slug);
   const successMessage =
@@ -36,7 +39,7 @@ export async function renderNewsEditPage(
     <section className={styles.dashboard} aria-labelledby="edit-news-title">
       <div className={styles.dashboardHeader}>
         <div>
-          <Link className={styles.backLink} href="/admin/news">
+          <Link className={styles.backLink} href={returnTo}>
             <ChevronLeft aria-hidden="true" size={16} />
             Новости
           </Link>
@@ -47,6 +50,7 @@ export async function renderNewsEditPage(
         <NewsForm
           deleteAction={removeAction}
           initialValues={newsPost}
+          returnTo={returnTo}
           mode="edit"
           saveAction={saveAction}
           successMessage={successMessage}

@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
 
 import { createDocumentAction } from "../../content-actions";
 import styles from "../../../admin.module.css";
@@ -11,14 +12,16 @@ import {
 
 export async function renderNewDocumentPage(
   dependencies: DocumentPageDependencies = defaultDocumentPageDependencies,
+  searchParams: Record<string, string | string[] | undefined> = {},
 ) {
   await dependencies.requireSession();
+  const returnTo = safeContentReturnTo(searchParams.returnTo, "/admin/documents");
 
   return (
     <section className={styles.dashboard} aria-labelledby="new-document-title">
       <div className={styles.dashboardHeader}>
         <div>
-          <Link className={styles.backLink} href="/admin/documents">
+          <Link className={styles.backLink} href={returnTo}>
             <ChevronLeft aria-hidden="true" size={16} />
             Документы
           </Link>
@@ -26,12 +29,12 @@ export async function renderNewDocumentPage(
         </div>
       </div>
       <div className={styles.dashboardContent}>
-        <DocumentForm mode="create" saveAction={createDocumentAction} />
+        <DocumentForm mode="create" saveAction={createDocumentAction} returnTo={returnTo} />
       </div>
     </section>
   );
 }
 
-export default async function NewDocumentPage() {
-  return renderNewDocumentPage();
+export default async function NewDocumentPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  return renderNewDocumentPage(defaultDocumentPageDependencies, await searchParams);
 }

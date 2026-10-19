@@ -17,6 +17,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: [paymentIntegrationPath],
+    include: [paymentIntegrationPath, "src/features/payments/reconciliation-repository.integration.test.ts"],
   },
 });

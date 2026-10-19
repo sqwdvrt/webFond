@@ -181,6 +181,9 @@ describe("Prisma schema", () => {
   ADMIN
 }`);
     expect(schema).toContain(`enum AdminAuditAction {
+  CONTENT_UPDATED
+  REQUISITES_CHANGED
+  PAYMENT_RECONCILE_REQUESTED
   CONTENT_CREATED
   CONTENT_PUBLISHED
   CONTENT_ARCHIVED
@@ -190,6 +193,8 @@ describe("Prisma schema", () => {
   CONTACT_NOTE_CHANGED
 }`);
     expect(schema).toContain(`enum AdminAuditEntityType {
+  REQUISITES
+  DONATION
   PROJECT
   NEWS_POST
   DOCUMENT
@@ -205,6 +210,7 @@ describe("Prisma schema", () => {
     expect(auditEvent).toMatch(/\bentityId\s+String\b/);
     expect(auditEvent).toMatch(/\bpreviousStatus\s+String\?/);
     expect(auditEvent).toMatch(/\bnextStatus\s+String\?/);
+    expect(auditEvent).toMatch(/\bchangedFields\s+String\[\]\s+@default\(\[\]\)/);
     expect(auditEvent).toContain("@@index([createdAt, id])");
     expect(auditEvent).toContain(
       "@@index([entityType, entityId, createdAt])",

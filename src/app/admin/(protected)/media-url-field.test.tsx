@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -145,5 +145,55 @@ describe("MediaUrlField", () => {
       }),
     );
     await waitFor(() => expect(fileInput).toBeEnabled());
+  });
+
+  it("ignores an old response after manual URL editing and a subsequent upload", async () => {
+    const user = userEvent.setup();
+    const responses: ((response: Response) => void)[] = [];
+    globalThis.fetch = vi.fn(() => new Promise<Response>((resolve) => { responses.push(resolve); }));
+    renderImageField("/old.jpg");
+    const file = new File(["image"], "photo.jpg", { type: "image/jpeg" });
+    await user.upload(screen.getByLabelText("Загрузить изображение"), file);
+    await user.clear(screen.getByLabelText("Изображение"));
+    await user.type(screen.getByLabelText("Изображение"), "/manual.jpg");
+    await user.upload(screen.getByLabelText("Загрузить изображение"), file);
+    await act(async () => { responses[0](new Response(JSON.stringify({ url: "/stale.jpg" }))); });
+    expect(screen.getByLabelText("Изображение")).toHaveValue("/manual.jpg");
+    expect(screen.getByLabelText("Загрузить изображение")).toBeDisabled();
+    await act(async () => { responses[1](new Response(JSON.stringify({ url: "/latest.jpg" }))); });
+    expect(screen.getByLabelText("Изображение")).toHaveValue("/latest.jpg");
+  });
+
+  it("shows uploaded PDF metadata only for the uploaded URL", async () => {
+    const user = userEvent.setup();
+    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ url: "/report.pdf" })));
+    renderDocumentField("https://example.org/unknown.pdf");
+    expect(screen.queryByText(/байт$/)).not.toBeInTheDocument();
+    await user.upload(screen.getByLabelText("Загрузить документ"), new File(["%PDF"], "report.pdf", { type: "application/pdf" }));
+    expect(await screen.findByText("report.pdf · 4 байт")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Открыть документ" })).toHaveAttribute("href", "/report.pdf");
+    await user.type(screen.getByLabelText("Ссылка на документ"), "?replacement");
+    expect(screen.queryByText("report.pdf · 4 байт")).not.toBeInTheDocument();
+  });
+
+  it("rejects large and invalid MIME files without replacing the current URL", async () => {
+    globalThis.fetch = vi.fn();
+    renderImageField("/current.jpg");
+    const fileInput = screen.getByLabelText("Загрузить изображение");
+    fireEvent.change(fileInput, { target: { files: [new File(["text"], "bad.txt", { type: "text/plain" })] } });
+    expect(screen.getByRole("alert")).toHaveTextContent("до 4 000 000 байт");
+    fireEvent.change(fileInput, { target: { files: [new File([new Uint8Array(4_000_001)], "large.jpg", { type: "image/jpeg" })] } });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Изображение")).toHaveValue("/current.jpg");
+  });
+
+  it("reports an image error and removes the URL using the keyboard", async () => {
+    const user = userEvent.setup();
+    renderImageField("/broken.jpg");
+    fireEvent.error(screen.getByRole("img"));
+    expect(screen.getByRole("status")).toHaveTextContent("Не удалось показать изображение");
+    screen.getByRole("button", { name: "Убрать из материала" }).focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByLabelText("Изображение")).toHaveValue("");
   });
 });

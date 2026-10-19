@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Donation } from "@prisma/client";
 
-import { reconcilePendingPayments } from "./reconcile-pending";
+import { reconcilePendingPayments, reconcileSinglePayment } from "./reconcile-pending";
 
 const NOW = new Date("2026-10-19T10:00:00.000Z");
 
@@ -38,6 +38,9 @@ function repositoryFixture() {
     stored,
     repository: {
       listPendingForReconciliation: vi.fn(async () => [stored]),
+      retireReconciliationCandidates: vi.fn(async () => undefined),
+      releaseReconciliation: vi.fn(async () => undefined),
+      claimManualReconciliation: vi.fn(async () => true),
       claimForReconciliation: vi.fn(async () => true),
       updateReconciliation: vi.fn(async () => undefined),
       findById: vi.fn(async () => stored),
@@ -52,6 +55,35 @@ function repositoryFixture() {
 }
 
 describe("reconcilePendingPayments", () => {
+  it("excludes exhausted/old records in the repository selection before a bounded batch", async () => {
+    const fixture = repositoryFixture();
+    fixture.repository.listPendingForReconciliation.mockResolvedValue([]);
+    const client = { getPayment: vi.fn() };
+    await reconcilePendingPayments({ repository: fixture.repository, client, now: NOW, limit: 25 });
+    expect(fixture.repository.listPendingForReconciliation).toHaveBeenCalledWith(expect.objectContaining({
+      maxAttempts: 8, limit: 25, createdBefore: new Date(NOW.getTime() - 300_000), createdAfter: new Date(NOW.getTime() - 90 * 86400_000),
+    }));
+    expect(client.getPayment).not.toHaveBeenCalled();
+  });
+
+  it("does not call the provider if a manual check is already claimed", async () => {
+    const fixture = repositoryFixture();
+    fixture.repository.claimManualReconciliation.mockResolvedValue(false);
+    const client = { getPayment: vi.fn() };
+    await expect(reconcileSinglePayment({ repository: fixture.repository, client, now: NOW, donationId: "donation-1" })).resolves.toEqual({ kind: "busy" });
+    expect(client.getPayment).not.toHaveBeenCalled();
+  });
+
+  it("releases the claim and requires review after a permanent amount mismatch", async () => {
+    const fixture = repositoryFixture();
+    const result = await reconcileSinglePayment({ repository: fixture.repository, now: NOW, donationId: "donation-1", client: {
+      getPayment: vi.fn(async () => ({ id: "provider-1", status: "succeeded" as const, paid: true, capturedAt: NOW.toISOString(), amount: { kopecks: 1, currency: "RUB" }, paymentMethod: { type: "sbp" }, confirmation: undefined, metadata: { donationId: "donation-1" } })),
+    } });
+    expect(result.kind).toBe("failed");
+    expect(fixture.repository.transitionPending).not.toHaveBeenCalled();
+    expect(fixture.repository.updateReconciliation).toHaveBeenCalledWith("donation-1", expect.any(String), expect.objectContaining({ errorCode: "payment_amount_mismatch", manualReviewRequired: true }));
+    expect(fixture.repository.releaseReconciliation).toHaveBeenCalledOnce();
+  });
   it("moves a successfully paid pending donation to succeeded", async () => {
     const fixture = repositoryFixture();
     const result = await reconcilePendingPayments({

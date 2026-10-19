@@ -3,6 +3,7 @@ import { requireAdminSession } from "@/lib/admin-auth/session";
 
 import { contactAuditEvents, type ContactAuditEvent } from "../admin-audit/events";
 import { CONTACT_STATUSES, type ContactStatusValue } from "./types";
+import { safeMessagesReturnTo } from "./filters";
 
 const VALIDATION_MESSAGE = "Проверьте заполнение формы";
 const CONFLICT_MESSAGE =
@@ -14,6 +15,7 @@ const CANONICAL_UTC_ISO =
 export type ContactMutationInput = {
   status: ContactStatusValue;
   note: string | null;
+  preserveNote?: true;
 };
 
 export type ContactMutationValues = {
@@ -126,7 +128,7 @@ export function parseContactMutation(
   if (Object.keys(errors).length > 0) return { ok: false, errors, values };
   return {
     ok: true,
-    value: { status: rawStatus as ContactStatusValue, note },
+    value: { status: rawStatus as ContactStatusValue, note, ...(oneString(formData, "intent") === "status-only" ? { preserveNote: true as const } : {}) },
   };
 }
 
@@ -147,12 +149,13 @@ export async function updateContactRequest(
       return { status: "conflict" };
     }
 
-    const noteChanged = current.internalNote !== input.note;
+    const note = input.preserveNote ? current.internalNote : input.note;
+    const noteChanged = current.internalNote !== note;
     if (current.status === input.status && !noteChanged) return { status: "ok" };
 
     const updated = await transaction.contactRequest.updateMany({
       where: { id, updatedAt: expectedUpdatedAt },
-      data: { status: input.status, internalNote: input.note },
+      data: { status: input.status, internalNote: note },
     });
     if (updated.count === 0) return { status: "conflict" };
 
@@ -235,7 +238,7 @@ export async function updateContactRequestMutation(
     ok: true,
     effect: {
       revalidate: ["/admin", "/admin/messages"],
-      redirectTo: `/admin/messages/${id}?success=saved`,
+      redirectTo: `/admin/messages/${encodeURIComponent(id)}?success=saved${formData.has("returnTo") ? `&returnTo=${encodeURIComponent(safeMessagesReturnTo(oneString(formData, "returnTo")))}` : ""}`,
     },
   };
 }

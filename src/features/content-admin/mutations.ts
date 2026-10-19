@@ -13,6 +13,17 @@ import type {
   RequisitesInput,
   ValidationResult,
 } from "./types";
+import { safeContentReturnTo, type ContentListPath } from "./list-filters";
+
+function withEditorReturnTo(formData: FormData, redirectTo: string, path: ContentListPath) {
+  const returnTo = safeContentReturnTo(formData.get("returnTo"), path);
+  return returnTo === path ? redirectTo : `${redirectTo}&${new URLSearchParams({ returnTo })}`;
+}
+
+function listAfterDelete(formData: FormData, path: ContentListPath) {
+  const returnTo = safeContentReturnTo(formData.get("returnTo"), path);
+  return `${returnTo}${returnTo.includes("?") ? "&" : "?"}success=deleted`;
+}
 
 export type ContentFormState = {
   status: "idle" | "error";
@@ -194,7 +205,7 @@ async function createEditorialMutation<TInput extends EditorialInput>(
   }
   return success(
     paths,
-    `${section.adminPath}/${result.id}?success=created`,
+    withEditorReturnTo(formData, `${section.adminPath}/${result.id}?success=created`, section.adminPath as ContentListPath),
   );
 }
 
@@ -218,7 +229,7 @@ async function updateEditorialMutation<TInput extends EditorialInput>(
 
   return success(
     editorialPaths(section, result),
-    `${section.adminPath}/${result.id}?success=saved`,
+    withEditorReturnTo(formData, `${section.adminPath}/${result.id}?success=saved`, section.adminPath as ContentListPath),
   );
 }
 
@@ -243,7 +254,7 @@ async function deleteEditorialMutation(
       `${section.publicPath}/${slug}`,
       "/sitemap.xml",
     ],
-    `${section.adminPath}?success=deleted`,
+    listAfterDelete(formData, section.adminPath as ContentListPath),
   );
 }
 
@@ -282,7 +293,7 @@ export async function createDocumentMutation(
   const result = await dependencies.create(parsed.value);
   const paths: string[] = ["/admin/documents", "/reports"];
   if (result.isPublished) paths.push("/sitemap.xml");
-  return success(paths, `/admin/documents/${result.id}?success=created`);
+  return success(paths, withEditorReturnTo(formData, `/admin/documents/${result.id}?success=created`, "/admin/documents"));
 }
 
 export function updateProjectMutation(
@@ -320,7 +331,7 @@ export async function updateDocumentMutation(
 
   const paths: string[] = ["/admin/documents", "/reports"];
   if (result.wasPublished !== result.isPublished) paths.push("/sitemap.xml");
-  return success(paths, `/admin/documents/${result.id}?success=saved`);
+  return success(paths, withEditorReturnTo(formData, `/admin/documents/${result.id}?success=saved`, "/admin/documents"));
 }
 
 export function deleteProjectMutation(
@@ -361,7 +372,7 @@ export async function deleteDocumentMutation(
 
   return success(
     ["/admin/documents", "/reports"],
-    "/admin/documents?success=deleted",
+    listAfterDelete(formData, "/admin/documents"),
   );
 }
 

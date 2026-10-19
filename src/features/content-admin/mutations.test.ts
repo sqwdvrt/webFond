@@ -140,6 +140,26 @@ function expectEffect(
   });
 }
 
+describe("editor return navigation", () => {
+  it("preserves a validated content filter after save and rejects external destinations", async () => {
+    for (const destination of ["/admin/projects?status=DRAFT&page=2", "https://evil.example/"]) {
+      const form = formWithToken();
+      form.set("returnTo", destination);
+      const result = await updateProjectMutation("entry-1", form, {
+        requireSession: async () => undefined,
+        parse: () => ok(projectInput),
+        update: async () => editorialSuccess({ previousStatus: "DRAFT", previousSlug: editorialInput.slug }),
+        now: () => now,
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("save failed");
+      const url = new URL(result.effect.redirectTo, "https://example.org");
+      expect(url.pathname).toBe("/admin/projects/entry-1");
+      expect(url.searchParams.get("returnTo")).toBe(destination.startsWith("/admin/") ? destination : null);
+    }
+  });
+});
+
 describe("content mutation authorization order", () => {
   let events: string[];
   let requireSession: () => Promise<void>;

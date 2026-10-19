@@ -28,11 +28,9 @@ import {
   updateAuditedDocument,
   updateAuditedNews,
   updateAuditedProject,
+  saveAuditedRequisites,
+  replaceInvalidAuditedRequisites,
 } from "@/features/admin-audit/content-repository";
-import {
-  replaceInvalidRequisites,
-  saveRequisites,
-} from "@/features/content-admin/repository";
 import {
   parseDocumentForm,
   parseEditorialForm,
@@ -172,7 +170,7 @@ export async function saveRequisitesAction(
   return applyMutation(saveRequisitesMutation(formData, {
     requireSession: requireAdminSession,
     parse: parseRequisitesForm,
-    save: saveRequisites,
+    save: saveAuditedRequisites,
     now,
   }));
 }
@@ -183,7 +181,7 @@ export async function replaceInvalidRequisitesAction(
 ): Promise<ContentFormState> {
   return applyMutation(replaceInvalidRequisitesMutation(formData, {
     requireSession: requireAdminSession,
-    replace: replaceInvalidRequisites,
+    replace: replaceInvalidAuditedRequisites,
     now,
   }));
 }

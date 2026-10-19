@@ -30,6 +30,7 @@ export type ContentAuditEvent = {
   actorKind: "ADMIN";
   action:
     | "CONTENT_CREATED"
+    | "CONTENT_UPDATED"
     | "CONTENT_PUBLISHED"
     | "CONTENT_ARCHIVED"
     | "CONTENT_STATUS_CHANGED"
@@ -38,6 +39,7 @@ export type ContentAuditEvent = {
   entityId: string;
   previousStatus?: PublicationStatus;
   nextStatus?: PublicationStatus;
+  changedFields?: string[];
 };
 
 type ContentIdentity = {
@@ -79,11 +81,15 @@ export function contentUpdatedAuditEvents({
   id,
   previousStatus,
   status,
+  changedFields = [],
 }: ContentIdentity & {
   previousStatus: PublicationStatus;
   status: PublicationStatus;
+  changedFields?: string[];
 }): ContentAuditEvent[] {
-  if (previousStatus === status) return [];
+  if (previousStatus === status) return changedFields.length ? [{
+    actorKind: "ADMIN", action: "CONTENT_UPDATED", entityType, entityId: id, changedFields,
+  }] : [];
 
   return [{
     actorKind: "ADMIN",

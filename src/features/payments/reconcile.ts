@@ -61,6 +61,7 @@ type ReconcileVerifiedPaymentInput = {
 type ReconcilePaymentByIdInput = {
   paymentId: string;
   terminalEvent: SupportedWebhookEvent | null;
+  expectedDonationId?: string;
 };
 
 export type ReconcilePaymentByIdDependencies =
@@ -158,7 +159,7 @@ export async function reconcileVerifiedPayment(
 }
 
 export async function reconcilePaymentById(
-  { paymentId, terminalEvent }: ReconcilePaymentByIdInput,
+  { paymentId, terminalEvent, expectedDonationId }: ReconcilePaymentByIdInput,
   {
     client,
     repository,
@@ -173,6 +174,9 @@ export async function reconcilePaymentById(
     return mapProviderGetError(error, report);
   }
 
+  if (expectedDonationId && payment.metadata?.donationId !== expectedDonationId) {
+    return permanentRejection(paymentAlertCodes.metadataMismatch, report);
+  }
   return reconcileVerifiedPayment(
     { payment, terminalEvent, expectedPaymentId: paymentId },
     { repository, report },
@@ -234,14 +238,13 @@ async function applyVerifiedStatus(
     if (donation.status === "SUCCEEDED") {
       return { kind: "succeeded", donation };
     }
-    return {
-      kind: "succeeded",
-      donation: await repository.transitionPending(
-        donation.id,
-        "SUCCEEDED",
-        capturedAt,
-      ),
-    };
+    const stored = await repository.transitionPending(
+      donation.id,
+      "SUCCEEDED",
+      capturedAt,
+    );
+    if (stored.status !== "SUCCEEDED") return permanentRejection(paymentAlertCodes.terminalStateConflict, report);
+    return { kind: "succeeded", donation: stored };
   }
 
   if (payment.status === "canceled") {
@@ -254,14 +257,13 @@ async function applyVerifiedStatus(
     if (donation.status === "CANCELED") {
       return { kind: "canceled", donation };
     }
-    return {
-      kind: "canceled",
-      donation: await repository.transitionPending(
-        donation.id,
-        "CANCELED",
-        null,
-      ),
-    };
+    const stored = await repository.transitionPending(
+      donation.id,
+      "CANCELED",
+      null,
+    );
+    if (stored.status !== "CANCELED") return permanentRejection(paymentAlertCodes.terminalStateConflict, report);
+    return { kind: "canceled", donation: stored };
   }
 
   return { kind: "retry", code: reconcileRetryCodes.providerProtocol };

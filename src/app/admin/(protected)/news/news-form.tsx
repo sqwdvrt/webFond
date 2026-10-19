@@ -1,6 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
+
+import { projectSlug } from "@/features/content-admin/project-slug";
+
+import { safeContentReturnTo } from "@/features/content-admin/list-filters";
 
 import type { ContentFormState } from "@/features/content-admin/mutations";
 import type { AdminEditorialRow } from "@/features/content-admin/repository";
@@ -10,9 +14,12 @@ import {
   DeleteDraftButton,
   FieldError,
   FormSuccess,
-  SubmitButton,
 } from "../content-ui";
 import { MediaUrlField } from "../media-url-field";
+import { useUnsavedChanges } from "../use-unsaved-changes";
+import { UnsavedChangesNotice } from "../unsaved-changes-notice";
+import { PublicationControls } from "../publication-controls";
+import { EditorialPreview } from "../editorial-preview";
 
 type FormAction = (
   state: ContentFormState,
@@ -25,6 +32,7 @@ type NewsFormProps = {
   deleteAction?: FormAction;
   initialValues?: AdminEditorialRow;
   successMessage?: string;
+  returnTo?: string;
 };
 
 const initialState: ContentFormState = { status: "idle", message: "" };
@@ -37,19 +45,22 @@ async function idleDeleteAction(
   return state;
 }
 
-const statusLabels = {
-  DRAFT: "Черновик",
-  PUBLISHED: "Опубликован",
-  ARCHIVED: "В архиве",
-} as const;
+export function NewsForm(props: NewsFormProps) {
+  return <NewsFormEditor key={props.initialValues?.updatedAt.toISOString() ?? "new"} {...props} />;
+}
 
-export function NewsForm({
+function NewsFormEditor({
   mode,
   saveAction,
   deleteAction,
   initialValues,
   successMessage,
+  returnTo,
 }: NewsFormProps) {
+  const listUrl = safeContentReturnTo(returnTo, "/admin/news");
+  const formRef = useRef<HTMLFormElement>(null);
+  const guard = useUnsavedChanges(formRef);
+  const customSlug = useRef(mode === "edit");
   const [state, formAction] = useActionState(saveAction, initialState);
   const [deleteState, deleteFormAction] = useActionState(
     deleteAction ?? idleDeleteAction,
@@ -72,6 +83,7 @@ export function NewsForm({
 
   const runDelete = deleteAction && initialValues
     ? (formData: FormData) => {
+        formData.set("returnTo", listUrl);
         formData.set("updatedAt", initialValues.updatedAt.toISOString());
         deleteFormAction(formData);
       }
@@ -90,7 +102,8 @@ export function NewsForm({
         </p>
       ) : null}
 
-      <form action={formAction} className={styles.loginForm}>
+      <form ref={formRef} action={formAction} className={styles.loginForm}>
+        <input type="hidden" name="returnTo" value={listUrl} />
         {mode === "edit" && initialValues ? (
           <input
             name="updatedAt"
@@ -101,13 +114,20 @@ export function NewsForm({
 
         <div className={styles.field}>
           <label htmlFor="title">Заголовок</label>
-          <input {...field("title")} defaultValue={String(value("title"))} id="title" maxLength={160} name="title" required />
+          <input {...field("title")} defaultValue={String(value("title"))} id="title" maxLength={160} name="title" required onChange={(event) => {
+            if (customSlug.current) return;
+            const input = formRef.current?.elements.namedItem("slug") as HTMLInputElement | null;
+            if (input) {
+              input.value = projectSlug(event.currentTarget.value);
+              input.dispatchEvent(new Event("editorialchange", { bubbles: true }));
+            }
+          }} />
           <FieldError id="title-error">{state.errors?.title}</FieldError>
         </div>
 
         <div className={styles.field}>
           <label htmlFor="slug">Адрес страницы</label>
-          <input {...field("slug")} defaultValue={String(value("slug"))} id="slug" maxLength={120} name="slug" required />
+          <input {...field("slug")} defaultValue={String(value("slug"))} id="slug" maxLength={120} name="slug" required autoCapitalize="none" spellCheck={false} onChange={() => { customSlug.current = true; }} />
           <FieldError id="slug-error">{state.errors?.slug}</FieldError>
         </div>
 
@@ -137,25 +157,11 @@ export function NewsForm({
           value={String(value("imageUrl"))}
         />
 
-        <div className={styles.field}>
-          <label htmlFor="status">Статус</label>
-          <select
-            {...field("status")}
-            defaultValue={String(value("status"))}
-            id="status"
-            key={String(value("status"))}
-            name="status"
-          >
-            {Object.entries(statusLabels).map(([status, label]) => (
-              <option key={status} value={status}>{label}</option>
-            ))}
-          </select>
-          <FieldError id="status-error">{state.errors?.status}</FieldError>
-        </div>
+        <FieldError id="status-error">{state.errors?.status}</FieldError>
 
-        <SubmitButton pendingLabel="Сохранение...">
-          {mode === "create" ? "Создать новость" : "Сохранить"}
-        </SubmitButton>
+        <UnsavedChangesNotice guard={guard} />
+        <EditorialPreview values={guard.values} />
+        <PublicationControls status={initialValues?.status ?? "DRAFT"} uploading={guard.uploading} missing={[!guard.values.title?.trim() && "название", !guard.values.slug?.trim() && "адрес", (guard.values.summary?.trim().length ?? 0) < 10 && "краткое описание (от 10 символов)", (guard.values.content?.trim().length ?? 0) < 20 && "содержание (от 20 символов)"].filter((item): item is string => Boolean(item))} />
       </form>
 
       {runDelete && initialValues ? (

@@ -73,10 +73,12 @@ export function MessagesView({
         method="get"
         role="search"
       >
+        {filters.before ? <input name="before" type="hidden" value={filters.before} /> : null}
         <label className={styles.compactField}>
           <span>Статус</span>
           <select defaultValue={filters.status ?? ""} name="status">
             <option value="">Все статусы</option>
+            <option value="ACTIVE">Активные</option>
             {CONTACT_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {CONTACT_STATUS_LABELS[status]}
@@ -156,7 +158,7 @@ export function MessagesView({
                 <td data-label="Действие">
                   <Link
                     className={styles.contactDetailLink}
-                    href={`/admin/messages/${contact.id}`}
+                    href={`/admin/messages/${encodeURIComponent(contact.id)}?returnTo=${encodeURIComponent(messagesHref(filters, result.page))}`}
                     prefetch={false}
                   >
                     Открыть обращение {contact.name}

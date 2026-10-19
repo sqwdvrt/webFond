@@ -1,3 +1,5 @@
+import { UPLOAD_MAX_BYTES } from "./limits";
+
 export type UploadKind = "image" | "document";
 
 export type DetectedUpload = {
@@ -13,8 +15,6 @@ export class UploadValidationError extends Error {
   }
 }
 
-const IMAGE_MAX_BYTES = 4_000_000;
-const DOCUMENT_MAX_BYTES = 4_000_000;
 
 function startsWith(bytes: Uint8Array, signature: number[]) {
   return signature.every((value, index) => bytes[index] === value);
@@ -61,7 +61,7 @@ export function inspectUpload(
   bytes: Uint8Array,
   kind: UploadKind,
 ): DetectedUpload {
-  const limit = kind === "image" ? IMAGE_MAX_BYTES : DOCUMENT_MAX_BYTES;
+  const limit = UPLOAD_MAX_BYTES;
 
   if (bytes.byteLength === 0 || bytes.byteLength > limit) {
     throw new UploadValidationError("Файл слишком большой или пустой");

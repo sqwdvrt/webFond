@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import { defaultRequisitesDraft } from "./validation";
@@ -18,6 +19,9 @@ import {
   listAdminDocuments,
   listAdminNews,
   listAdminProjects,
+  listAdminProjectsPage,
+  listAdminNewsPage,
+  listAdminDocumentsPage,
   listPublishedDocuments,
   listPublishedNews,
   listPublishedProjects,
@@ -195,6 +199,54 @@ const publicDocumentSelect = {
   publishedAt: true,
   updatedAt: true,
 };
+
+describe("paginated content reads", () => {
+  it.each([
+    [listAdminProjectsPage, "project"],
+    [listAdminNewsPage, "newsPost"],
+    [listAdminDocumentsPage, "document"],
+  ] as const)("reads count and bounded rows in a repeatable snapshot: %s", async (list, model) => {
+    const count = vi.fn(async () => 26);
+    const rows = [model === "document" ? { ...adminDocumentListRow, fileUrl: adminDocumentRow.fileUrl } : adminEditorialListRow];
+    const findMany = vi.fn(async () => rows);
+    const transaction = { [model]: { count, findMany } } as unknown as Prisma.TransactionClient;
+    const transactionRead = vi.fn();
+    const $transaction = async <T,>(read: (tx: Prisma.TransactionClient) => Promise<T>, options: { isolationLevel: "RepeatableRead" }) => {
+      transactionRead(read, options);
+      return read(transaction);
+    };
+    const result = await list({ q: "Помощь", status: "DRAFT", page: 99, sort: "updated-asc" }, { $transaction });
+    expect(result).toEqual({ items: rows, total: 26, page: 2, pageSize: 25, totalPages: 2 });
+    expect(transactionRead).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: "RepeatableRead" });
+    const where = { status: "DRAFT", OR: [
+      { title: { contains: "Помощь", mode: "insensitive" } },
+      { [model === "document" ? "category" : "slug"]: { contains: "Помощь", mode: "insensitive" } },
+    ] };
+    expect(count).toHaveBeenCalledWith({ where });
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where,
+      take: 25, skip: 25, orderBy: [{ updatedAt: "asc" }, { id: "asc" }],
+    }));
+    if (model === "document") expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ select: expect.objectContaining({ fileUrl: true }) }));
+  });
+
+  it("handles zero results and page boundaries with a stable default order", async () => {
+    const count = vi.fn(async () => 0);
+    const findMany = vi.fn(async () => []);
+    const transaction = { project: { count, findMany } } as unknown as Prisma.TransactionClient;
+    const $transaction = async <T,>(read: (tx: Prisma.TransactionClient) => Promise<T>) => read(transaction);
+    const result = await listAdminProjectsPage({}, { $transaction });
+    expect(result).toMatchObject({ page: 1, totalPages: 1, total: 0 });
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 25, orderBy: [{ updatedAt: "desc" }, { id: "desc" }] }));
+    count.mockResolvedValue(26);
+    expect(await listAdminProjectsPage({ page: 2 }, { $transaction })).toMatchObject({ page: 2, totalPages: 2 });
+    expect(findMany).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 25, take: 25 }));
+    // Deleting the last row of page two must reveal page one, not an empty page.
+    count.mockResolvedValue(25);
+    expect(await listAdminProjectsPage({ page: 2 }, { $transaction })).toMatchObject({ page: 1, totalPages: 1 });
+    expect(findMany).toHaveBeenLastCalledWith(expect.objectContaining({ skip: 0, take: 25 }));
+  });
+});
 
 describe("content repository admin reads", () => {
   it.each([

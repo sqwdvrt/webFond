@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => ({
   createAuditedDocument: vi.fn(),
   updateAuditedDocument: vi.fn(),
   deleteAuditedDocument: vi.fn(),
+  saveAuditedRequisites: vi.fn(),
+  replaceInvalidAuditedRequisites: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
@@ -59,6 +61,8 @@ vi.mock("@/features/admin-audit/content-repository", () => ({
   createAuditedDocument: mocks.createAuditedDocument,
   updateAuditedDocument: mocks.updateAuditedDocument,
   deleteAuditedDocument: mocks.deleteAuditedDocument,
+  saveAuditedRequisites: mocks.saveAuditedRequisites,
+  replaceInvalidAuditedRequisites: mocks.replaceInvalidAuditedRequisites,
 }));
 
 import {
@@ -168,6 +172,8 @@ describe("content server actions", () => {
     ["document create", mocks.createDocumentMutation, mocks.createAuditedDocument, "create", (data: FormData) => createDocumentAction(idle, data)],
     ["document update", mocks.updateDocumentMutation, mocks.updateAuditedDocument, "update", (data: FormData) => updateDocumentAction("document-1", idle, data)],
     ["document delete", mocks.deleteDocumentMutation, mocks.deleteAuditedDocument, "remove", (data: FormData) => deleteDocumentAction("document-1", idle, data)],
+    ["requisites save", mocks.saveRequisitesMutation, mocks.saveAuditedRequisites, "save", (data: FormData) => saveRequisitesAction(idle, data)],
+    ["invalid requisites replace", mocks.replaceInvalidRequisitesMutation, mocks.replaceInvalidAuditedRequisites, "replace", (data: FormData) => replaceInvalidRequisitesAction(idle, data)],
   ])("wires %s to its audited repository", async (
     _label,
     mutation,

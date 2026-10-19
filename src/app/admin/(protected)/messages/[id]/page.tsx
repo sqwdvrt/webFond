@@ -6,13 +6,17 @@ import {
   contactEmailHref,
   contactReplyHref,
 } from "@/features/admin-messages/presentation";
-import { getAdminContactRequest } from "@/features/admin-messages/repository";
+import { getAdminContactRequest, getContactHistory } from "@/features/admin-messages/repository";
+import { safeMessagesReturnTo } from "@/features/admin-messages/filters";
+import { CONTACT_STATUS_LABELS } from "@/features/admin-messages/presentation";
+import { CONTACT_STATUSES, type ContactStatusValue } from "@/features/admin-messages/types";
 import { requireAdminSession } from "@/lib/admin-auth/session";
 
 import styles from "../../../admin.module.css";
-import { updateContactRequestAction } from "../actions";
+import { updateContactRequestAction, updateContactRequestWithReturnAction } from "../actions";
 import { ContactStatusBadge } from "../contact-status-badge";
 import { MessageForm } from "../message-form";
+import { QuickStatusForm } from "../quick-status-form";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +31,8 @@ type MessageDetailPageDependencies = {
   getContact: typeof getAdminContactRequest;
   updateAction: typeof updateContactRequestAction;
   showNotFound: () => never;
+  getHistory: typeof getContactHistory;
+  updateWithReturnAction: typeof updateContactRequestWithReturnAction;
 };
 
 const defaultDependencies: MessageDetailPageDependencies = {
@@ -34,6 +40,8 @@ const defaultDependencies: MessageDetailPageDependencies = {
   getContact: getAdminContactRequest,
   updateAction: updateContactRequestAction,
   showNotFound: notFound,
+  getHistory: getContactHistory,
+  updateWithReturnAction: updateContactRequestWithReturnAction,
 };
 
 export async function renderMessageDetailPage(
@@ -46,14 +54,18 @@ export async function renderMessageDetailPage(
   const contact = await dependencies.getContact(id);
   if (!contact) return dependencies.showNotFound();
 
-  const action = dependencies.updateAction.bind(null, contact.id);
+  const history = await dependencies.getHistory(contact.id);
+  const returnTo = safeMessagesReturnTo(query.returnTo);
+  const action = query.returnTo
+    ? dependencies.updateWithReturnAction.bind(null, contact.id, returnTo)
+    : dependencies.updateAction.bind(null, contact.id);
   const successMessage = query.success === "saved" ? "Обращение сохранено" : undefined;
 
   return (
     <section className={styles.messagesPage} aria-labelledby="message-title">
       <div className={styles.messageHeading}>
         <div>
-          <Link className={styles.backLink} href="/admin/messages">
+          <Link className={styles.backLink} href={returnTo}>
             <ChevronLeft aria-hidden="true" size={16} />
             Все обращения
           </Link>
@@ -102,8 +114,28 @@ export async function renderMessageDetailPage(
       </article>
 
       <MessageForm action={action} contact={contact} successMessage={successMessage} />
+      <section aria-labelledby="quick-status-title">
+        <h2 id="quick-status-title">Быстрые действия</h2>
+        <div className={styles.messageDetailActions}>
+          {([ ["IN_PROGRESS", "В работу"], ["CLOSED", "Закрыть"], ["SPAM", "Спам"] ] as const).filter(([status]) => status !== contact.status).map(([status, label]) =>
+            <QuickStatusForm key={status} action={action} status={status} label={label} updatedAt={contact.updatedAt.toISOString()} />
+          )}
+        </div>
+      </section>
+      <section aria-labelledby="contact-history-title">
+        <h2 id="contact-history-title">История обращения</h2>
+        <p>Последние 20 изменений. Доступ к админке общий; персональный автор не определяется.</p>
+        {history.length ? <ol>{history.map((event) => <li key={event.id}>
+          {event.action === "CONTACT_NOTE_CHANGED" ? "Изменена внутренняя заметка" : `Статус: ${statusLabel(event.previousStatus)} → ${statusLabel(event.nextStatus)}`}
+          {" · "}<time dateTime={event.createdAt.toISOString()}>{dateTimeFormatter.format(event.createdAt)} МСК</time>
+        </li>)}</ol> : <p>Изменений пока нет.</p>}
+      </section>
     </section>
   );
+}
+
+function statusLabel(value: string | null) {
+  return value && CONTACT_STATUSES.includes(value as ContactStatusValue) ? CONTACT_STATUS_LABELS[value as ContactStatusValue] : "Неизвестный статус";
 }
 
 export default async function MessageDetailPage({

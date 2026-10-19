@@ -86,6 +86,11 @@ function detailDependencies(overrides: Record<string, unknown> = {}) {
     showNotFound: vi.fn((): never => {
       throw new Error("not-found");
     }),
+    getHistory: vi.fn(async () => []),
+    updateWithReturnAction: vi.fn(async (...args: [string, string, ContactMutationState, FormData]) => {
+      void args;
+      return { status: "idle" as const, message: "" };
+    }),
     ...overrides,
   };
 }
@@ -187,6 +192,7 @@ describe("MessagesView", () => {
     );
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
       "Все статусы",
+      "Активные",
       "Новое",
       "В работе",
       "Закрыто",
@@ -206,7 +212,7 @@ describe("MessagesView", () => {
     expect(screen.getByRole("cell", { name: "В работе" })).toBeVisible();
     expect(screen.getByRole("link", { name: /Открыть обращение Анна Иванова/ })).toHaveAttribute(
       "href",
-      "/admin/messages/contact-1",
+      `/admin/messages/contact-1?returnTo=${encodeURIComponent("/admin/messages?status=IN_PROGRESS&from=2026-08-01&to=2026-08-23&q=%D0%90%D0%BD%D0%BD%D0%B0&page=2")}`,
     );
     expect(screen.getByRole("link", { name: /Назад/ })).toHaveAttribute(
       "href",
@@ -246,7 +252,7 @@ describe("MessagesView", () => {
       "utf8",
     );
     expect(source).toMatch(
-      /href=\{`\/admin\/messages\/\$\{contact\.id\}`\}[\s\S]*?prefetch=\{false\}/,
+      /href=\{`\/admin\/messages\/[\s\S]*?returnTo=[\s\S]*?prefetch=\{false\}/,
     );
     expect(source).not.toMatch(/tabIndex=\{?[1-9]/);
     expect(source).not.toMatch(/window\.innerWidth|matchMedia/);
@@ -340,6 +346,29 @@ describe("MessagesView", () => {
 });
 
 describe("message detail page", () => {
+  it("preserves the validated list target in the back link and bound action", async () => {
+    const deps = detailDependencies();
+    const returnTo = "/admin/messages?status=ACTIVE&page=2";
+    render(await renderMessageDetailPage(Promise.resolve({ id: contact.id }), Promise.resolve({ returnTo }), deps));
+    expect(screen.getByRole("link", { name: "Все обращения" })).toHaveAttribute("href", returnTo);
+    fireEvent.click(screen.getByRole("button", { name: "Закрыть" }));
+    await waitFor(() => expect(deps.updateWithReturnAction).toHaveBeenCalledOnce());
+    expect(deps.updateWithReturnAction.mock.calls[0]?.slice(0, 2)).toEqual([contact.id, returnTo]);
+    const data = (deps.updateWithReturnAction.mock.calls[0] as unknown as [string, string, ContactMutationState, FormData])[3];
+    expect(data.get("status")).toBe("CLOSED");
+    expect(data.get("intent")).toBe("status-only");
+    expect(data.get("updatedAt")).toBe(contact.updatedAt.toISOString());
+    expect(data.has("note")).toBe(false);
+  });
+
+  it("falls back from an unsafe return target and renders a safe history", async () => {
+    const deps = detailDependencies({ getHistory: vi.fn(async () => [{ id: "history-1", action: "CONTACT_NOTE_CHANGED", previousStatus: null, nextStatus: null, createdAt: contact.updatedAt }]) });
+    render(await renderMessageDetailPage(Promise.resolve({ id: contact.id }), Promise.resolve({ returnTo: "//evil.test" }), deps));
+    expect(screen.getByRole("link", { name: "Все обращения" })).toHaveAttribute("href", "/admin/messages");
+    expect(deps.getHistory).toHaveBeenCalledWith(contact.id);
+    expect(screen.getByText("Изменена внутренняя заметка", { exact: false })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "История обращения" })).toBeVisible();
+  });
   it("authenticates before awaiting params and search params or loading contact data", async () => {
     const denied = new Error("guest denied");
     const deps = detailDependencies({

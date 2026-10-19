@@ -16,6 +16,9 @@ function createDatabase(overrides: {
     _sum: { amountKopecks: number | null };
   }>;
   calls?: string[];
+  heartbeat?: unknown;
+  activity?: object[];
+  existingProjects?: { id: string }[];
 } = {}) {
   const tx = {
     contactRequest: {
@@ -25,6 +28,7 @@ function createDatabase(overrides: {
         .mockResolvedValueOnce(overrides.contactCounts?.[2] ?? 2),
     },
     project: {
+      findMany: vi.fn().mockResolvedValue(overrides.existingProjects ?? []),
       count: vi.fn()
         .mockResolvedValueOnce(overrides.projectCounts?.[0] ?? 11)
         .mockResolvedValueOnce(overrides.projectCounts?.[1] ?? 3),
@@ -48,7 +52,7 @@ function createDatabase(overrides: {
         }),
     },
     adminAuditEvent: {
-      findMany: vi.fn().mockResolvedValue([
+      findMany: vi.fn().mockResolvedValue(overrides.activity ?? [
         {
           id: "audit-1",
           action: "CONTENT_PUBLISHED",
@@ -58,6 +62,9 @@ function createDatabase(overrides: {
           createdAt: new Date("2026-01-31T22:00:00.000Z"),
         },
       ]),
+    },
+    siteSetting: {
+      findUnique: vi.fn().mockResolvedValue(overrides.heartbeat === undefined ? null : { value: overrides.heartbeat }),
     },
   };
   const database = {
@@ -71,6 +78,34 @@ function createDatabase(overrides: {
 }
 
 describe("getAdminDashboardReadModel", () => {
+  it.each([undefined, { completedAt: "invalid", failed: 0 }, { completedAt: "2026-10-20T12:00:00.000Z", failed: 0 }, { completedAt: "2026-10-19T11:50:00.000Z", failed: "secret" }])("warns safely for an absent or malformed enabled heartbeat: %j", async (heartbeat) => {
+    const { database, tx } = createDatabase({ heartbeat });
+    const model = await getAdminDashboardReadModel(new Date("2026-10-19T12:00:00.000Z"), { database, evaluateReadiness: () => ({ ok: true, issues: [] }), paymentsEnabled: () => true });
+    expect(tx.siteSetting.findUnique).toHaveBeenCalledWith({ where: { key: "paymentsReconciliationHeartbeat" }, select: { value: true } });
+    expect(model.reconciliation).toEqual({ enabled: true, completedAt: null, failed: null });
+    expect(model.alerts.some((alert) => alert.code === "PAYMENTS_RECONCILIATION_STALE")).toBe(true);
+  });
+
+  it("reads the latest valid completion and skips heartbeat access when disabled", async () => {
+    const { database, tx } = createDatabase({ heartbeat: { completedAt: "2026-10-19T11:55:00.000Z", failed: 0 } });
+    const deps = { database, evaluateReadiness: () => ({ ok: true as const, issues: [] as [] }), paymentsEnabled: () => false };
+    await getAdminDashboardReadModel(new Date("2026-10-19T12:00:00.000Z"), deps);
+    expect(tx.siteSetting.findUnique).not.toHaveBeenCalled();
+    const enabled = createDatabase({ heartbeat: { completedAt: "2026-10-19T11:55:00.000Z", failed: 0 } });
+    const model = await getAdminDashboardReadModel(new Date("2026-10-19T12:00:00.000Z"), { ...deps, database: enabled.database, paymentsEnabled: () => true });
+    expect(model.reconciliation?.completedAt).toEqual(new Date("2026-10-19T11:55:00.000Z"));
+    expect(model.alerts.some((alert) => alert.code === "PAYMENTS_RECONCILIATION_STALE")).toBe(false);
+  });
+
+  it("links only existing audit objects and strips their internal identity from the view model", async () => {
+    const event = { id: "audit-1", entityId: "project-1", entityType: "PROJECT", action: "CONTENT_UPDATED", previousStatus: null, nextStatus: null, createdAt: new Date("2026-10-19T11:00:00.000Z") };
+    for (const exists of [false, true]) {
+      const { database } = createDatabase({ activity: [event], existingProjects: exists ? [{ id: "project-1" }] : [] });
+      const model = await getAdminDashboardReadModel(new Date("2026-10-19T12:00:00.000Z"), { database, evaluateReadiness: () => ({ ok: true, issues: [] }), paymentsEnabled: () => false });
+      expect(model.recentActivity[0]?.href).toBe(exists ? "/admin/projects/project-1" : null);
+      expect(model.recentActivity[0]).not.toHaveProperty("entityId");
+    }
+  });
   it("loads a repeatable dashboard snapshot with exact Moscow periods", async () => {
     const now = new Date("2026-01-31T21:30:00.000Z");
     const calls: string[] = [];
@@ -94,7 +129,7 @@ describe("getAdminDashboardReadModel", () => {
       where: { status: "NEW" },
     });
     expect(tx.contactRequest.count).toHaveBeenNthCalledWith(2, {
-      where: { status: "IN_PROGRESS" },
+      where: { status: { in: ["NEW", "IN_PROGRESS"] } },
     });
     expect(tx.contactRequest.count).toHaveBeenNthCalledWith(3, {
       where: {
@@ -149,6 +184,7 @@ describe("getAdminDashboardReadModel", () => {
         id: true,
         action: true,
         entityType: true,
+        entityId: true,
         previousStatus: true,
         nextStatus: true,
         createdAt: true,
@@ -157,6 +193,11 @@ describe("getAdminDashboardReadModel", () => {
     expect(model).toEqual({
       messages: { newCount: 7, activeCount: 5 },
       content: { publishedProjectCount: 11, draftCount: 12 },
+      draftCounts: { projects: 3, news: 4, documents: 5 },
+      donationLinks: {
+        today: "/admin/donations?status=SUCCEEDED&dateField=paidAt&from=2026-02-01&to=2026-02-01",
+        month: "/admin/donations?status=SUCCEEDED&dateField=paidAt&from=2026-02-01&to=2026-02-28",
+      },
       donations: {
         today: { count: 4, amountKopecks: 125_500 },
         month: { count: 18, amountKopecks: 990_000 },
@@ -172,13 +213,13 @@ describe("getAdminDashboardReadModel", () => {
           code: "STALE_PENDING_DONATIONS",
           severity: "warning",
           message: "Ожидающих пожертвований старше часа: 3.",
-          href: "/admin/donations?status=PENDING",
+          href: "/admin/donations?status=PENDING&stale=1",
         },
         {
           code: "STALE_NEW_CONTACTS",
           severity: "warning",
           message: "Новых обращений старше 48 часов: 2.",
-          href: "/admin/messages?status=NEW",
+          href: "/admin/messages?status=NEW&before=2026-01-29T21%3A30%3A00.000Z",
         },
       ],
       recentActivity: [

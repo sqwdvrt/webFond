@@ -4,6 +4,7 @@ import {
   buildContactQuery,
   buildContactWhere,
   parseContactPageFilters,
+  safeMessagesReturnTo,
 } from "./filters";
 
 function expectValid<T>(result: { ok: true; value: T } | { ok: false }) {
@@ -13,6 +14,30 @@ function expectValid<T>(result: { ok: true; value: T } | { ok: false }) {
 }
 
 describe("contact page filters", () => {
+  it("matches the combined active count and preserves an exact stale cutoff", () => {
+    const query = new URLSearchParams("status=ACTIVE&before=2026-10-17T09%3A12%3A34.000Z&page=2");
+    const filters = expectValid(parseContactPageFilters(query));
+    expect(buildContactWhere(filters)).toEqual({
+      status: { in: ["NEW", "IN_PROGRESS"] },
+      createdAt: { lt: new Date("2026-10-17T09:12:34.000Z") },
+    });
+    expect(buildContactQuery(filters).get("before")).toBe("2026-10-17T09:12:34.000Z");
+  });
+
+  it.each(["https://evil.test", "//evil.test", "/admin/messages/one", "/admin/messages?status=BAD", "/admin/messages?returnTo=https://evil.test", "/admin/messages#foo", "/admin/messages?before=bad"])('rejects unsafe return target %s', (value) => {
+    expect(safeMessagesReturnTo(value)).toBe("/admin/messages");
+  });
+
+  it("preserves valid list filters in a return target", () => {
+    expect(safeMessagesReturnTo("/admin/messages?status=ACTIVE&q=hello&page=2")).toBe("/admin/messages?status=ACTIVE&q=hello&page=2");
+  });
+  it("uses the stricter of the exact cutoff and calendar end date", () => {
+    const filters = expectValid(parseContactPageFilters(new URLSearchParams("status=NEW&before=2026-10-17T09%3A12%3A34.000Z&to=2026-10-16")));
+    expect(buildContactWhere(filters)).toEqual({ status: "NEW", createdAt: { lt: new Date("2026-10-16T21:00:00.000Z") } });
+  });
+  it.each(["before=bad", "before=2026-02-30T00%3A00%3A00.000Z", "before=2026-10-16T12%3A00%3A00Z", "before=2026-10-16T12%3A00%3A00.000Z&before=2026-10-16T12%3A00%3A00.000Z"])("rejects invalid exact cutoff %s", (query) => {
+    expect(parseContactPageFilters(new URLSearchParams(query))).toEqual({ ok: false });
+  });
   it("defaults absent optional filters to the first page", () => {
     expect(parseContactPageFilters(new URLSearchParams())).toEqual({
       ok: true,
