@@ -95,6 +95,9 @@ describe("admin messages accessibility", () => {
     expect(screen.getByRole("link", { name: "Административная часть" })).toHaveFocus();
 
     const filterControls = [
+      screen.getByRole("link", { name: "Входящие" }),
+      screen.getByRole("link", { name: "Архив" }),
+      screen.getByRole("link", { name: "Корзина" }),
       screen.getByLabelText("Статус"),
       screen.getByLabelText("Дата от"),
       screen.getByLabelText("Дата до"),

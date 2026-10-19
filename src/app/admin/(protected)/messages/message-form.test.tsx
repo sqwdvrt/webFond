@@ -78,7 +78,7 @@ describe("MessageForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Сохранить обращение" }));
 
     await waitFor(() => expect(action).toHaveBeenCalledOnce());
-    expect(screen.getByRole("alert", { name: "Ошибка сохранения" })).toHaveTextContent(
+    expect(await screen.findByRole("alert", { name: "Ошибка сохранения" })).toHaveTextContent(
       "Обновите страницу",
     );
     expect(screen.getByLabelText("Статус обращения")).toHaveValue("CLOSED");

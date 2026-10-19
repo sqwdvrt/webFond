@@ -15,7 +15,7 @@ export function getContactHistory(
   client: { adminAuditEvent: { findMany(args: Prisma.AdminAuditEventFindManyArgs): Promise<ContactHistoryEvent[]> } } = prisma,
 ) {
   return client.adminAuditEvent.findMany({
-    where: { entityType: "CONTACT_REQUEST", entityId: id, action: { in: ["CONTACT_STATUS_CHANGED", "CONTACT_NOTE_CHANGED"] } },
+    where: { entityType: "CONTACT_REQUEST", entityId: id, action: { in: ["CONTACT_STATUS_CHANGED", "CONTACT_NOTE_CHANGED", "CONTACT_FOLDER_CHANGED"] } },
     select: historySelect,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: 20,
@@ -69,7 +69,7 @@ type ContactDetailDelegate = {
 };
 
 type ContactCountDelegate = {
-  count(args: { where: { status: "NEW" } }): Promise<number>;
+  count(args: { where: { status: "NEW"; folder: "INBOX" } }): Promise<number>;
 };
 
 type ContactPageReadClient = { contactRequest: ContactPageDelegate };
@@ -137,5 +137,5 @@ export async function getAdminContactRequest(
 export async function countNewContactRequests(
   client: ContactCountClient = prisma,
 ) {
-  return client.contactRequest.count({ where: { status: "NEW" } });
+  return client.contactRequest.count({ where: { status: "NEW", folder: "INBOX" } });
 }

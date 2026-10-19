@@ -21,27 +21,22 @@ function readDeclarations(selector: string) {
 }
 
 describe("hero logo styles", () => {
-  it("uses the approved adaptive surface contract", () => {
+  it("keeps the desktop mark compact", () => {
     expect(readDeclarations(".hero-logo")).toMatchObject({
-      width: "clamp(240px, 26vw, 360px)",
+      width: "240px",
       "max-width": "100%",
       "justify-self": "center",
-      "aspect-ratio": "1",
-      padding: "28px",
-      border: "2px solid var(--brand)",
-      "border-radius": "8px",
       overflow: "hidden",
-      "box-shadow": "0 18px 48px rgba(31, 91, 37, 0.12)",
     });
   });
 
-  it("keeps the mobile logo compact", () => {
+  it("hides the repeated mark on mobile", () => {
     const mobileStart = css.indexOf("@media (max-width: 720px)");
     const mobileEnd = css.indexOf("@media", mobileStart + 1);
     const mobileStyles = css.slice(mobileStart, mobileEnd);
 
     expect(mobileStart).toBeGreaterThan(-1);
-    expect(mobileStyles).toMatch(/\.hero-logo\s*\{[^}]*width:\s*180px/);
+    expect(mobileStyles).toMatch(/\.hero-logo\s*\{[^}]*display:\s*none/);
     expect(mobileStyles).not.toContain("width: min(100%, 330px)");
     expect(mobileStyles).not.toContain("justify-self: start");
   });

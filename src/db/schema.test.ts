@@ -191,6 +191,7 @@ describe("Prisma schema", () => {
   CONTENT_DELETED
   CONTACT_STATUS_CHANGED
   CONTACT_NOTE_CHANGED
+  CONTACT_FOLDER_CHANGED
 }`);
     expect(schema).toContain(`enum AdminAuditEntityType {
   REQUISITES

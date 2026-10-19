@@ -21,68 +21,38 @@ describe("HomePage", () => {
     expect(screen.getByText("Не удалось загрузить отчёты.")).toBeVisible();
   });
 
-  it("renders the mission, actions, help groups, trust and contacts", () => {
-    const { container } = render(<HomePage />);
+  it("explains the mission and offers separate paths for donors and applicants", () => {
+    render(<HomePage />);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1, name: "Фонд «Быть Добру»" })).toBeVisible();
-    expect(
-      screen.getByText(
-        "Помогаем людям в трудной ситуации. Поддержите фонд или обратитесь за помощью",
-      ),
-    ).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Помогаем людям в трудной жизненной ситуации");
     expect(screen.getByRole("link", { name: "Помочь фонду" })).toHaveAttribute("href", "/help");
     expect(screen.getByRole("link", { name: "Нужна помощь" })).toHaveAttribute("href", "/need-help");
-    expect(screen.getByRole("heading", { level: 2, name: "Кому мы помогаем" })).toBeVisible();
-    expect(screen.getByRole("heading", { level: 2, name: "Как работает помощь" })).toBeVisible();
-    expect(screen.getByRole("heading", { level: 2, name: "Почему нам можно доверять" })).toBeVisible();
-    expect(screen.getByRole("heading", { level: 2, name: "Документы фонда" })).toBeVisible();
-    expect(container.querySelector("ul.activity-list")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
-      ...homepageHelpGroups.map((group) => group.title),
-      "1. Напишите фонду",
-      "2. Мы уточним ситуацию",
-      "3. Согласуем понятный формат помощи",
-      "Проверяемые сведения",
-      "Открытые документы",
-      "Банковский перевод",
-      "На что идут пожертвования",
-      "Проекты фонда",
-      "Отчёты и документы",
-      "Поддержать фонд",
-      "Другие формы участия",
-    ]);
-    expect(screen.getByRole("link", { name: "Все направления" })).toHaveAttribute(
-      "href",
-      "/projects",
-    );
-    expect(container.querySelectorAll(".project-card-compact")).toHaveLength(0);
-    expect(screen.queryByText("Виды деятельности по уставу")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Конкретные программы и проекты будут опубликованы/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Написать через форму" })).toHaveAttribute("href", siteConfig.contacts.formHref);
+    for (const group of homepageHelpGroups) {
+      expect(screen.getByRole("heading", { name: group.title })).toBeVisible();
+    }
   });
 
-  it("keeps a short section order without empty theater", () => {
-    render(<HomePage />);
-
-    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      "Кому мы помогаем",
-      "Как работает помощь",
-      "Почему нам можно доверять",
-      "Как помочь",
-      "Документы фонда",
-      "Напишите нам",
-    ]);
-    expect(Array.from(document.querySelectorAll(".section-number")).map((item) => item.textContent)).toEqual([
-      "01",
-      "02",
-      "03",
-      "04",
-      "05",
-    ]);
-    expect(screen.queryByRole("link", { name: "Новости" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Отчеты" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Подтвержденные факты")).not.toBeInTheDocument();
+  it("keeps empty collections out of the homepage and legal details available", () => {
+    const { container } = render(<HomePage />);
+    expect(screen.queryByRole("heading", { name: "Проекты и отчётность" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Отчёты фонда" })).toHaveAttribute("href", "/reports");
+    expect(container.querySelectorAll(".section-number")).toHaveLength(0);
+    expect(container.querySelectorAll("ol.help-steps > li")).toHaveLength(3);
     expect(screen.getByText(/17 июля 2025 года/)).toBeVisible();
-    expect(screen.queryByText(/Направления помощи|Помощь рядом|Забота о старших|Поддержка детям|Три направления/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/пока не опубликованы/)).not.toBeInTheDocument();
+  });
+
+  it("puts published work before donation and renders only available collections", () => {
+    render(renderHomePage({ paymentsEnabled: () => true, evidence: {
+      projects: [{ id: "project", slug: "real", title: "Опубликованный проект", summary: "Реальная работа", imageUrl: null, publishedAt: null, fundraising: null }],
+      documents: [],
+    } }));
+    const work = screen.getByRole("heading", { name: "Проекты и отчётность" });
+    const help = screen.getByRole("heading", { name: "Как помочь" });
+    expect(work.compareDocumentPosition(help)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByRole("link", { name: "Опубликованный проект" })).toHaveAttribute("href", "/projects/real");
+    expect(screen.queryByRole("heading", { name: "Отчёты и документы" })).not.toBeInTheDocument();
   });
 
   it("describes help without emphasizing payment periodicity", () => {
@@ -90,7 +60,7 @@ describe("HomePage", () => {
     expect(container.textContent?.toLowerCase()).not.toMatch(/разов|единоврем|подпис|автоспис/);
   });
 
-  it.each(["disabled", "configuration-error"])("offers bank transfer without unavailable notices when %s", (state) => {
+  it.each(["disabled", "configuration-error"])("offers bank transfer when payments are %s", (state) => {
     const { container } = render(renderHomePage({ paymentsEnabled: () => {
       if (state === "configuration-error") throw new Error("private config");
       return false;
@@ -98,23 +68,11 @@ describe("HomePage", () => {
     expect(screen.getByText("Поддержать фонд можно банковским переводом.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Перейти к переводу" })).toHaveAttribute("href", "/help");
     expect(container.textContent).not.toMatch(/подключается|скоро|недоступна|private config/);
-    expect(screen.getByRole("link", { name: "Нужна помощь" })).toHaveAttribute("href", "/need-help");
   });
 
   it("shows the live payment path when payments are enabled", () => {
-    const { container } = render(renderHomePage({ paymentsEnabled: () => true }));
-
-    expect(screen.queryByText(/еще подключается/)).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 3, name: "Онлайн-оплата" })).toBeVisible();
-    expect(
-      screen.getByText(
-        "Перевод доступен на странице помощи. Реквизиты карты обрабатывает платежный сервис, фонд их не хранит.",
-      ),
-    ).toBeVisible();
-    expect(
-      screen.getByText("Можно поддержать фонд онлайн или по банковским реквизитам."),
-    ).toBeVisible();
+    render(renderHomePage({ paymentsEnabled: () => true }));
+    expect(screen.getByText("Можно поддержать фонд онлайн или по банковским реквизитам.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Перейти к оплате" })).toHaveAttribute("href", "/help");
-    expect(container.textContent?.toLowerCase()).not.toMatch(/разов|единоврем|подпис|автоспис/);
   });
 });

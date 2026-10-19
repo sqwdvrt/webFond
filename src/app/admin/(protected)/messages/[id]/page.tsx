@@ -9,7 +9,7 @@ import {
 import { getAdminContactRequest, getContactHistory } from "@/features/admin-messages/repository";
 import { safeMessagesReturnTo } from "@/features/admin-messages/filters";
 import { CONTACT_STATUS_LABELS } from "@/features/admin-messages/presentation";
-import { CONTACT_STATUSES, type ContactStatusValue } from "@/features/admin-messages/types";
+import { CONTACT_STATUSES, CONTACT_FOLDERS, CONTACT_FOLDER_LABELS, type ContactFolderValue, type ContactStatusValue } from "@/features/admin-messages/types";
 import { requireAdminSession } from "@/lib/admin-auth/session";
 
 import styles from "../../../admin.module.css";
@@ -126,12 +126,16 @@ export async function renderMessageDetailPage(
         <h2 id="contact-history-title">История обращения</h2>
         <p>Последние 20 изменений. Доступ к админке общий; персональный автор не определяется.</p>
         {history.length ? <ol>{history.map((event) => <li key={event.id}>
-          {event.action === "CONTACT_NOTE_CHANGED" ? "Изменена внутренняя заметка" : `Статус: ${statusLabel(event.previousStatus)} → ${statusLabel(event.nextStatus)}`}
+          {event.action === "CONTACT_NOTE_CHANGED" ? "Изменена внутренняя заметка" : event.action === "CONTACT_FOLDER_CHANGED" ? `Папка: ${folderLabel(event.previousStatus)} → ${folderLabel(event.nextStatus)}` : `Статус: ${statusLabel(event.previousStatus)} → ${statusLabel(event.nextStatus)}`}
           {" · "}<time dateTime={event.createdAt.toISOString()}>{dateTimeFormatter.format(event.createdAt)} МСК</time>
         </li>)}</ol> : <p>Изменений пока нет.</p>}
       </section>
     </section>
   );
+}
+
+function folderLabel(value: string | null) {
+  return value && CONTACT_FOLDERS.includes(value as ContactFolderValue) ? CONTACT_FOLDER_LABELS[value as ContactFolderValue] : "Неизвестная папка";
 }
 
 function statusLabel(value: string | null) {

@@ -126,14 +126,15 @@ describe("getAdminDashboardReadModel", () => {
       { isolationLevel: "RepeatableRead" },
     );
     expect(tx.contactRequest.count).toHaveBeenNthCalledWith(1, {
-      where: { status: "NEW" },
+      where: { status: "NEW", folder: "INBOX" },
     });
     expect(tx.contactRequest.count).toHaveBeenNthCalledWith(2, {
-      where: { status: { in: ["NEW", "IN_PROGRESS"] } },
+      where: { status: { in: ["NEW", "IN_PROGRESS"] }, folder: "INBOX" },
     });
     expect(tx.contactRequest.count).toHaveBeenNthCalledWith(3, {
       where: {
         status: "NEW",
+        folder: "INBOX",
         createdAt: { lt: new Date("2026-01-29T21:30:00.000Z") },
       },
     });
@@ -178,7 +179,7 @@ describe("getAdminDashboardReadModel", () => {
       _sum: { amountKopecks: true },
     });
     expect(tx.adminAuditEvent.findMany).toHaveBeenCalledWith({
-      take: 10,
+      take: 5,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: {
         id: true,

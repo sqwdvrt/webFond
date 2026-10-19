@@ -18,6 +18,7 @@ describe("contact page filters", () => {
     const query = new URLSearchParams("status=ACTIVE&before=2026-10-17T09%3A12%3A34.000Z&page=2");
     const filters = expectValid(parseContactPageFilters(query));
     expect(buildContactWhere(filters)).toEqual({
+      folder: "INBOX",
       status: { in: ["NEW", "IN_PROGRESS"] },
       createdAt: { lt: new Date("2026-10-17T09:12:34.000Z") },
     });
@@ -33,7 +34,7 @@ describe("contact page filters", () => {
   });
   it("uses the stricter of the exact cutoff and calendar end date", () => {
     const filters = expectValid(parseContactPageFilters(new URLSearchParams("status=NEW&before=2026-10-17T09%3A12%3A34.000Z&to=2026-10-16")));
-    expect(buildContactWhere(filters)).toEqual({ status: "NEW", createdAt: { lt: new Date("2026-10-16T21:00:00.000Z") } });
+    expect(buildContactWhere(filters)).toEqual({ folder: "INBOX", status: "NEW", createdAt: { lt: new Date("2026-10-16T21:00:00.000Z") } });
   });
   it.each(["before=bad", "before=2026-02-30T00%3A00%3A00.000Z", "before=2026-10-16T12%3A00%3A00Z", "before=2026-10-16T12%3A00%3A00.000Z&before=2026-10-16T12%3A00%3A00.000Z"])("rejects invalid exact cutoff %s", (query) => {
     expect(parseContactPageFilters(new URLSearchParams(query))).toEqual({ ok: false });
@@ -150,6 +151,7 @@ describe("contact page filters", () => {
     );
 
     expect(buildContactWhere(filters)).toEqual({
+      folder: "INBOX",
       status: "SPAM",
       createdAt: {
         gte: new Date("2026-08-22T21:00:00.000Z"),
@@ -161,5 +163,17 @@ describe("contact page filters", () => {
         { message: { contains: "help", mode: "insensitive" } },
       ],
     });
+  });
+});
+
+describe("contact folders", () => {
+  it("defaults the inbox query and keeps folder filters in return links", () => {
+    expect(buildContactWhere({})).toEqual({ folder: "INBOX" });
+    const parsed = parseContactPageFilters(new URLSearchParams("folder=ARCHIVE&page=2"));
+    expect(parsed).toEqual({ ok: true, value: { folder: "ARCHIVE", page: 2 } });
+    expect(safeMessagesReturnTo("/admin/messages?folder=TRASH&page=2")).toBe("/admin/messages?folder=TRASH&page=2");
+  });
+  it.each(["folder=BAD", "folder=INBOX&folder=TRASH"])("rejects invalid folder input %s", (query) => {
+    expect(parseContactPageFilters(new URLSearchParams(query)).ok).toBe(false);
   });
 });

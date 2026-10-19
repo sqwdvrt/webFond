@@ -18,6 +18,8 @@ import {
 } from "@/features/admin-audit/content-repository";
 import { getAdminDashboardReadModel } from "@/features/admin-dashboard/read-model";
 import { parseContactPageFilters } from "@/features/admin-messages/filters";
+import { moveContactSelection } from "@/features/admin-messages/bulk";
+import { getAuditPage } from "@/features/admin-audit/history";
 import { updateContactRequest } from "@/features/admin-messages/mutation";
 import { getContactRequestPage } from "@/features/admin-messages/repository";
 import type { PublicationStatus } from "@/features/content-admin/types";
@@ -327,7 +329,7 @@ describeWithDatabase("admin operations application integration", () => {
       baselineDraftNewsPostCount,
       baselineDraftDocumentCount,
     ] = await Promise.all([
-      client.contactRequest.count({ where: { status: "IN_PROGRESS" } }),
+      client.contactRequest.count({ where: { status: { in: ["NEW", "IN_PROGRESS"] }, folder: "INBOX" } }),
       client.project.count({ where: { status: "PUBLISHED" } }),
       client.project.count({ where: { status: "DRAFT" } }),
       client.newsPost.count({ where: { status: "DRAFT" } }),
@@ -409,18 +411,18 @@ describeWithDatabase("admin operations application integration", () => {
       expect(model.alerts).toEqual([
         expect.objectContaining({
           code: "STALE_PENDING_DONATIONS",
-          href: "/admin/donations?status=PENDING",
+          href: "/admin/donations?status=PENDING&stale=1",
         }),
         expect.objectContaining({
           code: "STALE_NEW_CONTACTS",
-          href: "/admin/messages?status=NEW",
+          href: "/admin/messages?status=NEW&before=2026-10-14T12%3A00%3A00.000Z",
         }),
       ]);
       expect(model.alerts[0]?.message).toContain(": 1.");
       expect(model.alerts[1]?.message).toContain(": 1.");
-      expect(model.recentActivity).toHaveLength(10);
+      expect(model.recentActivity).toHaveLength(5);
       expect(model.recentActivity.map(({ id }) => id)).toEqual(
-        auditRows.slice(1).reverse().map(({ id }) => id),
+        auditRows.slice(-5).reverse().map(({ id }) => id),
       );
       for (const event of model.recentActivity) {
         expect(event).not.toHaveProperty("entityId");
@@ -529,6 +531,7 @@ describeWithDatabase("admin operations application integration", () => {
       "previousStatus",
       "nextStatus",
       "createdAt",
+      "changedFields",
     ]);
 
     const auditCount = await client.adminAuditEvent.count();
@@ -777,4 +780,33 @@ describeWithDatabase("admin operations application integration", () => {
       ]));
     }
   }, TEST_TIMEOUT_MS);
+  it("atomically moves selected contacts, excludes other folders from the inbox and restores workflow state", async () => {
+    const contacts = await Promise.all(["a", "b"].map((suffix) => client.contactRequest.create({ data: {
+      name: `Bulk ${suffix}`, email: "bulk@example.org", message: "Bulk test", status: "IN_PROGRESS",
+    } })));
+    const rows = contacts.map(({ id, updatedAt }) => ({ id, updatedAt }));
+    // A stale second row must roll back an already updated first row.
+    const staleRows = [...rows].sort((a, b) => a.id.localeCompare(b.id));
+    staleRows[1] = { ...staleRows[1], updatedAt: new Date(0) };
+    await expect(moveContactSelection({ source: "INBOX", target: "ARCHIVE", rows: staleRows }, client)).rejects.toThrow("contact_selection_conflict");
+    expect(await client.contactRequest.count({ where: { id: { in: rows.map((row) => row.id) }, folder: "INBOX" } })).toBe(2);
+    expect(await client.adminAuditEvent.count({ where: { entityId: { in: rows.map((row) => row.id) } } })).toBe(0);
+
+    await moveContactSelection({ source: "INBOX", target: "ARCHIVE", rows }, client);
+    const archived = await getContactRequestPage({ page: 1, folder: "ARCHIVE" }, client);
+    expect(archived.rows.map(({ id }) => id)).toEqual(expect.arrayContaining(rows.map(({ id }) => id)));
+    const inbox = await getContactRequestPage({ page: 1 }, client);
+    expect(inbox.rows.some((row) => rows.some(({ id }) => row.id === id))).toBe(false);
+    await moveContactSelection({ source: "ARCHIVE", target: "TRASH", rows: archived.rows.filter((row) => rows.some(({ id }) => row.id === id)).map(({ id, updatedAt }) => ({ id, updatedAt })) }, client);
+    const trash = await client.contactRequest.findMany({ where: { id: { in: rows.map(({ id }) => id) } } });
+    expect(trash.every((row) => row.folder === "TRASH" && row.status === "IN_PROGRESS")).toBe(true);
+    await moveContactSelection({ source: "TRASH", target: "INBOX", rows: trash.map(({ id, updatedAt }) => ({ id, updatedAt })) }, client);
+    expect(await client.contactRequest.count({ where: { id: { in: rows.map(({ id }) => id) }, folder: "INBOX", status: "IN_PROGRESS" } })).toBe(2);
+    const audit = await client.adminAuditEvent.findMany({ where: { entityId: { in: rows.map(({ id }) => id) } } });
+    expect(audit).toHaveLength(6);
+    expect(audit.every((row) => row.action === "CONTACT_FOLDER_CHANGED")).toBe(true);
+    const history = await getAuditPage(1, client);
+    expect(history.rows.length).toBeLessThanOrEqual(25);
+  }, TEST_TIMEOUT_MS);
+
 });

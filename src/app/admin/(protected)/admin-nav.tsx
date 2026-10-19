@@ -7,6 +7,7 @@ import {
   FileText,
   FolderKanban,
   HandCoins,
+  History,
   Landmark,
   LayoutDashboard,
   Mail,
@@ -23,6 +24,7 @@ const adminSections = [
   { href: "/admin/documents", label: "Документы", icon: FileText },
   { href: "/admin/requisites", label: "Реквизиты", icon: Landmark },
   { href: "/admin/donations", label: "Пожертвования", icon: HandCoins },
+  { href: "/admin/changes", label: "Изменения", icon: History },
 ] as const;
 
 export function isAdminSectionCurrent(pathname: string, href: string) {

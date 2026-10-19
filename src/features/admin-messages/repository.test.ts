@@ -12,7 +12,7 @@ it("reads only a bounded history of status and note events without note payloads
   const findMany = vi.fn(async () => []);
   await getContactHistory("contact-1", { adminAuditEvent: { findMany } } as never);
   expect(findMany).toHaveBeenCalledWith({
-    where: { entityType: "CONTACT_REQUEST", entityId: "contact-1", action: { in: ["CONTACT_STATUS_CHANGED", "CONTACT_NOTE_CHANGED"] } },
+    where: { entityType: "CONTACT_REQUEST", entityId: "contact-1", action: { in: ["CONTACT_STATUS_CHANGED", "CONTACT_NOTE_CHANGED", "CONTACT_FOLDER_CHANGED"] } },
     select: { id: true, action: true, previousStatus: true, nextStatus: true, createdAt: true },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20,
   });
@@ -70,9 +70,9 @@ describe("contact request repository page", () => {
     expect(mocks.transaction).toHaveBeenCalledWith(expect.any(Function), {
       isolationLevel: "RepeatableRead",
     });
-    expect(mocks.count).toHaveBeenCalledWith({ where: { status: "NEW" } });
+    expect(mocks.count).toHaveBeenCalledWith({ where: { status: "NEW", folder: "INBOX" } });
     expect(mocks.findMany).toHaveBeenCalledWith({
-      where: { status: "NEW" },
+      where: { status: "NEW", folder: "INBOX" },
       select: {
         id: true,
         name: true,
@@ -130,7 +130,7 @@ describe("contact request repository summaries", () => {
 
     expect(result).toBe(3);
     expect(count).toHaveBeenCalledOnce();
-    expect(count).toHaveBeenCalledWith({ where: { status: "NEW" } });
+    expect(count).toHaveBeenCalledWith({ where: { status: "NEW", folder: "INBOX" } });
   });
 
   it("loads one contact request with the detail fields", async () => {

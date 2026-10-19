@@ -85,6 +85,7 @@ describe("contact-request server action", () => {
     expect(events).toEqual([
       "revalidate:/admin",
       "revalidate:/admin/messages",
+      "revalidate:/admin/changes",
       "redirect:/admin/messages/contact-1?success=saved",
     ]);
   });

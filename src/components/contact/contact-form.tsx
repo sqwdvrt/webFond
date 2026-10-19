@@ -29,8 +29,9 @@ export function ContactForm({ action }: ContactFormProps) {
   const values = state.status === "success" ? undefined : state.values;
 
   return (
-    <div className="contact-form">
+    <div className="contact-form" id="contact-form">
       <h2 id="contact-form-title">Написать через сайт</h2>
+      <p>Расскажите о ситуации и оставьте электронную почту для ответа.</p>
 
       {state.status === "success" ? (
         <p className="contact-form-success" role="status">

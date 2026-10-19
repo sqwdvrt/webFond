@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -68,7 +69,7 @@ describe("information pages", () => {
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
     expect(screen.getAllByRole("heading", { level: 2 })[0]).toHaveTextContent("Перевод в приложении банка");
     expect(screen.queryByText(/будет обрабатывать|появится форма|скоро будут доступны/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
     expect(
@@ -78,32 +79,18 @@ describe("information pages", () => {
     ).toBeVisible();
   });
 
-  it("renders the live donation form when payments are enabled", () => {
+  it("renders online payment first and reveals bank transfer on request", async () => {
+    const user = userEvent.setup();
     render(renderHelpPage({ paymentsEnabled: () => true }));
     expect(screen.getByRole("heading", { level: 1, name: "Поддержать фонд" })).toBeVisible();
     expect(screen.getByText(/Пожертвование через ЮKassa/)).toBeVisible();
-    expect(
-      screen.getByText(/Выберите сумму и перейдите к оплате на стороне ЮKassa/),
-    ).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Как устроена оплата" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "ЮKassa" })).not.toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Оплата проходит на стороне ЮKassa. Доступны Система быстрых платежей (СБП) и банковская карта. Выберите способ на странице оплаты. Если выбран СБП, подтвердите платёж в приложении банка. QR-код СБП показывает ЮKassa после перехода, не на этой странице. Email нужен для кассового чека и передаётся в ЮKassa.",
-      ),
-    ).toBeVisible();
-    expect(screen.queryByText(/если они включены в магазине/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeEnabled();
-    expect(
-      screen.getByText(
-        "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
-      ),
-    ).toBeVisible();
-    expect(screen.queryByText("Онлайн-оплата через СБП находится в подключении.")).not.toBeInTheDocument();
-    expect(screen.queryByText("Онлайн-пожертвования скоро будут доступны")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
-    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).not.toBeVisible();
+    expect(screen.getByRole("link", { name: "Полные банковские реквизиты" })).toHaveAttribute("href", "/requisites");
+    await user.click(screen.getByText("Перевести через приложение банка"));
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
+    expect(screen.getByText("Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).")).toBeVisible();
   });
 
   it("preselects a published project on the help form without a payment error", () => {
@@ -194,7 +181,7 @@ describe("information pages", () => {
     expect(screen.queryByText(publishedRequisites.email)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: "Т-Банк" })).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
     expect(

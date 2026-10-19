@@ -47,7 +47,7 @@ async function applyMutation(
   const outcome = await outcomePromise;
   if (!outcome.ok) return outcome.state;
 
-  for (const path of outcome.effect.revalidate) {
+  for (const path of new Set([...outcome.effect.revalidate, "/admin/changes"])) {
     revalidatePath(path);
   }
   redirect(outcome.effect.redirectTo);

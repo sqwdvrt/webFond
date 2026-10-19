@@ -21,16 +21,15 @@ describe("HomeEvidence", () => {
     render(<HomeEvidence data={{ documents: [], projects: [{ ...project, fundraising: null }] }} />);
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Реальный проект" })).toBeVisible();
-    expect(screen.getByText("Отчёты пока не опубликованы.")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Отчёты и документы" })).not.toBeInTheDocument();
   });
   it("keeps the surviving collection on a failed read", () => {
     render(<HomeEvidence data={{ documents: null, projects: [project] }} />);
     expect(screen.getByText("Не удалось загрузить отчёты.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Реальный проект" })).toBeVisible();
   });
-  it("shows empty projects and leaves the reports link available", () => {
-    render(<HomeEvidence data={{ documents: [], projects: [] }} />);
-    expect(screen.getByText("Проекты пока не опубликованы.")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Все отчёты и документы" })).toHaveAttribute("href", "/reports");
+  it("omits both collections when neither has published content", () => {
+    const { container } = render(<HomeEvidence data={{ documents: [], projects: [] }} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

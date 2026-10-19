@@ -4,6 +4,8 @@ import { moscowDateRange } from "@/lib/dates/moscow";
 
 import {
   CONTACT_STATUSES,
+  CONTACT_FOLDERS,
+  type ContactFolderValue,
   type ContactFilters,
   type ContactPageFilters,
   type ContactStatusValue,
@@ -31,6 +33,7 @@ function oneValue(input: SearchParamsInput, name: string) {
 export function parseContactPageFilters(
   input: SearchParamsInput,
 ): ParseResult<ContactPageFilters> {
+  const folderValue = oneValue(input, "folder");
   const statusValue = oneValue(input, "status");
   const fromValue = oneValue(input, "from");
   const toValue = oneValue(input, "to");
@@ -39,6 +42,7 @@ export function parseContactPageFilters(
   const beforeValue = oneValue(input, "before");
 
   if (
+    !folderValue.ok ||
     !statusValue.ok ||
     !fromValue.ok ||
     !toValue.ok ||
@@ -48,6 +52,7 @@ export function parseContactPageFilters(
     return { ok: false };
   }
 
+  if (folderValue.value && !CONTACT_FOLDERS.includes(folderValue.value as ContactFolderValue)) return { ok: false };
   if (
     statusValue.value &&
     statusValue.value !== "ACTIVE" &&
@@ -70,6 +75,7 @@ export function parseContactPageFilters(
   return {
     ok: true,
     value: {
+      ...(folderValue.value ? { folder: folderValue.value as ContactFolderValue } : {}),
       ...(statusValue.value
         ? { status: statusValue.value as ContactPageFilters["status"] }
         : {}),
@@ -87,6 +93,7 @@ export function buildContactWhere(
   filters: ContactFilters,
 ): Prisma.ContactRequestWhereInput {
   return {
+    folder: filters.folder ?? "INBOX",
     ...(filters.status ? { status: filters.status === "ACTIVE" ? { in: ["NEW", "IN_PROGRESS"] } : filters.status } : {}),
     ...(filters.fromUtc || filters.toExclusiveUtc || filters.before
       ? {
@@ -110,6 +117,7 @@ export function buildContactWhere(
 
 export function buildContactQuery(filters: ContactPageFilters) {
   const query = new URLSearchParams();
+  if (filters.folder && filters.folder !== "INBOX") query.set("folder", filters.folder);
   if (filters.status) query.set("status", filters.status);
   if (filters.before) query.set("before", filters.before);
   if (filters.from) query.set("from", filters.from);
@@ -122,7 +130,7 @@ export function buildContactQuery(filters: ContactPageFilters) {
 export function safeMessagesReturnTo(value: unknown): string {
   if (typeof value !== "string" || !/^\/admin\/messages(?:\?|$)/.test(value) || /[\\#\x00-\x20]/.test(value)) return "/admin/messages";
   const query = new URLSearchParams(value.split("?")[1]);
-  if ([...query.keys()].some((key) => !["status", "from", "to", "q", "page", "before"].includes(key))) return "/admin/messages";
+  if ([...query.keys()].some((key) => !["status", "from", "to", "q", "page", "before", "folder"].includes(key))) return "/admin/messages";
   const parsed = parseContactPageFilters(query);
   if (!parsed.ok) return "/admin/messages";
   const canonical = buildContactQuery(parsed.value);

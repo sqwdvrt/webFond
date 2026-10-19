@@ -27,7 +27,11 @@ export function SiteFooter() {
             <a href={`mailto:${siteConfig.legal.emailLabel}`}>
               {siteConfig.legal.emailLabel}
             </a>
+            {siteConfig.contacts.phones.map((phone) => (
+              <a key={phone.href} href={phone.href}>{phone.label}</a>
+            ))}
             <span>{siteConfig.legal.address}</span>
+            <Link href="/contacts">Все контакты</Link>
           </address>
         </div>
 

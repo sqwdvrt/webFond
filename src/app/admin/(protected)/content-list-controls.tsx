@@ -19,7 +19,7 @@ export function ContentListControls({ path, filters }: { path: ContentListPath; 
           <option value="ARCHIVED">В архиве</option>
         </select>
       </label>
-      <label>
+      <label className={styles.sortField}>
         Сортировка
         <select name="sort" defaultValue={filters.sort}>
           <option value="updated-desc">Сначала недавно изменённые</option>

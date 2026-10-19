@@ -45,7 +45,7 @@ export async function renderMessagesPage(
     dependencies.navigate(`/admin/messages${query.size ? `?${query}` : ""}`);
   }
 
-  return <MessagesView filters={parsed.value} result={result} />;
+  return <MessagesView key={JSON.stringify([parsed.value, result.rows.map((row) => [row.id, row.updatedAt])])} filters={parsed.value} result={result} />;
 }
 
 export default async function MessagesPage({

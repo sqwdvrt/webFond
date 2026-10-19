@@ -1,6 +1,7 @@
 import type { AdminAuditEvent } from "@prisma/client";
 
 import { moscowDayInterval, moscowMonthInterval } from "@/lib/dates/moscow";
+import { resolveAuditLinks } from "@/features/admin-audit/activity-links";
 import { prisma } from "@/lib/db";
 import { evaluateReadiness } from "@/features/readiness/evaluate";
 import { readPaymentsAvailability } from "@/features/payments/config";
@@ -105,11 +106,12 @@ export async function getAdminDashboardReadModel(
       currentMonth,
       recentActivity,
     ] = await Promise.all([
-      tx.contactRequest.count({ where: { status: "NEW" } }),
-      tx.contactRequest.count({ where: { status: { in: ["NEW", "IN_PROGRESS"] } } }),
+      tx.contactRequest.count({ where: { status: "NEW", folder: "INBOX" } }),
+      tx.contactRequest.count({ where: { status: { in: ["NEW", "IN_PROGRESS"] }, folder: "INBOX" } }),
       tx.contactRequest.count({
         where: {
           status: "NEW",
+          folder: "INBOX",
           createdAt: { lt: staleContactCutoff(now) },
         },
       }),
@@ -140,7 +142,7 @@ export async function getAdminDashboardReadModel(
         _sum: { amountKopecks: true },
       }),
       tx.adminAuditEvent.findMany({
-        take: 10,
+        take: 5,
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: {
           id: true,
@@ -156,28 +158,7 @@ export async function getAdminDashboardReadModel(
 
     const heartbeat = paymentsEnabled ? await tx.siteSetting.findUnique({ where: { key: "paymentsReconciliationHeartbeat" }, select: { value: true } }) : null;
     const reconciliation = paymentsEnabled ? parseReconciliationHeartbeat(heartbeat?.value, now) : undefined;
-    const activity = await Promise.all(recentActivity.map(async ({ entityId, ...event }) => {
-      if (!entityId) return event;
-      let href: string | null = null;
-      if (event.entityType === "REQUISITES") {
-        const rows = await tx.siteSetting.findMany({ where: { key: "requisites" }, select: { key: true } });
-        if (rows.length) href = "/admin/requisites";
-      } else {
-        const targets = {
-          PROJECT: [tx.project, "/admin/projects"], NEWS_POST: [tx.newsPost, "/admin/news"],
-          DOCUMENT: [tx.document, "/admin/documents"], CONTACT_REQUEST: [tx.contactRequest, "/admin/messages"],
-          DONATION: [tx.donation, "/admin/donations"],
-        } as const;
-        const target = targets[event.entityType];
-        if (target) {
-          const rows = await target[0].findMany({ where: { id: entityId }, select: { id: true }, take: 1 });
-          if (rows.length) href = event.entityType === "DONATION"
-            ? `${target[1]}?donationId=${encodeURIComponent(entityId)}`
-            : `${target[1]}/${encodeURIComponent(entityId)}`;
-        }
-      }
-      return { ...event, href };
-    }));
+    const activity = await resolveAuditLinks(recentActivity, tx);
     return {
       newContactCount,
       activeContactCount,

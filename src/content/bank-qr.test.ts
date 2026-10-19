@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { bankQrOptions, formatBankQrCopy, unpublishedTbankQr } from "./bank-qr";
+import { bankQrOptions, formatBankQrCopy } from "./bank-qr";
 
 function optionById(id: "alfa" | "vtb") {
   const option = bankQrOptions.find((item) => item.id === id);
@@ -11,10 +11,8 @@ function optionById(id: "alfa" | "vtb") {
 }
 
 describe("bank QR catalog", () => {
-  it("lists Alfa-Bank and VTB while T-Bank stays unpublished", () => {
-    expect(bankQrOptions.map((item) => item.id)).toEqual(["alfa", "vtb"]);
-    expect(unpublishedTbankQr.id).toBe("tbank");
-    expect(unpublishedTbankQr.src).toBe("/qr/tbank.png");
+  it("lists all four confirmed banks", () => {
+    expect(bankQrOptions.map((item) => item.id)).toEqual(["tbank", "sber", "alfa", "vtb"]);
   });
 
   it("formats Alfa copy with its account and BIK, without the VTB account", () => {

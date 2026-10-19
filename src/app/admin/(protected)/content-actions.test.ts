@@ -124,6 +124,7 @@ describe("content server actions", () => {
       "revalidate:/admin/content",
       "revalidate:/public/content",
       "revalidate:/sitemap.xml",
+      "revalidate:/admin/changes",
       "redirect:/admin/content?success=saved",
     ]);
   });

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { AdminDashboardReadModel } from "@/features/admin-dashboard/read-model";
 
+import { ActivityList } from "./activity-list";
 import { renderAdminDashboard } from "./page";
 
 const dashboard: AdminDashboardReadModel = {
@@ -137,7 +138,7 @@ describe("admin dashboard", () => {
     const consumerPaths = [
       "src/app/admin/(protected)/messages/message-form.tsx",
       "src/app/admin/(protected)/messages/messages-view.tsx",
-      "src/app/admin/(protected)/page.tsx",
+      "src/app/admin/(protected)/activity-list.tsx",
     ];
     const consumers = consumerPaths.map((path) => ({
       path,
@@ -155,7 +156,7 @@ describe("admin dashboard", () => {
     }
 
     const dashboardSource = consumers.find(
-      ({ path }) => path === "src/app/admin/(protected)/page.tsx",
+      ({ path }) => path === "src/app/admin/(protected)/activity-list.tsx",
     )?.source;
     expect(dashboardSource).toMatch(
       /event\.action === ["']CONTACT_STATUS_CHANGED["'][\s\S]*?CONTACT_STATUS_LABELS\[/,
@@ -201,8 +202,8 @@ describe("admin dashboard", () => {
     );
   });
 
-  it("renders safe entity labels and descriptions without audit details", async () => {
-    const { container } = render(await renderAdminDashboard(dependencies()));
+  it("renders safe entity labels and descriptions without audit details", () => {
+    const { container } = render(<ActivityList events={dashboard.recentActivity} />);
 
     expect(screen.getAllByText("Проект")).toHaveLength(2);
     expect(screen.getByText("Проект опубликован")).toBeVisible();
@@ -225,6 +226,12 @@ describe("admin dashboard", () => {
     expect(container).not.toHaveTextContent("PRIVATE-OLD");
     expect(container).not.toHaveTextContent("PRIVATE-NEW");
     expect(container).not.toHaveTextContent("PRIVATE-INCOMPATIBLE");
+  });
+
+  it("shows only five recent actions and links to the complete journal", async () => {
+    const { container } = render(await renderAdminDashboard(dependencies()));
+    expect(container.querySelectorAll("ol > li")).toHaveLength(5);
+    expect(screen.getByRole("link", { name: "Все изменения" })).toHaveAttribute("href", "/admin/changes");
   });
 
   it("loads once and renders six operational metric groups accessibly", async () => {

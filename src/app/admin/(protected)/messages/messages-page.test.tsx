@@ -206,7 +206,7 @@ describe("MessagesView", () => {
     expect(table.querySelector("tbody")).not.toBeNull();
     expect(
       screen.getAllByRole("columnheader").map((header) => header.textContent),
-    ).toEqual(["Имя", "Email", "Получено", "Статус", "Сообщение", "Действие"]);
+    ).toEqual(["", "Имя", "Email", "Получено", "Статус", "Сообщение", "Действие"]);
     expect(screen.getByRole("row", { name: /Анна Иванова/ })).toBeVisible();
     expect(screen.getByText("23.08.2026, 11:00 МСК")).toBeVisible();
     expect(screen.getByRole("cell", { name: "В работе" })).toBeVisible();

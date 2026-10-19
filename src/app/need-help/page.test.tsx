@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import NeedHelpPage from "@/app/need-help/page";
 import { siteConfig } from "@/config/site";
-import { faqItems } from "@/content/faq";
+import { applicantFaqItems } from "@/content/faq";
 
 describe("need-help page", () => {
   it("explains who can ask for help and how to apply", () => {
@@ -19,14 +19,14 @@ describe("need-help page", () => {
     expect(screen.getByRole("heading", { name: "Когда ответим" })).toBeVisible();
     expect(
       screen.getByRole("link", { name: "Написать через форму" }),
-    ).toHaveAttribute("href", "/contacts");
+    ).toHaveAttribute("href", "/contacts#contact-form");
     expect(
       screen.getByRole("link", { name: siteConfig.legal.emailLabel }),
     ).toHaveAttribute("href", `mailto:${siteConfig.legal.emailLabel}`);
     expect(screen.queryByText(/заявки на помощь через сайт не принимаем/i)).not.toBeInTheDocument();
     expect(
       Array.from(document.querySelectorAll(".section-number")).map((item) => item.textContent),
-    ).toEqual(["01", "02", "03", "04", "05"]);
+    ).toEqual([]);
   });
 
   it("reveals FAQ answers when a question is opened", async () => {
@@ -34,9 +34,9 @@ describe("need-help page", () => {
     const { container } = render(<NeedHelpPage />);
 
     expect(container.querySelector(".info-grid")).not.toBeInTheDocument();
-    expect(container.querySelectorAll(".faq-list details")).toHaveLength(faqItems.length);
+    expect(container.querySelectorAll(".faq-list details")).toHaveLength(applicantFaqItems.length);
 
-    for (const item of faqItems) {
+    for (const item of applicantFaqItems) {
       expect(screen.getByText(item.question)).toBeVisible();
     }
 
@@ -44,9 +44,9 @@ describe("need-help page", () => {
     expect(first).toBeInstanceOf(HTMLDetailsElement);
     expect((first as HTMLDetailsElement).open).toBe(false);
 
-    await user.click(screen.getByText(faqItems[0].question));
+    await user.click(screen.getByText(applicantFaqItems[0].question));
     expect((first as HTMLDetailsElement).open).toBe(true);
-    expect(screen.getByText(faqItems[0].answer)).toBeVisible();
+    expect(screen.getByText(applicantFaqItems[0].answer)).toBeVisible();
     expect(screen.queryByText(/Помощь рядом|Забота о старших|Поддержка детям/)).not.toBeInTheDocument();
   });
 });

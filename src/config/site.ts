@@ -11,6 +11,13 @@ export const siteConfig = {
   description:
     "Помогаем людям, оказавшимся в трудной жизненной ситуации, и объединяем тех, кто готов поддержать добрые дела.",
   siteUrl: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://fond-bit-dobru.ru"),
+  contacts: {
+    phones: [
+      { label: "8 928 714 77 83", href: "tel:+79287147783" },
+      { label: "8 928 715 77 83", href: "tel:+79287157783" },
+    ],
+    formHref: "/contacts#contact-form",
+  },
   foundedAt: "2025-07-17",
   helpHref: "/help",
   routes: {

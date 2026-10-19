@@ -28,6 +28,12 @@ enum ContactRequestStatus {
   SPAM
 }
 
+enum ContactRequestFolder {
+  INBOX
+  ARCHIVE
+  TRASH
+}
+
 enum AdminAuditActorKind {
   ADMIN
 }
@@ -43,6 +49,7 @@ enum AdminAuditAction {
   CONTENT_DELETED
   CONTACT_STATUS_CHANGED
   CONTACT_NOTE_CHANGED
+  CONTACT_FOLDER_CHANGED
 }
 
 enum AdminAuditEntityType {
@@ -142,12 +149,14 @@ model ContactRequest {
   email        String
   message      String
   status       ContactRequestStatus @default(NEW)
+  folder       ContactRequestFolder @default(INBOX)
   internalNote String?
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
 
   @@index([status, createdAt, id])
   @@index([createdAt, id])
+  @@index([folder, createdAt, id])
   @@index([name(ops: raw("public.gin_trgm_ops"))], map: "ContactRequest_name_trgm_idx", type: Gin)
   @@index([email(ops: raw("public.gin_trgm_ops"))], map: "ContactRequest_email_trgm_idx", type: Gin)
   @@index([message(ops: raw("public.gin_trgm_ops"))], map: "ContactRequest_message_trgm_idx", type: Gin)

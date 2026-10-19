@@ -1,3 +1,8 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { moveContactSelectionAction } from "./actions";
+
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import Link from "next/link";
 
@@ -11,6 +16,8 @@ import {
 import type { ContactPageResult } from "@/features/admin-messages/repository";
 import {
   CONTACT_STATUSES,
+  CONTACT_FOLDERS,
+  CONTACT_FOLDER_LABELS,
   type ContactPageFilters,
 } from "@/features/admin-messages/types";
 
@@ -56,6 +63,9 @@ export function MessagesView({
   filters: ContactPageFilters;
   result: ContactPageResult;
 }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkState, bulkAction, pending] = useActionState(moveContactSelectionAction, { status: "idle" as const, message: "" });
+  const folder = filters.folder ?? "INBOX";
   return (
     <section className={styles.messagesPage} aria-labelledby="messages-title">
       <div className={styles.messageHeading}>
@@ -68,11 +78,19 @@ export function MessagesView({
         </div>
       </div>
 
+      <nav className={styles.messageFolders} aria-label="Папки писем">
+        {CONTACT_FOLDERS.map((value) => <Link key={value} aria-current={folder === value ? "page" : undefined}
+          href={value === "INBOX" ? "/admin/messages" : `/admin/messages?folder=${value}`}>
+          {CONTACT_FOLDER_LABELS[value]}
+        </Link>)}
+      </nav>
+
       <form
         className={`${styles.filters} ${styles.messageFilters}`}
         method="get"
         role="search"
       >
+        <input type="hidden" name="folder" value={folder} />
         {filters.before ? <input name="before" type="hidden" value={filters.before} /> : null}
         <label className={styles.compactField}>
           <span>Статус</span>
@@ -109,7 +127,7 @@ export function MessagesView({
             <Search aria-hidden="true" size={18} />
             Применить
           </button>
-          <Link className={styles.clearButton} href="/admin/messages">
+          <Link className={styles.clearButton} href={folder === "INBOX" ? "/admin/messages" : `/admin/messages?folder=${folder}`}>
             <X aria-hidden="true" size={18} />
             Сбросить
           </Link>
@@ -123,10 +141,24 @@ export function MessagesView({
       </div>
 
       {result.rows.length ? (
+        <form action={bulkAction}>
+          <input type="hidden" name="folder" value={folder} />
+          <input type="hidden" name="returnTo" value={messagesHref(filters, result.page)} />
+          <div className={styles.bulkActions}>
+            <span aria-live="polite">Выбрано: {selected.length}</span>
+            {folder !== "ARCHIVE" ? <button className={styles.secondaryButton} type="submit" name="intent" value="archive" disabled={!selected.length || pending}>Архивировать</button> : null}
+            {folder !== "TRASH" ? <button className={styles.secondaryButton} type="submit" name="intent" value="trash" disabled={!selected.length || pending}>Удалить в корзину</button> : null}
+            {folder !== "INBOX" ? <button className={styles.secondaryButton} type="submit" name="intent" value="restore" disabled={!selected.length || pending}>Вернуть во входящие</button> : null}
+            {pending ? <span role="status">Перемещаем письма…</span> : null}
+          </div>
+          {bulkState.status === "error" ? <p className={styles.formMessage} role="alert">{bulkState.message}</p> : null}
         <table className={styles.contactTable}>
           <caption className={styles.visuallyHidden}>Обращения</caption>
           <thead>
             <tr>
+              <th scope="col" className={styles.selectionCell}><input type="checkbox" aria-label="Выбрать все письма на странице"
+                checked={selected.length === result.rows.length} disabled={pending}
+                onChange={(event) => setSelected(event.target.checked ? result.rows.map((row) => row.id) : [])} /></th>
               <th scope="col">Имя</th>
               <th scope="col">Email</th>
               <th scope="col">Получено</th>
@@ -138,6 +170,11 @@ export function MessagesView({
           <tbody>
             {result.rows.map((contact) => (
               <tr key={contact.id}>
+                <td className={styles.selectionCell} data-label="Выбор"><input type="checkbox" name="selection"
+                  aria-label={`Выбрать письмо ${contact.name}`} disabled={pending}
+                  value={JSON.stringify({ id: contact.id, updatedAt: contact.updatedAt.toISOString() })}
+                  checked={selected.includes(contact.id)}
+                  onChange={(event) => setSelected(event.target.checked ? [...selected, contact.id] : selected.filter((id) => id !== contact.id))} /></td>
                 <td data-label="Имя">{contact.name}</td>
                 <td data-label="Email">
                   <a className={styles.contactEmail} href={contactEmailHref(contact.email)}>
@@ -169,6 +206,7 @@ export function MessagesView({
             ))}
           </tbody>
         </table>
+        </form>
       ) : (
         <div className={styles.emptyState}>
           <h2>Обращения не найдены</h2>

@@ -10,14 +10,16 @@ const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
 });
 
 export function HomeEvidence({ data }: { data: HomeEvidenceData }) {
+  const showProjects = data.projects === null || data.projects.length > 0;
+  const showDocuments = data.documents === null || data.documents.length > 0;
+  if (!showProjects && !showDocuments) return null;
+
   return (
     <div className="home-evidence">
-      <section aria-labelledby="home-projects-heading">
+      {showProjects ? <section aria-labelledby="home-projects-heading">
         <h3 id="home-projects-heading">Проекты фонда</h3>
         {data.projects === null ? (
           <p className="status-note" role="status">Не удалось загрузить проекты.</p>
-        ) : data.projects.length === 0 ? (
-          <p>Проекты пока не опубликованы.</p>
         ) : (
           <div className="published-grid">
             {data.projects.map((project) => (
@@ -33,13 +35,11 @@ export function HomeEvidence({ data }: { data: HomeEvidenceData }) {
           </div>
         )}
         <p className="quiet-row"><Link href="/projects">Все проекты и направления</Link></p>
-      </section>
-      <section aria-labelledby="home-reports-heading">
+      </section> : null}
+      {showDocuments ? <section aria-labelledby="home-reports-heading">
         <h3 id="home-reports-heading">Отчёты и документы</h3>
         {data.documents === null ? (
           <p className="status-note" role="status">Не удалось загрузить отчёты.</p>
-        ) : data.documents.length === 0 ? (
-          <p>Отчёты пока не опубликованы.</p>
         ) : (
           <ul className="home-report-list">
             {data.documents.map((document) => {
@@ -59,7 +59,7 @@ export function HomeEvidence({ data }: { data: HomeEvidenceData }) {
           </ul>
         )}
         <p className="quiet-row"><Link href="/reports">Все отчёты и документы</Link></p>
-      </section>
+      </section> : null}
     </div>
   );
 }
