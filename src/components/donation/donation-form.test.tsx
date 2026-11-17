@@ -121,6 +121,8 @@ describe("DonationForm", () => {
     const payload = JSON.parse(String(init.body));
     expect(payload).toEqual({
       amountRoubles: 1000,
+      consentVersion: "2026-09-04",
+      offerVersion: "2026-09-04",
       acceptedOffer: true,
       acceptedPersonalData: true,
       attemptId: ATTEMPT_ID,
@@ -256,7 +258,8 @@ describe("DonationForm", () => {
 
   it("hides the honeypot from assistive technology", () => {
     renderForm();
-    const honeypot = screen.getByRole("textbox", { name: "Сайт", hidden: true });
+    const honeypot = document.querySelector('input[name="website"]');
+    expect(screen.queryByRole("textbox", { name: "Сайт" })).not.toBeInTheDocument();
     expect(honeypot).toHaveAttribute("tabindex", "-1");
     expect(honeypot).toHaveAttribute("autocomplete", "off");
   });

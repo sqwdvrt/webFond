@@ -1,3 +1,8 @@
+import { personalDataConsentPublication } from "@/content/legal";
+import { donationOfferPublication } from "@/content/donation-offer";
+import { defaultSaveContact } from "@/features/contact/submit";
+import { createPayment } from "./create-payment";
+
 import { PrismaClient } from "@prisma/client";
 import {
   afterAll,
@@ -7,6 +12,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
 
 import {
@@ -134,6 +140,49 @@ afterAll(async () => {
 }, HOOK_TIMEOUT_MS);
 
 describe("payment repository against PostgreSQL", () => {
+  it("keeps legacy evidence null and atomically stores contact consent", async () => {
+    const legacy = await createPendingDonation(901);
+    expect(legacy).toMatchObject({ consentVersion: null, consentAcceptedAt: null, offerVersion: null, offerAcceptedAt: null });
+    const legacyContact = await client.contactRequest.create({ data: { name: "Legacy consent integration", email: "legacy-consent@example.test", message: "Historical message" } });
+    try {
+      expect(legacyContact).toMatchObject({ consentVersion: null, consentAcceptedAt: null });
+      await defaultSaveContact({ name: "Current consent integration", email: "current-consent@example.test", message: "Current message", consentVersion: personalDataConsentPublication.version, consentAcceptedAt: NOW }, "consent-integration", NOW, client as never);
+      expect(await client.contactRequest.findFirstOrThrow({ where: { email: "current-consent@example.test" } })).toMatchObject({ consentVersion: personalDataConsentPublication.version, consentAcceptedAt: NOW });
+      expect(await client.contactRequest.findUniqueOrThrow({ where: { id: legacyContact.id } })).toMatchObject({ consentVersion: null, consentAcceptedAt: null });
+    } finally {
+      await client.contactRequest.deleteMany({ where: { email: { in: ["legacy-consent@example.test", "current-consent@example.test"] } } });
+      await client.paymentRateLimitBucket.deleteMany({ where: { key: { in: ["contact:client:10m:consent-integration", "contact:global:1m"] } } });
+    }
+  }, TEST_TIMEOUT_MS);
+
+  it("stores donation evidence and reuses a bound payment after document versions change", async () => {
+    const id = attemptId(902);
+    const command = { attemptId: id, amountKopecks: 30_000, customerEmail: "anna@example.org", clientKey: FIXTURE_CLIENT_KEYS.concurrent, acceptedPersonalData: true, consentVersion: personalDataConsentPublication.version, acceptedOffer: true, offerVersion: donationOfferPublication.version! };
+    const payment = { id: "consent-provider-payment", status: "pending" as const, paid: false, amount: { kopecks: 30_000, currency: "RUB" }, paymentMethod: { type: "sbp" }, confirmation: { type: "redirect" as const, url: "https://yoomoney.ru/checkout/consent" }, capturedAt: undefined, metadata: { donationId: id } };
+    const provider = { createPayment: vi.fn(async () => payment), getPayment: vi.fn(async () => payment) };
+    const dependencies = { repository, client: provider, now: NOW, config: { shopId: "test", secretKey: "test", siteUrl: new URL("https://example.org"), returnUrl: new URL("https://example.org/donation/result"), rateLimitSecret: "test-secret-long-enough-for-local-tests", trustProxy: false } };
+    expect(await createPayment(command, dependencies)).toMatchObject({ kind: "redirect", donationId: id });
+    const original = await client.donation.findUniqueOrThrow({ where: { id } });
+    expect(original).toMatchObject({ consentVersion: command.consentVersion, consentAcceptedAt: NOW, offerVersion: command.offerVersion, offerAcceptedAt: NOW });
+    const originalConsentVersion = personalDataConsentPublication.version;
+    const originalOfferVersion = donationOfferPublication.version;
+    try {
+      personalDataConsentPublication.version = "future-consent";
+      donationOfferPublication.version = "future-offer";
+      expect(await createPayment(command, { ...dependencies, now: new Date(NOW.getTime() + 1000) })).toMatchObject({ kind: "redirect", donationId: id });
+      expect(provider.createPayment).toHaveBeenCalledOnce();
+      expect(provider.getPayment).toHaveBeenCalledOnce();
+      expect(await client.donation.findUniqueOrThrow({ where: { id } })).toMatchObject({ consentVersion: original.consentVersion, consentAcceptedAt: original.consentAcceptedAt, offerVersion: original.offerVersion, offerAcceptedAt: original.offerAcceptedAt });
+      expect(await createPayment({ ...command, attemptId: attemptId(903) }, dependencies)).toEqual({ kind: "consent-required" });
+      expect(await client.donation.findUnique({ where: { id: attemptId(903) } })).toBeNull();
+      expect(provider.createPayment).toHaveBeenCalledOnce();
+      expect(await createPayment({ ...command, customerEmail: "other@example.org" }, dependencies)).toEqual({ kind: "conflict" });
+    } finally {
+      personalDataConsentPublication.version = originalConsentVersion;
+      donationOfferPublication.version = originalOfferVersion;
+    }
+  }, TEST_TIMEOUT_MS);
+
   it(
     "serializes concurrent attempts and charges request quota twice but new-attempt quota once",
     async () => {
@@ -146,6 +195,8 @@ describe("payment repository against PostgreSQL", () => {
           attemptId: id,
           amountKopecks: 50_000,
           customerEmail: "anna@example.org",
+        acceptedPersonalData: true, consentVersion: "2026-09-04",
+        acceptedOffer: true, offerVersion: "2026-09-04",
           clientKey,
           now: NOW,
         }),
@@ -153,6 +204,8 @@ describe("payment repository against PostgreSQL", () => {
           attemptId: id,
           amountKopecks: 50_000,
           customerEmail: "anna@example.org",
+        acceptedPersonalData: true, consentVersion: "2026-09-04",
+        acceptedOffer: true, offerVersion: "2026-09-04",
           clientKey,
           now: NOW,
         }),
@@ -194,6 +247,8 @@ describe("payment repository against PostgreSQL", () => {
         attemptId: id,
         amountKopecks: 50_000,
         customerEmail: "anna@example.org",
+        acceptedPersonalData: true, consentVersion: "2026-09-04",
+        acceptedOffer: true, offerVersion: "2026-09-04",
         clientKey,
         now: NOW,
       });
@@ -202,6 +257,8 @@ describe("payment repository against PostgreSQL", () => {
           attemptId: id,
           amountKopecks: 50_001,
           customerEmail: "anna@example.org",
+        acceptedPersonalData: true, consentVersion: "2026-09-04",
+        acceptedOffer: true, offerVersion: "2026-09-04",
           clientKey,
           now: NOW,
         }),
@@ -285,6 +342,8 @@ describe("payment repository against PostgreSQL", () => {
           attemptId: id,
           amountKopecks: 30_000,
           customerEmail: "anna@example.org",
+        acceptedPersonalData: true, consentVersion: "2026-09-04",
+        acceptedOffer: true, offerVersion: "2026-09-04",
           clientKey,
           now: NOW,
         })
@@ -469,6 +528,8 @@ describe("payment repository against PostgreSQL", () => {
         attemptId: attemptId(16),
         amountKopecks: 100_000,
         customerEmail: "anna@example.org",
+        acceptedPersonalData: true, consentVersion: "2026-09-04",
+        acceptedOffer: true, offerVersion: "2026-09-04",
         clientKey: FIXTURE_CLIENT_KEYS.expiry,
         now: NOW,
       });

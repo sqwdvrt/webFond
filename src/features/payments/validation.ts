@@ -32,7 +32,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 function hasExactPaymentInputKeys(value: Record<string, unknown>): boolean {
-  const keys = Object.keys(value);
+  const keys = Object.keys(value).filter((key) => key !== "consentVersion" && key !== "offerVersion");
   return (
     keys.length === PAYMENT_INPUT_KEYS.length &&
     PAYMENT_INPUT_KEYS.every((key) => Object.hasOwn(value, key))
@@ -86,6 +86,8 @@ export function parsePaymentCreateInput(
 
   if (
     !hasExactPaymentInputKeys(value) ||
+    (value.consentVersion !== undefined && (typeof value.consentVersion !== "string" || value.consentVersion.length > 100)) ||
+    (value.offerVersion !== undefined && (typeof value.offerVersion !== "string" || value.offerVersion.length > 100)) ||
     value.website !== "" ||
     value.acceptedOffer !== true ||
     value.acceptedPersonalData !== true ||
@@ -110,6 +112,8 @@ export function parsePaymentCreateInput(
   }
 
   const input: PaymentCreateInput = {
+    ...(typeof value.consentVersion === "string" ? { consentVersion: value.consentVersion } : {}),
+    ...(typeof value.offerVersion === "string" ? { offerVersion: value.offerVersion } : {}),
     amountRoubles: value.amountRoubles,
     acceptedOffer: true,
     acceptedPersonalData: true,

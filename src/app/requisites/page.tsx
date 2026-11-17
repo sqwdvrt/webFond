@@ -87,7 +87,7 @@ export async function renderRequisitesPage(
       />
       <section className="page-section">
         <div className="container requisites-layout">
-          <dl className="requisites-list">
+          <dl className="requisites-list" id="bank-details" tabIndex={-1}>
             {rows.map(([term, value]) => (
               <div key={term}>
                 <dt>{term}</dt>
@@ -100,7 +100,7 @@ export async function renderRequisitesPage(
               <CopyRequisitesButton
                 text={formatPublishedRequisitesCopy(published, siteConfig.legal.email)}
               />
-              <BankQrTransfer />
+              <BankQrTransfer requisitesHref="#bank-details" />
             </div>
           ) : result === null ? (
             <p className="status-note" role="status">

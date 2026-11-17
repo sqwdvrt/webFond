@@ -537,6 +537,8 @@ describeWithDatabase("admin operations application integration", () => {
     const auditCount = await client.adminAuditEvent.count();
     await expect(defaultSaveContact(
       {
+        consentVersion: "2026-09-04",
+        consentAcceptedAt: new Date("2026-10-16T13:00:00.000Z"),
         name: "Public Contact",
         email: "public-contact@example.test",
         message: "Public submission",

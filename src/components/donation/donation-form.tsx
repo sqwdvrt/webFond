@@ -1,5 +1,8 @@
 "use client";
 
+import { personalDataConsentPublication } from "@/content/legal";
+import { donationOfferPublication } from "@/content/donation-offer";
+
 import { useId, useState } from "react";
 
 import {
@@ -19,6 +22,7 @@ const PRESET_AMOUNTS = [
 ] as const;
 
 const ERROR_MESSAGES: Record<string, string> = {
+  consent_required: "Редакция документов изменилась. Обновите страницу и прочитайте действующие документы перед новым платежом.",
   invalid_request: "Проверьте сумму, согласие на обработку данных и принятие оферты.",
   stale_attempt:
     "Предыдущая попытка оплаты устарела. Подтвердите новый платеж.",
@@ -145,6 +149,8 @@ export function DonationForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amountRoubles,
+          consentVersion: personalDataConsentPublication.version,
+          offerVersion: donationOfferPublication.version,
           acceptedOffer: true,
           acceptedPersonalData: true,
           attemptId: resolved.attempt.id,
@@ -287,10 +293,11 @@ export function DonationForm({
           </span>
         </label>
 
-        <label className="donation-honeypot">
+        <label aria-hidden="true" className="donation-honeypot">
           Сайт
           <input
             type="text"
+            name="website"
             tabIndex={-1}
             autoComplete="off"
             value={website}

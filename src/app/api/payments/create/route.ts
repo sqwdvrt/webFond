@@ -111,6 +111,8 @@ function mapOutcome(outcome: CreatePaymentOutcome): Response {
         { error: "rate_limited" },
         { "Retry-After": String(outcome.retryAfterSeconds) },
       );
+    case "consent-required":
+      return jsonResponse(400, { error: "consent_required" });
     case "stale-attempt":
       return jsonResponse(409, { error: "stale_attempt" });
     case "conflict":
@@ -183,6 +185,10 @@ export async function handlePaymentCreate(
     const outcome = await dependencies.createPayment(
       {
         amountKopecks: input.amountKopecks,
+        acceptedPersonalData: input.input.acceptedPersonalData,
+        acceptedOffer: input.input.acceptedOffer,
+        consentVersion: input.input.consentVersion,
+        offerVersion: input.input.offerVersion,
         attemptId: input.input.attemptId,
         customerEmail: input.input.email,
         clientKey,

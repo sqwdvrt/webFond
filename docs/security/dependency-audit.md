@@ -1,35 +1,11 @@
-# Dependency audit — 19 октября 2026 года
+# Dependency audit — 17 ноября 2026
 
-Production-зависимости: `npm audit --omit=dev --audit-level=high` — 0 уязвимостей.
+Production: `npm audit --omit=dev --audit-level=high` — **0 уязвимостей** после обновления Next.js/eslint-config-next до 16.4.6, @vercel/blob до 2.9.0 и Zod до совместимого 4.6.7 через npm override. Override нужен из-за зафиксированной транзитивной версии Zod у @vercel/cli-config; удалить после исправления upstream. Vercel Blob сохранён для совместимости preview, production использует Timeweb S3.
 
-Полный audit: 5 записей high, относящихся к одной корневой проблеме
-[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+Полный audit: **16 записей high**, относящихся к одной корневой проблеме [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) в picomatch. Advisory 17 ноября указывает affected <=4.0.7, patched versions отсутствуют. Это dev-цепочки Next ESLint/TypeScript ESLint/Vitest/Vite/glob, не production-зависимости. Vite обновлён до 8.3.8 в допустимом диапазоне Vitest, устранив прежние Vite advisory.
 
-Цепочка, целиком dev-only:
+Не применять `npm audit fix --force`: предлагаемые откаты ESLint/Vitest через major не являются проверенным исправлением. Порог production CI не ослаблен. Непроверенные glob-паттерны нельзя подставлять в конфигурацию линтера, тестов и сборки. Сервис приложения не использует эти инструменты для HTTP-параметров. Это ограничение достижимости, а не исправление самой dev-уязвимости.
 
-`eslint-config-next@16.4.2 → @next/eslint-plugin-next@16.4.2 → fast-glob@3.3.1 → micromatch@4.0.8 → braces@3.0.3`.
+До следующего выпуска повторить оба audit. Ответственный: сопровождающий проекта; следующая плановая проверка — 24 ноября 2026. Проверять upstream picomatch, `npm explain picomatch`, `npm explain zod`, совместимость override и свежий lockfile.
 
-На дату проверки registry latest braces — 3.0.3, исправленной версии в advisory
-нет. Совместимого стабильного исправления в Next ESLint также нет. Предлагаемый
-`npm audit fix --force` откатывает eslint-config-next на 14.2.35 и не применяется.
-
-Воздействие: глубоко вложенный brace-шаблон может завершить процесс обработки
-glob через переполнение стека. Эта цепочка используется линтером. Проверенная
-конфигурация ESLint не задаёт `settings.next.rootDir`; установленный плагин в
-этом случае использует cwd непосредственно, без передачи rootDir в fast-glob.
-HTTP-параметры приложения в эту цепочку не поступают.
-
-Временное решение до upstream-исправления: сохранять glob-шаблоны конфигурации
-под контролем сопровождающих; не подставлять внешние или генерируемые из
-недоверенных данных шаблоны в `settings.next.rootDir`. Production audit остаётся
-обязательной проверкой CI; полный audit не скрывается и запускается при выпуске.
-Это документированный остаточный риск dev-инструментария, а не исправление
-уязвимости или отключение всех будущих advisory.
-
-Ответственный: сопровождающий зависимостей/CI проекта. Повторная проверка
-registry и advisory — **2 ноября 2026 года**. При появлении совместимого патча
-обновить lockfile и выполнить lint, tests, typecheck, build и оба audit.
-
-Проверка: `npm explain braces`, `npm audit --json`, `npm view braces version`,
-`npm view eslint-config-next version`, production-only audit. Значения npm registry
-перепроверять на дату следующего выпуска.
+После обновления `npm run verify` прошёл, включая 1571 unit/компонентный тест, lint, TypeScript, Prisma и build; браузерные сценарии14/14. Интеграционные результаты и ограничения production фиксируются в журнале исправлений.

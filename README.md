@@ -1,5 +1,50 @@
 # Фонд «Быть Добру»
 
+## Исправления аудита 17 ноября 2026
+
+Новые обращения сохраняют `consentVersion`/`consentAcceptedAt`, новые Donation —
+также `offerVersion`/`offerAcceptedAt`. Сервер сверяет показанные клиенту версии
+с опубликованными документами и берёт время на сервере. Исторические поля остаются
+null. Повтор существующего attemptId с теми же параметрами не переписывает evidence
+и не создаёт второй платёж после обновления документов. Новая попытка требует
+текущих версий. Флажки согласия и оферты остаются отдельными.
+
+Для выпуска нужна миграция `20261117193000_consent_evidence`. Порядок остановки
+новых записей, замены всех инстансов и отката — в
+[`release-checklist.md`](docs/operations/release-checklist.md).
+Не обновлять записи прошлого периода вымышленными доказательствами согласия.
+
+Защищённый `GET /api/maintenance/status` проверяет БД и свежесть heartbeat сверки.
+Нужен `x-maintenance-secret`; секрет не передавать в URL. Этот endpoint не заменяет
+liveness и не создаёт расписаний/оповещений. Подробности — в
+[`production-maintenance.md`](docs/operations/production-maintenance.md).
+
+### Браузерные проверки
+
+Используйте отдельную рабочую копию без `.env*` и отдельную локальную PostgreSQL
+с именем `_test`. Runner отклоняет внешний адрес БД/сайта и очищает окружение
+дочернего Next-процесса. Ни одна команда ниже не предназначена для production.
+
+```sh
+npm ci
+npx playwright install chromium
+export E2E_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/foundation_browser_test"
+node --test tests/e2e/runner.safety.mjs
+node scripts/run-e2e.mjs migrate
+node scripts/run-e2e.mjs build
+npm run test:e2e
+```
+
+Конфигурация запускает локальные production-серверы на 3017/3018, тестирует desktop
+и mobile. Основной сервер с оплатой выключен; второй использует dummy credentials
+и подмену API в браузере только для UI-сценария. Боевой провайдер не вызывается.
+Отправка контактной формы проверяется через реальную изолированную БД и evidence.
+Браузерные trace/скриншоты CI сохраняются только при ошибках, на 7 дней.
+
+Наполнение сайта фактами отложено владельцем. Условия помощи и часы связи пока
+не определены; нейтральные формулировки сохранены. Состояние внешней приёмки — в
+[`журнале`](docs/operations/production-acceptance-2026-11-17.md).
+
 Публичный сайт благотворительного фонда. Проект использует Next.js App Router,
 TypeScript, Tailwind CSS, PostgreSQL и Prisma.
 

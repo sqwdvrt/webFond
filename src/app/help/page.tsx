@@ -67,7 +67,7 @@ export function renderHelpPage(
           </p>
           <section className="bank-transfer-content" aria-labelledby="bank-transfer-title">
             <h2 id="bank-transfer-title">Перевод в приложении банка</h2>
-            <p>Выберите свой банк, откройте QR-код и укажите сумму пожертвования.</p>
+            <p>Выберите банковский счёт фонда, откройте QR-код и укажите сумму пожертвования.</p>
             <BankQrTransfer />
           </section>
         </div>

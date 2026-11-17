@@ -62,6 +62,10 @@ enum AdminAuditEntityType {
 }
 
 model Donation {
+  consentVersion String?
+  consentAcceptedAt DateTime?
+  offerVersion String?
+  offerAcceptedAt DateTime?
   id                String         @id @default(cuid())
   providerPaymentId String?        @unique
   idempotenceKey    String         @unique
@@ -144,6 +148,8 @@ model SiteSetting {
 }
 
 model ContactRequest {
+  consentVersion String?
+  consentAcceptedAt DateTime?
   id           String               @id @default(cuid())
   name         String
   email        String

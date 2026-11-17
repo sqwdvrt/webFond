@@ -1,5 +1,7 @@
 "use client";
 
+import { personalDataConsentPublication } from "@/content/legal";
+
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -90,10 +92,11 @@ export function ContactForm({ action }: ContactFormProps) {
           </p>
         ) : null}
 
+        <p id="contact-sensitive-warning">Не указывайте сведения о здоровье, паспортные и банковские данные, а также персональные данные других людей.</p>
         <label className="contact-field">
           Сообщение
           <textarea
-            aria-describedby="contact-message-error"
+            aria-describedby={state.errors?.message ? "contact-sensitive-warning contact-message-error" : "contact-sensitive-warning"}
             aria-invalid={Boolean(state.errors?.message)}
             defaultValue={values?.message ?? ""}
             id="contact-message"
@@ -109,16 +112,18 @@ export function ContactForm({ action }: ContactFormProps) {
           </p>
         ) : null}
 
-        <label className="donation-honeypot">
+        <label aria-hidden="true" className="donation-honeypot">
           Сайт
           <input autoComplete="off" name="website" tabIndex={-1} type="text" />
         </label>
 
-        <p className="contact-form-privacy" id="contact-form-privacy">
-          Отправляя сообщение, вы соглашаетесь, что фонд обработает имя и почту,
-          чтобы ответить. Подробности в{" "}
-          <a href="/privacy">политике конфиденциальности</a>.
-        </p>
+        <input type="hidden" name="consentVersion" value={personalDataConsentPublication.version} />
+        <label className="contact-form-privacy" id="contact-form-privacy">
+          <input type="checkbox" name="acceptedPersonalData" required aria-invalid={Boolean(state.errors?.acceptedPersonalData)} aria-describedby={state.errors?.acceptedPersonalData ? "contact-consent-error" : undefined} />
+          <span>Я даю <a href="/personal-data-consent">согласие на обработку персональных данных</a> и ознакомился с <a href="/privacy">политикой конфиденциальности</a>.</span>
+        </label>
+
+        {state.errors?.acceptedPersonalData ? <p className="contact-form-error" id="contact-consent-error">{state.errors.acceptedPersonalData}</p> : null}
 
         <SubmitButton />
       </form>

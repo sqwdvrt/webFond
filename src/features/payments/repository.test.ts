@@ -111,12 +111,27 @@ function repositoryFixture(existing: ReturnType<typeof donation> | null = null) 
 }
 
 describe("beginAttempt", () => {
+  it.each([
+    {},
+    { acceptedPersonalData: false, consentVersion: "2026-09-04", acceptedOffer: true, offerVersion: "2026-09-04" },
+    { acceptedPersonalData: true, consentVersion: "old-consent", acceptedOffer: true, offerVersion: "2026-09-04" },
+    { acceptedPersonalData: true, consentVersion: "2026-09-04", acceptedOffer: false, offerVersion: "2026-09-04" },
+    { acceptedPersonalData: true, consentVersion: "2026-09-04", acceptedOffer: true, offerVersion: "old-offer" },
+  ])("rejects new attempts without current document acceptance %j", async (acceptance) => {
+    const { repository, tx } = repositoryFixture();
+    await expect(repository.beginAttempt({ attemptId: ATTEMPT_ID, amountKopecks: 50_000, customerEmail: CUSTOMER_EMAIL, clientKey: "consent-client", now: NOW, ...acceptance })).rejects.toThrow(/consent/i);
+    expect(tx.donation.create).not.toHaveBeenCalled();
+  });
   it("returns a matching existing attempt without consuming new-attempt quota", async () => {
     const stored = donation();
     const { client, rawCalls, repository, tx } = repositoryFixture(stored);
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "old-consent",
+        acceptedOffer: true,
+        offerVersion: "old-offer",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
         customerEmail: CUSTOMER_EMAIL,
@@ -142,6 +157,10 @@ describe("beginAttempt", () => {
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "2026-09-04",
+        acceptedOffer: true,
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
         customerEmail: "other@example.org",
@@ -160,6 +179,10 @@ describe("beginAttempt", () => {
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "2026-09-04",
+        acceptedOffer: true,
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
         customerEmail: CUSTOMER_EMAIL,
@@ -179,6 +202,10 @@ describe("beginAttempt", () => {
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "2026-09-04",
+        acceptedOffer: true,
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_001,
         customerEmail: CUSTOMER_EMAIL,
@@ -199,6 +226,10 @@ describe("beginAttempt", () => {
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "2026-09-04",
+        acceptedOffer: true,
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
         customerEmail: CUSTOMER_EMAIL,
@@ -219,6 +250,10 @@ describe("beginAttempt", () => {
     ]);
     expect(tx.donation.create).toHaveBeenCalledWith({
       data: {
+        consentVersion: "2026-09-04",
+        consentAcceptedAt: NOW,
+        offerVersion: "2026-09-04",
+        offerAcceptedAt: NOW,
         id: ATTEMPT_ID,
         idempotenceKey: ATTEMPT_ID,
         amountKopecks: 50_000,
@@ -237,6 +272,10 @@ describe("beginAttempt", () => {
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "2026-09-04",
+        acceptedOffer: true,
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
         customerEmail: CUSTOMER_EMAIL,
@@ -247,6 +286,10 @@ describe("beginAttempt", () => {
     ).resolves.toEqual({ kind: "created", donation: created });
     expect(tx.donation.create).toHaveBeenCalledWith({
       data: {
+        consentVersion: "2026-09-04",
+        consentAcceptedAt: NOW,
+        offerVersion: "2026-09-04",
+        offerAcceptedAt: NOW,
         id: ATTEMPT_ID,
         idempotenceKey: ATTEMPT_ID,
         amountKopecks: 50_000,
@@ -268,6 +311,10 @@ describe("beginAttempt", () => {
 
     await expect(
       repository.beginAttempt({
+        acceptedPersonalData: true,
+        consentVersion: "2026-09-04",
+        acceptedOffer: true,
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         amountKopecks: 50_000,
         customerEmail: CUSTOMER_EMAIL,

@@ -26,6 +26,10 @@ vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 
 function donation(overrides: Partial<Donation> = {}): Donation {
   return {
+    consentVersion: null,
+    consentAcceptedAt: null,
+    offerVersion: null,
+    offerAcceptedAt: null,
     id: DONATION_ID,
     providerPaymentId: PROVIDER_ID,
     idempotenceKey: DONATION_ID,

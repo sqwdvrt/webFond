@@ -30,3 +30,7 @@ public/uploads/*
 *.log
 .DS_Store
 .env*
+
+# Browser smoke artifacts
+playwright-report/
+test-results/

@@ -1,3 +1,7 @@
+import {
+  contactConsentEvidence,
+  ConsentRequiredError,
+} from "@/features/consent/evidence";
 import { prisma } from "@/lib/db";
 import { createPaymentClientKey } from "@/features/payments/client-key";
 import {
@@ -10,7 +14,7 @@ import { parseContactForm, type ContactFormValues } from "./validation";
 export type ContactFormState = {
   status: "idle" | "error" | "success";
   message: string;
-  errors?: Partial<ContactFormValues>;
+  errors?: Partial<ContactFormValues & { acceptedPersonalData: string }>;
   values?: ContactFormValues;
 };
 
@@ -23,7 +27,7 @@ type ContactSaveTransaction = {
   ) => PromiseLike<unknown>;
   contactRequest: {
     create(args: {
-      data: ContactFormValues;
+      data: ContactFormValues & ReturnType<typeof contactConsentEvidence>;
     }): Promise<unknown>;
   };
 };
@@ -40,9 +44,11 @@ export type SubmitContactDependencies = {
   environment: string | undefined;
   secret: string;
   trustProxy: boolean;
-  save: (input: ContactFormValues, clientKey: string, now: Date) => Promise<
-    "ok" | "rate-limited"
-  >;
+  save: (
+    input: ContactFormValues & ReturnType<typeof contactConsentEvidence>,
+    clientKey: string,
+    now: Date,
+  ) => Promise<"ok" | "rate-limited">;
 };
 
 const CLIENT_WINDOW_MS = 10 * 60 * 1_000;
@@ -74,7 +80,7 @@ function readGuardConfig() {
 }
 
 export async function defaultSaveContact(
-  input: ContactFormValues,
+  input: ContactFormValues & ReturnType<typeof contactConsentEvidence>,
   clientKey: string,
   now: Date,
   client: ContactSaveClient = prisma as unknown as ContactSaveClient,
@@ -98,6 +104,8 @@ export async function defaultSaveContact(
           name: input.name,
           email: input.email,
           message: input.message,
+          consentVersion: input.consentVersion,
+          consentAcceptedAt: input.consentAcceptedAt,
         },
       });
     });
@@ -133,6 +141,26 @@ export async function submitContact(
     };
   }
 
+  let evidence;
+  try {
+    evidence = contactConsentEvidence({
+      acceptedPersonalData:
+        formData.getAll("acceptedPersonalData").length === 1 &&
+        formData.get("acceptedPersonalData") === "on",
+      consentVersion: formData.getAll("consentVersion").length === 1
+        ? String(formData.get("consentVersion"))
+        : undefined,
+    }, dependencies.now);
+  } catch (error) {
+    if (!(error instanceof ConsentRequiredError)) throw error;
+    return {
+      status: "error",
+      message: "Подтвердите согласие с действующей редакцией обработки персональных данных. Обновите страницу, если редакция изменилась.",
+      errors: { acceptedPersonalData: "Подтвердите согласие с действующей редакцией. Если документы изменились, обновите страницу." },
+      values: parsed.value,
+    };
+  }
+
   const clientKey = createPaymentClientKey({
     headers: dependencies.headers,
     secret: dependencies.secret,
@@ -142,7 +170,7 @@ export async function submitContact(
 
   try {
     const saved = await dependencies.save(
-      parsed.value,
+      { ...parsed.value, ...evidence },
       clientKey,
       dependencies.now,
     );

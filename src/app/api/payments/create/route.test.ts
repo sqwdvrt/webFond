@@ -11,6 +11,8 @@ const BODY_LIMIT = 8192;
 
 const validBody = {
   amountRoubles: 300,
+  consentVersion: "2026-09-04",
+  offerVersion: "2026-09-04",
   acceptedOffer: true,
   acceptedPersonalData: true,
   attemptId: ATTEMPT_ID,
@@ -273,6 +275,10 @@ describe("payment create HTTP guards", () => {
     expect(deps.createPayment).toHaveBeenCalledExactlyOnceWith(
       {
         amountKopecks: 30_000,
+        acceptedPersonalData: true,
+        acceptedOffer: true,
+        consentVersion: "2026-09-04",
+        offerVersion: "2026-09-04",
         attemptId: ATTEMPT_ID,
         customerEmail: "anna@example.org",
         clientKey: "client-key",
@@ -358,6 +364,7 @@ describe("payment create outcome mapping", () => {
   });
 
   it.each([
+    ["consent-required", 400, "consent_required"],
     ["stale-attempt", 409, "stale_attempt"],
     ["conflict", 409, "conflict"],
     ["provider-rejected", 502, "provider_rejected"],

@@ -1,3 +1,4 @@
+import { ConsentRequiredError, type DocumentAcceptance } from "@/features/consent/evidence";
 import { PaymentRateLimitedError } from "./rate-limit";
 import {
   reconcilePaymentById,
@@ -18,7 +19,7 @@ import {
 
 const STALE_ATTEMPT_MS = 23 * 60 * 60 * 1_000;
 
-export type CreatePaymentCommand = {
+export type CreatePaymentCommand = DocumentAcceptance & {
   amountKopecks: number;
   attemptId: string;
   customerEmail: string;
@@ -29,6 +30,7 @@ export type CreatePaymentCommand = {
 export type CreatePaymentOutcome =
   | { kind: "redirect"; url: string; donationId: string }
   | { kind: "result"; url: string; donationId: string }
+  | { kind: "consent-required" }
   | { kind: "stale-attempt" }
   | { kind: "conflict" }
   | { kind: "rate-limited"; retryAfterSeconds: number }
@@ -153,8 +155,13 @@ export async function createPayment(
       clientKey: command.clientKey,
       projectId: command.projectId ?? null,
       now,
+      acceptedPersonalData: command.acceptedPersonalData,
+      consentVersion: command.consentVersion,
+      acceptedOffer: command.acceptedOffer,
+      offerVersion: command.offerVersion,
     });
   } catch (error) {
+    if (error instanceof ConsentRequiredError) return { kind: "consent-required" };
     if (error instanceof PaymentAttemptConflictError) {
       return { kind: "conflict" };
     }

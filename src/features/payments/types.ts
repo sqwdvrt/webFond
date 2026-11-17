@@ -12,6 +12,8 @@ export type PaymentCreateConfig = YooKassaConfig & {
 
 export type PaymentCreateInput = {
   amountRoubles: number;
+  consentVersion?: string;
+  offerVersion?: string;
   acceptedOffer: true;
   acceptedPersonalData: true;
   attemptId: string;

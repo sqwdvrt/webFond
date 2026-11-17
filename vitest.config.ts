@@ -19,6 +19,7 @@ export default defineConfig({
       "src/features/payments/reconciliation-repository.integration.test.ts",
       ".worktrees/**",
       "scripts/performance/**",
+      "tests/e2e/**",
     ],
     setupFiles: ["./vitest.setup.ts"],
   },

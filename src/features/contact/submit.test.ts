@@ -22,6 +22,8 @@ const valid = {
   email: "anna@example.org",
   message: "Хочу узнать, как помочь фонду документами.",
   website: "",
+  acceptedPersonalData: "on",
+  consentVersion: "2026-09-04",
 };
 
 function dependencies(
@@ -38,6 +40,25 @@ function dependencies(
 }
 
 describe("submitContact", () => {
+  it.each([undefined, "", "old-version"])("rejects missing or stale consent %s without saving and preserves input", async (version) => {
+    const save = vi.fn(async () => "ok" as const);
+    const data = form({ ...valid, acceptedPersonalData: "on" });
+    data.delete("consentVersion");
+    if (version !== undefined) data.set("consentVersion", version);
+    const result = await submitContact(idle, data, dependencies(save));
+    expect(result.status).toBe("error");
+    expect(result.errors?.acceptedPersonalData).toBeTruthy();
+    expect(result.values).toMatchObject({ name: valid.name, email: valid.email, message: valid.message });
+    expect(save).not.toHaveBeenCalled();
+  });
+  it("rejects an unchecked consent without saving", async () => {
+    const save = vi.fn(async () => "ok" as const);
+    const data = form(valid);
+    data.delete("acceptedPersonalData");
+    const result = await submitContact(idle, data, dependencies(save));
+    expect(result.status).toBe("error");
+    expect(save).not.toHaveBeenCalled();
+  });
   it("saves a valid message", async () => {
     const save = vi.fn(
       async (): Promise<"ok" | "rate-limited"> => "ok",
@@ -111,6 +132,8 @@ describe("defaultSaveContact", () => {
       name: valid.name,
       email: valid.email,
       message: valid.message,
+      consentVersion: "2026-09-04",
+      consentAcceptedAt: new Date("2026-10-16T09:00:00.000Z"),
     };
     const savedAt = new Date("2026-10-16T09:00:00.000Z");
 

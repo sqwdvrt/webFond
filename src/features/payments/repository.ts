@@ -1,3 +1,4 @@
+import { donationConsentEvidence, type DocumentAcceptance } from "@/features/consent/evidence";
 import type { Donation, PrismaClient } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -12,7 +13,7 @@ type PaymentClient = Pick<
   "$transaction" | "donation" | "paymentRateLimitBucket"
 >;
 
-type BeginAttemptInput = {
+type BeginAttemptInput = DocumentAcceptance & {
   attemptId: string;
   amountKopecks: number;
   customerEmail: string;
@@ -109,6 +110,7 @@ export function createPaymentRepository(
       clientKey,
       now,
       projectId = null,
+      ...acceptance
     }: BeginAttemptInput): Promise<BeginAttemptResult> {
       const keys = paymentLimitKeys(clientKey);
       const result: BeginAttemptTransactionResult = await client.$transaction(
@@ -145,6 +147,8 @@ export function createPaymentRepository(
             return { kind: "existing" as const, donation: existing };
           }
 
+          const evidence = donationConsentEvidence(acceptance, now);
+
           await consumeBucket(tx, {
             key: keys.clientAttempts,
             now,
@@ -160,6 +164,7 @@ export function createPaymentRepository(
 
           const created = await tx.donation.create({
             data: {
+              ...evidence,
               id: attemptId,
               idempotenceKey: attemptId,
               amountKopecks,

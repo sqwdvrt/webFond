@@ -43,6 +43,10 @@ function payment(
 
 function donation(overrides: Partial<Donation> = {}): Donation {
   return {
+    consentVersion: null,
+    consentAcceptedAt: null,
+    offerVersion: null,
+    offerAcceptedAt: null,
     id: DONATION_ID,
     providerPaymentId: null,
     idempotenceKey: DONATION_ID,

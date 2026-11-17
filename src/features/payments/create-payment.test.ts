@@ -30,6 +30,10 @@ const config: PaymentCreateConfig = {
 
 function donation(overrides: Partial<Donation> = {}): Donation {
   return {
+    consentVersion: null,
+    consentAcceptedAt: null,
+    offerVersion: null,
+    offerAcceptedAt: null,
     id: ATTEMPT_ID,
     providerPaymentId: null,
     idempotenceKey: ATTEMPT_ID,

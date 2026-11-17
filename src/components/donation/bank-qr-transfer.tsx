@@ -11,14 +11,14 @@ import {
   type BankQrId,
 } from "@/content/bank-qr";
 
-export function BankQrTransfer() {
+export function BankQrTransfer({ requisitesHref = "/requisites" }: { requisitesHref?: string }) {
   const [selectedId, setSelectedId] = useState<BankQrId | null>(null);
   const selected = bankQrOptions.find((item) => item.id === selectedId) ?? null;
 
   return (
     <section className="bank-qr-transfer">
       <fieldset>
-        <legend>Банк</legend>
+        <legend>Банковский счёт фонда</legend>
         <div className="bank-qr-grid">
           {bankQrOptions.map((option) => (
             <label key={option.id}>
@@ -66,13 +66,14 @@ export function BankQrTransfer() {
         </div>
       ) : (
         <div className="bank-qr-placeholder">
-          <div><strong>Выберите банк, чтобы показать QR-код и реквизиты</strong>
+          <div><strong>Выберите счёт фонда, чтобы показать QR-код и реквизиты</strong>
           <p>С компьютера отсканируйте код телефоном. С телефона сохраните изображение и откройте его в приложении банка.</p></div>
         </div>
       )}
 
-      <a className="bank-qr-other" href="/requisites">Другой банк? Переведите по реквизитам фонда</a>
+      <a className="bank-qr-other" href={requisitesHref}>Реквизиты для перевода из другого банка</a>
       <div className="bank-qr-notes">
+        <p className="preview-note">Можно перевести из другого банка по реквизитам выбранного счёта фонда. Возможную комиссию и поддержку QR уточните в приложении своего банка.</p>
         <p className="preview-note">
           Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей
           (СБП).

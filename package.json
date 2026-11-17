@@ -21,18 +21,20 @@
     "test:integration:payments": "vitest run --config vitest.payments-integration.config.ts",
     "test:watch": "vitest",
     "db:generate": "prisma generate",
-    "db:validate": "prisma validate"
+    "db:validate": "prisma validate",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
-    "@vercel/blob": "^2.8.0",
+    "@vercel/blob": "^2.9.0",
     "lucide-react": "^1.33.0",
-    "next": "^16.3.1",
+    "next": "^16.4.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
@@ -42,11 +44,14 @@
     "@types/react-dom": "^19.2.4",
     "axe-core": "^4.13.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.1",
+    "eslint-config-next": "^16.4.6",
     "jsdom": "^29.1.1",
     "prisma": "^6.12.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "zod": "^4.6.7"
   }
 }

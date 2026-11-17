@@ -8,6 +8,10 @@ const NOW = new Date("2026-10-19T10:00:00.000Z");
 
 function donation(overrides: Partial<Donation> = {}): Donation {
   return {
+    consentVersion: null,
+    consentAcceptedAt: null,
+    offerVersion: null,
+    offerAcceptedAt: null,
     id: "donation-1",
     providerPaymentId: "provider-1",
     idempotenceKey: "donation-1",

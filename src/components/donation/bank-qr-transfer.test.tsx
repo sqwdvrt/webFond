@@ -16,17 +16,21 @@ function optionById(id: "alfa" | "vtb") {
 }
 
 describe("BankQrTransfer", () => {
+  it("links to actual bank details instead of reloading the requisites page", () => {
+    render(<BankQrTransfer requisitesHref="#bank-details" />);
+    expect(screen.getByRole("link", { name: "Реквизиты для перевода из другого банка" })).toHaveAttribute("href", "#bank-details");
+  });
   it("shows Alfa-Bank and VTB choices and no QR or account until a bank is selected", () => {
     render(<BankQrTransfer />);
 
-    expect(screen.getByRole("group", { name: "Банк" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Банковский счёт фонда" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Т-Банк" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "ВТБ" })).not.toBeChecked();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(screen.queryByText("Расчетный счет")).not.toBeInTheDocument();
     expect(
-      screen.getByText("Выберите банк, чтобы показать QR-код и реквизиты"),
+      screen.getByText("Выберите счёт фонда, чтобы показать QR-код и реквизиты"),
     ).toBeVisible();
     expect(
       screen.getByText(

@@ -1,0 +1,50 @@
+name: browser-smoke
+on:
+  pull_request:
+  push:
+    branches: [develop, master]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: foundation_browser_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/foundation_browser_test
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/e2e/runner.safety.mjs
+      - run: node scripts/run-e2e.mjs migrate
+      - run: node scripts/run-e2e.mjs build
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-smoke-failures
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
