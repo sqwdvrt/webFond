@@ -46,7 +46,7 @@ test('home navigation and responsive menu', async ({ page }, info) => {
 });
 
 test('FAQ expands and collapses; public pages fit viewport', async ({ page }) => {
-  for (const path of ['/', '/help', '/need-help', '/contacts', '/requisites', '/personal-data-consent', '/donation-offer']) {
+  for (const path of ['/', '/about', '/projects', '/help', '/need-help', '/contacts', '/requisites', '/news', '/reports', '/privacy', '/personal-data-consent', '/donation-offer', '/cookies']) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `overflow at ${path}`).toBe(true);
