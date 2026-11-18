@@ -81,26 +81,39 @@ export async function renderRequisitesPage(
   return (
     <>
       <PageHero
+        compact
         eyebrow="Реквизиты"
         title="Сведения о фонде"
         description="Юридические сведения фонда."
-      />
+      >
+        <nav className="section-jumps" aria-label="Разделы реквизитов">
+          {published ? <a href="#bank-transfer">К QR-кодам и счетам фонда</a> : null}
+          <a href="#bank-details">К общим реквизитам фонда</a>
+        </nav>
+      </PageHero>
       <section className="page-section">
         <div className="container requisites-layout">
-          <dl className="requisites-list" id="bank-details" tabIndex={-1}>
-            {rows.map(([term, value]) => (
-              <div key={term}>
-                <dt>{term}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          {published ? (
-            <div className="requisites-aside">
+          <section id="bank-details" aria-labelledby="general-requisites-title" tabIndex={-1}>
+            <h2 id="general-requisites-title">Общие реквизиты фонда</h2>
+            <dl className="requisites-list">
+              {rows.map(([term, value]) => (
+                <div key={term}>
+                  <dt>{term}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {published ? (
               <CopyRequisitesButton
+                label="Скопировать общие реквизиты"
+                successMessage="Общие реквизиты фонда скопированы."
                 text={formatPublishedRequisitesCopy(published, siteConfig.legal.email)}
               />
-              <BankQrTransfer requisitesHref="#bank-details" />
+            ) : null}
+          </section>
+          {published ? (
+            <div className="requisites-aside" id="bank-transfer" tabIndex={-1}>
+              <BankQrTransfer requisitesHref="#bank-details" linkLabel="К общим реквизитам фонда" />
             </div>
           ) : result === null ? (
             <p className="status-note" role="status">

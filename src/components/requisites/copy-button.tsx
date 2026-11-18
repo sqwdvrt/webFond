@@ -4,9 +4,15 @@ import { useState } from "react";
 
 type CopyRequisitesButtonProps = {
   text: string;
+  label?: string;
+  successMessage?: string;
 };
 
-export function CopyRequisitesButton({ text }: CopyRequisitesButtonProps) {
+export function CopyRequisitesButton({
+  text,
+  label = "Скопировать реквизиты",
+  successMessage = "Реквизиты скопированы.",
+}: CopyRequisitesButtonProps) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(false);
 
@@ -24,8 +30,9 @@ export function CopyRequisitesButton({ text }: CopyRequisitesButtonProps) {
   return (
     <div className="requisites-copy">
       <button className="button button-secondary" onClick={copy} type="button">
-        {copied ? "Скопировано" : "Скопировать реквизиты"}
+        {copied ? "Скопировано" : label}
       </button>
+      {copied ? <p className="status-note" role="status">{successMessage}</p> : null}
       {error ? (
         <p className="status-note" role="alert">
           Не получилось скопировать. Выделите текст вручную.

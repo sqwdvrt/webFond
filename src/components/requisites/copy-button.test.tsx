@@ -17,6 +17,23 @@ describe("CopyRequisitesButton", () => {
     await user.click(screen.getByRole("button", { name: "Скопировать реквизиты" }));
 
     expect(writeText).toHaveBeenCalledWith("ИНН: 123");
-    expect(screen.getByRole("button", { name: "Скопировано" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Реквизиты скопированы.");
+  });
+  it("uses a contextual label and announces which details were copied", async () => {
+    const user = userEvent.setup();
+    render(<CopyRequisitesButton text="ИНН: 123" label="Скопировать общие реквизиты" successMessage="Общие реквизиты фонда скопированы." />);
+    await user.click(screen.getByRole("button", { name: "Скопировать общие реквизиты" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Общие реквизиты фонда скопированы.");
+  });
+  it("offers manual selection if clipboard access fails", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    render(<CopyRequisitesButton text="ИНН: 123" />);
+    await user.click(screen.getByRole("button", { name: "Скопировать реквизиты" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Не получилось скопировать. Выделите текст вручную.");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });

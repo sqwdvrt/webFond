@@ -175,7 +175,11 @@ describe("information pages", () => {
       `mailto:${siteConfig.legal.email}`,
     );
     expect(screen.queryByText(publishedRequisites.email)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Общие реквизиты фонда", level: 2 })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Скопировать общие реквизиты" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "К QR-кодам и счетам фонда" })).toHaveAttribute("href", "#bank-transfer");
+    expect(screen.getAllByRole("link", { name: "К общим реквизитам фонда" })).toHaveLength(2);
+    expect(document.getElementById("bank-transfer")).toBeInTheDocument();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();

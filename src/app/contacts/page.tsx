@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function ContactsPage() {
   return (
     <>
-      <PageHero eyebrow="Контакты" title="Написать нам" />
+      <PageHero compact eyebrow="Контакты" title="Написать нам" />
       <section className="page-section" id="help-request">
         <div className="container contact-layout">
           <ContactForm action={submitContactAction} />

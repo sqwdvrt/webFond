@@ -71,7 +71,7 @@ test('bank choices expose matching QR, copy and requisites', async ({ page, cont
     await expect(download).toHaveAttribute('href', bank.src);
     await expect(download).toHaveAttribute('download', `qr-${bank.id}.png`);
     expect((await page.request.get(bank.src)).ok()).toBe(true);
-    await section.getByRole('button', { name: 'Скопировать реквизиты' }).click();
+    await section.getByRole('button', { name: `Скопировать реквизиты ${bank.label}`, exact: true }).click();
     await expect(section.getByRole('button', { name: 'Скопировано' })).toBeVisible();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(formatBankQrCopy(bank));
   }
@@ -79,6 +79,29 @@ test('bank choices expose matching QR, copy and requisites', async ({ page, cont
   await expect(link).toHaveCount(1);
   await link.click();
   await expect(page).toHaveURL(/\/requisites(?:#.*)?$/);
+});
+
+test('document contents navigate to readable sections', async ({ page }) => {
+  for (const path of ['/privacy', '/personal-data-consent', '/donation-offer', '/cookies']) {
+    await page.goto(path);
+    const contents = page.getByRole('navigation', { name: 'Содержание документа' });
+    await contents.locator('summary').click();
+    const target = contents.getByRole('link').last();
+    const title = await target.innerText();
+    await target.click();
+    const heading = page.getByRole('heading', { level: 2, name: title, exact: true });
+    await expect(heading).toBeFocused();
+    const box = await heading.boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(72);
+    expect(box!.y).toBeLessThan(500);
+  }
+});
+
+test('help jumps to bank transfer without passing through the payment form', async ({ page }) => {
+  await page.goto('/help');
+  await page.getByRole('navigation', { name: 'Способы помощи' }).getByRole('link', { name: 'Перевести по реквизитам' }).click();
+  await expect(page).toHaveURL(/#bank-transfer$/);
+  await expect(page.getByRole('heading', { name: 'Перевод в приложении банка', exact: true })).toBeInViewport();
 });
 
 test('guest admin redirect and missing page', async ({ page }) => {

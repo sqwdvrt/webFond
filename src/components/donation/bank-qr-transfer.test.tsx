@@ -17,12 +17,14 @@ function optionById(id: "alfa" | "vtb") {
 
 describe("BankQrTransfer", () => {
   it("links to actual bank details instead of reloading the requisites page", () => {
-    render(<BankQrTransfer requisitesHref="#bank-details" />);
-    expect(screen.getByRole("link", { name: "Реквизиты для перевода из другого банка" })).toHaveAttribute("href", "#bank-details");
+    render(<BankQrTransfer requisitesHref="#bank-details" linkLabel="К общим реквизитам фонда" />);
+    expect(screen.getByRole("link", { name: "К общим реквизитам фонда" })).toHaveAttribute("href", "#bank-details");
   });
   it("shows Alfa-Bank and VTB choices and no QR or account until a bank is selected", () => {
     render(<BankQrTransfer />);
 
+    expect(screen.getByText(/Выберите счёт фонда.*из вашего банка/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Все реквизиты фонда" })).toHaveAttribute("href", "/requisites");
     expect(screen.getByRole("group", { name: "Банковский счёт фонда" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Т-Банк" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).not.toBeChecked();
@@ -47,21 +49,24 @@ describe("BankQrTransfer", () => {
 
     await user.click(screen.getByRole("radio", { name: "Альфа-Банк" }));
 
+    expect(screen.getByRole("heading", { level: 3, name: "Выбранный счёт фонда: Альфа-Банк" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toHaveFocus();
     const alfaImage = screen.getByRole("img", { name: alfa.alt });
     expect(alfaImage).toHaveAttribute("src", alfa.src);
     expect(screen.getByText(alfa.checkingAccount)).toBeVisible();
     expect(screen.getByText(alfa.bik)).toBeVisible();
-    expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Скопировать реквизиты Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Сохранить QR" })).toHaveAttribute("href", alfa.src);
     expect(screen.getByRole("link", { name: "оферты" })).toHaveAttribute("href", "/donation-offer");
     expect(screen.queryByText(vtb.checkingAccount)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Скопировать реквизиты" }));
-    expect(screen.getByRole("button", { name: "Скопировано" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Скопировать реквизиты Альфа-Банк" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Реквизиты Альфа-Банк скопированы.");
 
     await user.click(screen.getByRole("radio", { name: "ВТБ" }));
 
-    expect(screen.getByRole("button", { name: "Скопировать реквизиты" })).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Скопировать реквизиты ВТБ" })).toBeVisible();
     expect(screen.getByRole("img", { name: vtb.alt })).toHaveAttribute("src", vtb.src);
     expect(screen.getByText(vtb.checkingAccount)).toBeVisible();
     expect(screen.queryByText(alfa.checkingAccount)).not.toBeInTheDocument();

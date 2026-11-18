@@ -32,7 +32,7 @@ describe("SiteHeader", () => {
       "href",
       "/need-help",
     );
-    expect(screen.getByRole("link", { name: "Документы" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Реквизиты" })).toHaveAttribute(
       "href",
       "/requisites",
     );

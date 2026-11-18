@@ -19,7 +19,7 @@ export function PublishedLegalDocumentView({
 }) {
   return (
     <section className="page-section">
-      <div className="container published-body">
+      <div className="container published-body legal-document">
         <h1>{document.title}</h1>
         {document.fileHref ? (
           <p className="quiet-row">
@@ -28,14 +28,25 @@ export function PublishedLegalDocumentView({
             </a>
           </p>
         ) : null}
+        <nav className="document-contents" aria-label="Содержание документа">
+          <details>
+            <summary id="document-contents">Содержание документа</summary>
+            <ol>
+              {document.sections.map((section, index) => (
+                <li key={index}><a href={`#document-section-${index + 1}`}>{section.heading}</a></li>
+              ))}
+            </ol>
+          </details>
+        </nav>
         {document.sections.map((section, sectionIndex) => (
           <section key={sectionIndex}>
-            <h2>{section.heading}</h2>
+            <h2 id={`document-section-${sectionIndex + 1}`} tabIndex={-1}>{section.heading}</h2>
             {section.paragraphs.map((paragraph, paragraphIndex) => (
               <p key={paragraphIndex}>{paragraph}</p>
             ))}
           </section>
         ))}
+        <p className="quiet-row"><a href="#document-contents">К содержанию документа</a></p>
       </div>
     </section>
   );

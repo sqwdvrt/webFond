@@ -11,12 +11,16 @@ import {
   type BankQrId,
 } from "@/content/bank-qr";
 
-export function BankQrTransfer({ requisitesHref = "/requisites" }: { requisitesHref?: string }) {
+export function BankQrTransfer({
+  requisitesHref = "/requisites",
+  linkLabel = "Все реквизиты фонда",
+}: { requisitesHref?: string; linkLabel?: string }) {
   const [selectedId, setSelectedId] = useState<BankQrId | null>(null);
   const selected = bankQrOptions.find((item) => item.id === selectedId) ?? null;
 
   return (
     <section className="bank-qr-transfer">
+      <p>Выберите счёт фонда для перевода. Отправить пожертвование можно из вашего банка.</p>
       <fieldset>
         <legend>Банковский счёт фонда</legend>
         <div className="bank-qr-grid">
@@ -53,6 +57,13 @@ export function BankQrTransfer({ requisitesHref = "/requisites" }: { requisitesH
             <p className="bank-qr-instruction">Наведите камеру телефона на код или сохраните его и откройте в приложении банка.</p>
           </figure>
           <div className="bank-qr-account">
+            <h3>Выбранный счёт фонда: {selected.label}</h3>
+            <CopyRequisitesButton
+              key={selected.id}
+              text={formatBankQrCopy(selected)}
+              label={`Скопировать реквизиты ${selected.label}`}
+              successMessage={`Реквизиты ${selected.label} скопированы.`}
+            />
             <dl className="bank-qr-requisites">
               {bankQrDetails(selected).map(([term, value]) => (
                 <div key={term}>
@@ -61,7 +72,7 @@ export function BankQrTransfer({ requisitesHref = "/requisites" }: { requisitesH
                 </div>
               ))}
             </dl>
-            <CopyRequisitesButton key={selected.id} text={formatBankQrCopy(selected)} />
+
           </div>
         </div>
       ) : (
@@ -71,7 +82,7 @@ export function BankQrTransfer({ requisitesHref = "/requisites" }: { requisitesH
         </div>
       )}
 
-      <a className="bank-qr-other" href={requisitesHref}>Реквизиты для перевода из другого банка</a>
+      <a className="bank-qr-other" href={requisitesHref}>{linkLabel}</a>
       <div className="bank-qr-notes">
         <p className="preview-note">Можно перевести из другого банка по реквизитам выбранного счёта фонда. Возможную комиссию и поддержку QR уточните в приложении своего банка.</p>
         <p className="preview-note">

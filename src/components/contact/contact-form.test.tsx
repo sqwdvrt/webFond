@@ -6,6 +6,12 @@ import { ContactForm } from "./contact-form";
 import type { ContactFormState } from "@/features/contact/submit";
 
 describe("ContactForm", () => {
+  it("only references error descriptions that actually exist", () => {
+    const { container } = render(<ContactForm action={async () => ({ status: "idle", message: "" })} />);
+    for (const element of container.querySelectorAll("[aria-describedby]")) {
+      for (const id of element.getAttribute("aria-describedby")!.split(" ")) expect(document.getElementById(id), id).not.toBeNull();
+    }
+  });
   it("requires separate unchecked consent and sends the viewed version", () => {
     const { container } = render(<ContactForm action={async () => ({ status: "idle", message: "" })} />);
     const consent = screen.getByRole("checkbox", { name: /согласие на обработку персональных данных/i });

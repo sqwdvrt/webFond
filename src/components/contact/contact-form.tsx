@@ -33,7 +33,7 @@ export function ContactForm({ action }: ContactFormProps) {
   return (
     <div className="contact-form" id="contact-form">
       <h2 id="contact-form-title">Написать через сайт</h2>
-      <p>Расскажите о ситуации и оставьте электронную почту для ответа.</p>
+      <p>Расскажите о ситуации и оставьте электронную почту для ответа. Все поля обязательны.</p>
 
       {state.status === "success" ? (
         <p className="contact-form-success" role="status">
@@ -55,7 +55,7 @@ export function ContactForm({ action }: ContactFormProps) {
         <label className="contact-field">
           Имя
           <input
-            aria-describedby="contact-name-error"
+            aria-describedby={state.errors?.name ? "contact-name-error" : undefined}
             aria-invalid={Boolean(state.errors?.name)}
             autoComplete="name"
             defaultValue={values?.name ?? ""}
@@ -75,7 +75,7 @@ export function ContactForm({ action }: ContactFormProps) {
         <label className="contact-field">
           Электронная почта
           <input
-            aria-describedby="contact-email-error"
+            aria-describedby={state.errors?.email ? "contact-email-error" : undefined}
             aria-invalid={Boolean(state.errors?.email)}
             autoComplete="email"
             defaultValue={values?.email ?? ""}
@@ -92,9 +92,9 @@ export function ContactForm({ action }: ContactFormProps) {
           </p>
         ) : null}
 
-        <p id="contact-sensitive-warning">Не указывайте сведения о здоровье, паспортные и банковские данные, а также персональные данные других людей.</p>
-        <label className="contact-field">
-          Сообщение
+        <div className="contact-field">
+          <label htmlFor="contact-message">Сообщение</label>
+          <p className="field-hint" id="contact-sensitive-warning">Укажите город и кратко опишите, какая помощь нужна. Не указывайте сведения о здоровье, паспортные и банковские данные, а также персональные данные других людей.</p>
           <textarea
             aria-describedby={state.errors?.message ? "contact-sensitive-warning contact-message-error" : "contact-sensitive-warning"}
             aria-invalid={Boolean(state.errors?.message)}
@@ -105,7 +105,7 @@ export function ContactForm({ action }: ContactFormProps) {
             required
             rows={7}
           />
-        </label>
+        </div>
         {state.errors?.message ? (
           <p className="contact-form-error" id="contact-message-error" role="alert">
             {state.errors.message}

@@ -40,7 +40,7 @@ export const siteConfig = {
     { label: "О фонде", href: "/about" },
     { label: "Деятельность", href: "/projects" },
     { label: "Нужна помощь", href: "/need-help" },
-    { label: "Документы", href: "/requisites" },
+    { label: "Реквизиты", href: "/requisites" },
     { label: "Контакты", href: "/contacts" },
   ] satisfies NavigationItem[],
   legal: {
