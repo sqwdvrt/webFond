@@ -16,14 +16,14 @@ function optionById(id: "alfa" | "vtb") {
 }
 
 describe("BankQrTransfer", () => {
-  it("links to actual bank details instead of reloading the requisites page", () => {
-    render(<BankQrTransfer requisitesHref="#bank-details" linkLabel="К общим реквизитам фонда" />);
-    expect(screen.getByRole("link", { name: "К общим реквизитам фонда" })).toHaveAttribute("href", "#bank-details");
+  it("can omit the redundant link when already on the requisites page", () => {
+    render(<BankQrTransfer showRequisitesLink={false} />);
+    expect(screen.queryByRole("link", { name: "Все реквизиты фонда" })).not.toBeInTheDocument();
   });
   it("shows Alfa-Bank and VTB choices and no QR or account until a bank is selected", () => {
     render(<BankQrTransfer />);
 
-    expect(screen.getByText(/Выберите счёт фонда.*из вашего банка/)).toBeVisible();
+    expect(screen.queryByText(/Выберите счёт фонда.*из вашего банка/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Все реквизиты фонда" })).toHaveAttribute("href", "/requisites");
     expect(screen.getByRole("group", { name: "Банковский счёт фонда" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Т-Банк" })).not.toBeChecked();
@@ -35,10 +35,10 @@ describe("BankQrTransfer", () => {
       screen.getByText("Выберите счёт фонда, чтобы показать QR-код и реквизиты"),
     ).toBeVisible();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
       ),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
   });
 
   it("shows Alfa QR, requisites and copy after selecting Alfa, then switches to VTB", async () => {

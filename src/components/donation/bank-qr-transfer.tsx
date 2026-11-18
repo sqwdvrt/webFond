@@ -12,15 +12,13 @@ import {
 } from "@/content/bank-qr";
 
 export function BankQrTransfer({
-  requisitesHref = "/requisites",
-  linkLabel = "Все реквизиты фонда",
-}: { requisitesHref?: string; linkLabel?: string }) {
+  showRequisitesLink = true,
+}: { showRequisitesLink?: boolean }) {
   const [selectedId, setSelectedId] = useState<BankQrId | null>(null);
   const selected = bankQrOptions.find((item) => item.id === selectedId) ?? null;
 
   return (
     <section className="bank-qr-transfer">
-      <p>Выберите счёт фонда для перевода. Отправить пожертвование можно из вашего банка.</p>
       <fieldset>
         <legend>Банковский счёт фонда</legend>
         <div className="bank-qr-grid">
@@ -82,13 +80,8 @@ export function BankQrTransfer({
         </div>
       )}
 
-      <a className="bank-qr-other" href={requisitesHref}>{linkLabel}</a>
+      {showRequisitesLink ? <a className="bank-qr-other" href="/requisites">Все реквизиты фонда</a> : null}
       <div className="bank-qr-notes">
-        <p className="preview-note">Можно перевести из другого банка по реквизитам выбранного счёта фонда. Возможную комиссию и поддержку QR уточните в приложении своего банка.</p>
-        <p className="preview-note">
-          Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей
-          (СБП).
-        </p>
         <p className="preview-note">
           Перевод по QR является пожертвованием на уставную деятельность и принятием{" "}
           <a href="/donation-offer">оферты</a>.

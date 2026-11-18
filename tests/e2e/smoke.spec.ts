@@ -97,11 +97,29 @@ test('document contents navigate to readable sections', async ({ page }) => {
   }
 });
 
-test('help jumps to bank transfer without passing through the payment form', async ({ page }) => {
+test('payment pages omit jump menus and stack bank transfer below general requisites', async ({ page }) => {
   await page.goto('/help');
-  await page.getByRole('navigation', { name: 'Способы помощи' }).getByRole('link', { name: 'Перевести по реквизитам' }).click();
-  await expect(page).toHaveURL(/#bank-transfer$/);
-  await expect(page.getByRole('heading', { name: 'Перевод в приложении банка', exact: true })).toBeInViewport();
+  await expect(page.getByRole('navigation', { name: 'Способы помощи' })).toHaveCount(0);
+  await expect(page.locator('.donation-purpose-note')).toHaveCount(0);
+  await page.goto('/requisites');
+  await expect(page.getByRole('navigation', { name: 'Разделы реквизитов' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'К общим реквизитам фонда' })).toHaveCount(0);
+  const previous = await prisma.siteSetting.findUnique({ where: { key: 'requisites' } });
+  const bank = bankQrOptions[0];
+  const value = { version: 1, status: 'PUBLISHED', fullName: 'Фонд «Быть Добру»', shortName: 'ФБД', ogrn: '1257700318974', inn: bank.inn, kpp: bank.kpp, address: 'Локальная проверка', email: 'smoke@example.invalid', bankName: bank.bankName, recipientName: bank.recipientName, checkingAccount: bank.checkingAccount, correspondentAccount: bank.correspondentAccount, bik: bank.bik };
+  try {
+    await prisma.siteSetting.upsert({ where: { key: 'requisites' }, create: { key: 'requisites', value }, update: { value } });
+    await page.reload();
+    const general = await page.locator('#bank-details').boundingBox();
+    const transfer = await page.locator('#bank-transfer').boundingBox();
+    expect(general).not.toBeNull();
+    expect(transfer).not.toBeNull();
+    expect(transfer!.y).toBeGreaterThanOrEqual(general!.y + general!.height);
+    await expect(page.getByRole('link', { name: 'К общим реквизитам фонда' })).toHaveCount(0);
+  } finally {
+    if (previous) await prisma.siteSetting.update({ where: { key: 'requisites' }, data: { value: previous.value! } });
+    else await prisma.siteSetting.deleteMany({ where: { key: 'requisites' } });
+  }
 });
 
 test('guest admin redirect and missing page', async ({ page }) => {

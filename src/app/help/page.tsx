@@ -50,28 +50,12 @@ export function renderHelpPage(
         compact
         eyebrow="Помочь фонду"
         title="Поддержать фонд"
-        description={
-          enabled
-            ? "Пожертвование через ЮKassa. Платеж разовый, без подписки."
-            : "Поддержать фонд можно банковским переводом. Выберите банк или воспользуйтесь реквизитами."
-        }
-      >
-        <nav className="section-jumps" aria-label="Способы помощи">
-          {enabled ? <a href="#online-donation">Оплатить онлайн</a> : null}
-          <a href="#bank-transfer">Перевести по реквизитам</a>
-          <a href="#other-help">Другие способы</a>
-        </nav>
-      </PageHero>
+      />
       <section className="page-section">
         <div className="container donation-content">
           <div id="online-donation" className="anchor-target">{enabled ? (
             <DonationForm initialProjectSlug={initialProjectSlug} projects={projects} />
           ) : <DonationPreview />}</div>
-          <p className="donation-purpose-note">
-            Пожертвования направляются на уставную деятельность фонда: помощь людям,
-            сохранение значимых мест и организацию благотворительной работы.{" "}
-            <Link href="/donation-offer">Цели использования пожертвований в оферте</Link>
-          </p>
           <section className="bank-transfer-content anchor-target" id="bank-transfer" aria-labelledby="bank-transfer-title">
             <h2 id="bank-transfer-title">Перевод в приложении банка</h2>
             <p>Выберите банковский счёт фонда, откройте QR-код и укажите сумму пожертвования.</p>

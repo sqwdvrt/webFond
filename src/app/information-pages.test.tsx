@@ -72,21 +72,23 @@ describe("information pages", () => {
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
       ),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
   });
 
   it("renders online payment first with visible bank choices", () => {
     render(renderHelpPage({ paymentsEnabled: () => true }));
     expect(screen.getByRole("heading", { level: 1, name: "Поддержать фонд" })).toBeVisible();
-    expect(screen.getByText(/Пожертвование через ЮKassa/)).toBeVisible();
+    expect(screen.queryByText(/Пожертвование через ЮKassa/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Способы помощи" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Пожертвования направляются на уставную деятельность фонда/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Оплатить онлайн" })).toBeEnabled();
     expect(screen.queryByRole("link", { name: "Полные банковские реквизиты" })).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Перевод в приложении банка" })).toBeVisible();
-    expect(screen.getByText("Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).")).toBeVisible();
+    expect(screen.queryByText("Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).")).not.toBeInTheDocument();
   });
 
   it("preselects a published project on the help form without a payment error", () => {
@@ -177,18 +179,19 @@ describe("information pages", () => {
     expect(screen.queryByText(publishedRequisites.email)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Общие реквизиты фонда", level: 2 })).toBeVisible();
     expect(screen.getByRole("button", { name: "Скопировать общие реквизиты" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "К QR-кодам и счетам фонда" })).toHaveAttribute("href", "#bank-transfer");
-    expect(screen.getAllByRole("link", { name: "К общим реквизитам фонда" })).toHaveLength(2);
+    expect(screen.queryByRole("navigation", { name: "Разделы реквизитов" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "К общим реквизитам фонда" })).not.toBeInTheDocument();
+    expect(document.getElementById("bank-details")!.compareDocumentPosition(document.getElementById("bank-transfer")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(document.getElementById("bank-transfer")).toBeInTheDocument();
     expect(screen.queryByText(/Банковские реквизиты готовятся/)).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Т-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toBeVisible();
     expect(screen.getByRole("radio", { name: "ВТБ" })).toBeVisible();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Это перевод по реквизитам фонда, не оплата через Систему быстрых платежей (СБП).",
       ),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
   });
 
   it.each(["draft", "archived", "malformed"])(
