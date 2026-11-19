@@ -49,7 +49,7 @@ describe("BankQrTransfer", () => {
 
     await user.click(screen.getByRole("radio", { name: "Альфа-Банк" }));
 
-    expect(screen.getByRole("heading", { level: 3, name: "Выбранный счёт фонда: Альфа-Банк" })).toBeVisible();
+    expect(screen.queryByText(/Выбранный счёт фонда:/)).not.toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Альфа-Банк" })).toHaveFocus();
     const alfaImage = screen.getByRole("img", { name: alfa.alt });
     expect(alfaImage).toHaveAttribute("src", alfa.src);

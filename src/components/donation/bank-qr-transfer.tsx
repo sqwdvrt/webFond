@@ -55,13 +55,6 @@ export function BankQrTransfer({
             <p className="bank-qr-instruction">Наведите камеру телефона на код или сохраните его и откройте в приложении банка.</p>
           </figure>
           <div className="bank-qr-account">
-            <h3>Выбранный счёт фонда: {selected.label}</h3>
-            <CopyRequisitesButton
-              key={selected.id}
-              text={formatBankQrCopy(selected)}
-              label={`Скопировать реквизиты ${selected.label}`}
-              successMessage={`Реквизиты ${selected.label} скопированы.`}
-            />
             <dl className="bank-qr-requisites">
               {bankQrDetails(selected).map(([term, value]) => (
                 <div key={term}>
@@ -70,7 +63,12 @@ export function BankQrTransfer({
                 </div>
               ))}
             </dl>
-
+            <CopyRequisitesButton
+              key={selected.id}
+              text={formatBankQrCopy(selected)}
+              label={`Скопировать реквизиты ${selected.label}`}
+              successMessage={`Реквизиты ${selected.label} скопированы.`}
+            />
           </div>
         </div>
       ) : (
